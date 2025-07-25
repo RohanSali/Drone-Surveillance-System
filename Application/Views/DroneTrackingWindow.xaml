@@ -1,0 +1,402 @@
+<Window x:Class="DroneSurveillanceSystem.Views.DroneTrackingWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Drone Tracking &amp; Visualization" Height="1000" Width="1600"
+        WindowStartupLocation="CenterScreen"
+        Background="#FF0A0A0A"
+        WindowState="Maximized">
+    
+    <Window.Resources>
+        <!-- Modern Button Style -->
+        <Style x:Key="TrackingButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="#FF0078D4"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="15,8"/>
+            <Setter Property="Margin" Value="5"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" 
+                                CornerRadius="5"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                BorderBrush="{TemplateBinding BorderBrush}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#FF106EBE"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter Property="Background" Value="#FF005A9E"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Drone Status Indicator Style -->
+        <Style x:Key="DroneStatusStyle" TargetType="Border">
+            <Setter Property="Background" Value="#FF2D2D30"/>
+            <Setter Property="BorderBrush" Value="#FF404040"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Padding" Value="15"/>
+            <Setter Property="Margin" Value="5"/>
+        </Style>
+
+        <!-- Header Text Style -->
+        <Style x:Key="HeaderStyle" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontSize" Value="18"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Margin" Value="10,5"/>
+        </Style>
+
+        <!-- Data Text Style -->
+        <Style x:Key="DataTextStyle" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="#FFCCCCCC"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Margin" Value="5,2"/>
+        </Style>
+
+        <!-- Value Text Style -->
+        <Style x:Key="ValueTextStyle" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Margin" Value="5,2"/>
+        </Style>
+
+        <!-- Alert Text Style -->
+        <Style x:Key="AlertTextStyle" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="#FFFF4444"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Margin" Value="5,2"/>
+        </Style>
+    </Window.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="80"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="250"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header Panel -->
+        <Border Grid.Row="0" Background="#FF1E1E1E" BorderBrush="#FF404040" BorderThickness="0,0,0,2">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Title Section -->
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="20,0">
+                    <Ellipse Width="50" Height="50" Fill="#FF0078D4" Margin="0,0,15,0"/>
+                    <TextBlock Text="🚁" FontSize="35" VerticalAlignment="Center" Margin="-42,0,20,0"/>
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="DRONE TRACKING SYSTEM" 
+                                  Foreground="White" 
+                                  FontWeight="Bold" 
+                                  FontSize="24"/>
+                        <TextBlock Text="Real-time Position &amp; Status Monitoring" 
+                                  Foreground="#FF888888" 
+                                  FontSize="14"/>
+                    </StackPanel>
+                </StackPanel>
+
+                <!-- Status Indicators -->
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="20,0">
+                    <Border Background="#FF2D2D30" CornerRadius="5" Padding="10,5" Margin="5,0">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="Active Drones:" Style="{StaticResource DataTextStyle}"/>
+                            <TextBlock Name="ActiveDronesText" Text="{Binding ActiveDronesCount}" 
+                                      Foreground="#FF00FF00" FontWeight="Bold" FontSize="16" Margin="5,0"/>
+                        </StackPanel>
+                    </Border>
+                    
+                    <Border Background="#FF2D2D30" CornerRadius="5" Padding="10,5" Margin="5,0">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="Status:" Style="{StaticResource DataTextStyle}"/>
+                            <TextBlock Name="TrackingStatusText" Text="{Binding TrackingStatus}" 
+                                      Foreground="#FF00FF00" FontWeight="Bold" FontSize="16" Margin="5,0"/>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <!-- Control Buttons -->
+                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="20,0">
+                    <Button Name="StartTrackingButton" Content="🎯 Start Tracking" 
+                            Style="{StaticResource TrackingButtonStyle}" Click="StartTrackingButton_Click"/>
+                    <Button Name="StopTrackingButton" Content="⏹ Stop Tracking" 
+                            Style="{StaticResource TrackingButtonStyle}" Background="#FFDC3545" Click="StopTrackingButton_Click"/>
+                    <Button Name="AddDroneButton" Content="➕ Add Drone" 
+                            Style="{StaticResource TrackingButtonStyle}" Background="#FF28A745" Click="AddDroneButton_Click"/>
+                    <Button Name="CloseButton" Content="✖ Close" 
+                            Style="{StaticResource TrackingButtonStyle}" Background="#FF6C757D" Click="CloseButton_Click"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Main Content Area -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="2*"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Map Visualization Area -->
+            <Border Grid.Column="0" Background="#FF1A1A1A" BorderBrush="#FF404040" BorderThickness="0,0,2,0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Map Header -->
+                    <Border Grid.Row="0" Background="#FF2D2D30" Padding="15,10">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            
+                            <TextBlock Grid.Column="0" Text="🗺️ Live Drone Map" Style="{StaticResource HeaderStyle}"/>
+                            
+                            <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                <TextBlock Text="Total Distance:" Style="{StaticResource DataTextStyle}" VerticalAlignment="Center"/>
+                                <TextBlock Name="TotalDistanceText" Text="{Binding TotalDistance, StringFormat='{}{0:F1}m'}" 
+                                          Style="{StaticResource ValueTextStyle}" VerticalAlignment="Center"/>
+                                <TextBlock Text="Avg Speed:" Style="{StaticResource DataTextStyle}" VerticalAlignment="Center" Margin="20,0,0,0"/>
+                                <TextBlock Name="AverageSpeedText" Text="{Binding AverageSpeed, StringFormat='{}{0:F1} m/min'}" 
+                                          Style="{StaticResource ValueTextStyle}" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <!-- Map Canvas -->
+                    <Canvas Grid.Row="1" Name="MapCanvas" Background="#FF0F0F0F" ClipToBounds="True">
+                        <!-- Grid Background -->
+                        <Canvas.Resources>
+                            <Style x:Key="GridLineStyle" TargetType="Line">
+                                <Setter Property="Stroke" Value="#FF333333"/>
+                                <Setter Property="StrokeThickness" Value="1"/>
+                            </Style>
+                        </Canvas.Resources>
+                        
+                        <!-- Map will be drawn programmatically -->
+                        
+                        <!-- Sample drone indicators (will be updated dynamically) -->
+                        <Border Name="SampleDroneIndicator" 
+                                Canvas.Left="300" Canvas.Top="200"
+                                Background="#FF0078D4" 
+                                CornerRadius="15" 
+                                Width="30" Height="30"
+                                BorderBrush="White" BorderThickness="2">
+                            <TextBlock Text="🚁" FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        
+                        <!-- Drone trail lines -->
+                        <Polyline Name="DroneTrailLine" 
+                                 Stroke="#FF0078D4" 
+                                 StrokeThickness="2" 
+                                 StrokeDashArray="5,3"
+                                 Opacity="0.7"/>
+                    </Canvas>
+                </Grid>
+            </Border>
+
+            <!-- Drone Status Panel -->
+            <Border Grid.Column="1" Background="#FF1A1A1A">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Status Header -->
+                    <Border Grid.Row="0" Background="#FF2D2D30" Padding="15,10">
+                        <TextBlock Text="📊 Drone Status" Style="{StaticResource HeaderStyle}"/>
+                    </Border>
+
+                    <!-- Drone List -->
+                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Margin="10">
+                        <StackPanel Name="DroneStatusPanel">
+                            <!-- Drone status cards will be added programmatically -->
+                            
+                            <!-- Sample Drone Card -->
+                            <Border Style="{StaticResource DroneStatusStyle}">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+
+                                    <!-- Drone Header -->
+                                    <Grid Grid.Row="0" Margin="0,0,0,10">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        
+                                        <StackPanel Grid.Column="0" Orientation="Horizontal">
+                                            <Ellipse Width="12" Height="12" Fill="#FF00FF00" Margin="0,0,8,0"/>
+                                            <TextBlock Text="DRONE-001" Foreground="White" FontWeight="Bold" FontSize="14"/>
+                                        </StackPanel>
+                                        
+                                        <TextBlock Grid.Column="1" Text="ACTIVE" Foreground="#FF00FF00" FontSize="12" FontWeight="Bold"/>
+                                    </Grid>
+
+                                    <!-- Drone Data -->
+                                    <Grid Grid.Row="1">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <StackPanel Grid.Column="0">
+                                            <TextBlock Text="Position:" Style="{StaticResource DataTextStyle}"/>
+                                            <TextBlock Text="37.7749, -122.4194" Style="{StaticResource ValueTextStyle}" FontSize="11"/>
+                                            
+                                            <TextBlock Text="Altitude:" Style="{StaticResource DataTextStyle}" Margin="0,5,0,0"/>
+                                            <TextBlock Text="50.0m" Style="{StaticResource ValueTextStyle}"/>
+                                            
+                                            <TextBlock Text="Casualties:" Style="{StaticResource DataTextStyle}" Margin="0,5,0,0"/>
+                                            <TextBlock Text="0" Style="{StaticResource ValueTextStyle}" Foreground="#FFFF4444"/>
+                                        </StackPanel>
+
+                                        <StackPanel Grid.Column="1">
+                                            <TextBlock Text="Battery:" Style="{StaticResource DataTextStyle}"/>
+                                            <ProgressBar Value="85" Maximum="100" Height="15" 
+                                                        Foreground="#FF00FF00" Background="#FF333333" Margin="0,2"/>
+                                            
+                                            <TextBlock Text="Signal:" Style="{StaticResource DataTextStyle}" Margin="0,5,0,0"/>
+                                            <ProgressBar Value="92" Maximum="100" Height="15" 
+                                                        Foreground="#FF0078D4" Background="#FF333333" Margin="0,2"/>
+                                            
+                                            <TextBlock Text="Anomalies:" Style="{StaticResource DataTextStyle}" Margin="0,5,0,0"/>
+                                            <TextBlock Text="0" Style="{StaticResource ValueTextStyle}" Foreground="#FFFF8800"/>
+                                        </StackPanel>
+                                    </Grid>
+
+                                    <!-- Status Bar -->
+                                    <Border Grid.Row="2" Background="#FF1A1A1A" CornerRadius="3" Padding="8,4" Margin="0,10,0,0">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            
+                                            <TextBlock Grid.Column="0" Text="Flying - Speed: 15.2 m/min" 
+                                                      Foreground="#FFCCCCCC" FontSize="11"/>
+                                            <TextBlock Grid.Column="1" Text="2s ago" 
+                                                      Foreground="#FF888888" FontSize="10"/>
+                                        </Grid>
+                                    </Border>
+                                </Grid>
+                            </Border>
+                        </StackPanel>
+                    </ScrollViewer>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- Bottom Control & Alert Panel -->
+        <Border Grid.Row="2" Background="#FF1E1E1E" BorderBrush="#FF404040" BorderThickness="0,2,0,0">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Tracking Statistics -->
+                <Border Grid.Column="0" Background="#FF2D2D30" Margin="10" CornerRadius="8" Padding="15">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Grid.Row="0" Text="📈 Tracking Statistics" Style="{StaticResource HeaderStyle}"/>
+                        
+                        <Grid Grid.Row="1">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="Total Tracked:" Style="{StaticResource DataTextStyle}"/>
+                                <TextBlock Name="TotalTrackedText" Text="{Binding TotalDronesTracked}" 
+                                          Style="{StaticResource ValueTextStyle}" FontSize="20"/>
+                                
+                                <TextBlock Text="Session Time:" Style="{StaticResource DataTextStyle}" Margin="0,10,0,0"/>
+                                <TextBlock Name="SessionTimeText" Text="00:15:32" Style="{StaticResource ValueTextStyle}"/>
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="1">
+                                <TextBlock Text="Data Points:" Style="{StaticResource DataTextStyle}"/>
+                                <TextBlock Name="DataPointsText" Text="1,247" Style="{StaticResource ValueTextStyle}" FontSize="20"/>
+                                
+                                <TextBlock Text="Update Rate:" Style="{StaticResource DataTextStyle}" Margin="0,10,0,0"/>
+                                <TextBlock Text="2.0s" Style="{StaticResource ValueTextStyle}"/>
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Text="Coverage Area:" Style="{StaticResource DataTextStyle}"/>
+                                <TextBlock Text="2.5 km²" Style="{StaticResource ValueTextStyle}" FontSize="20"/>
+                                
+                                <TextBlock Text="Alerts:" Style="{StaticResource DataTextStyle}" Margin="0,10,0,0"/>
+                                <TextBlock Name="AlertCountText" Text="3" Style="{StaticResource AlertTextStyle}"/>
+                            </StackPanel>
+                        </Grid>
+                    </Grid>
+                </Border>
+
+                <!-- Live Alerts -->
+                <Border Grid.Column="1" Background="#FF2D2D30" Margin="10" CornerRadius="8" Padding="15">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Grid.Row="0" Text="🚨 Live Alerts" Style="{StaticResource HeaderStyle}"/>
+                        
+                        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                            <StackPanel Name="AlertsPanel">
+                                <!-- Alerts will be added programmatically -->
+                                
+                                <!-- Sample Alert -->
+                                <Border Background="#FF1A1A1A" CornerRadius="5" Padding="10" Margin="0,5">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        
+                                        <Ellipse Grid.Column="0" Width="8" Height="8" Fill="#FFFF4444" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                        <TextBlock Grid.Column="1" Text="LOW BATTERY: Surveillance Alpha - 18.5%" 
+                                                  Style="{StaticResource AlertTextStyle}" VerticalAlignment="Center"/>
+                                        <TextBlock Grid.Column="2" Text="15:32" 
+                                                  Foreground="#FF888888" FontSize="10" VerticalAlignment="Center"/>
+                                    </Grid>
+                                </Border>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </Grid>
+                </Border>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>

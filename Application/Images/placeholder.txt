@@ -1,0 +1,8 @@
+This folder will contain surveillance scene images.
+
+To add custom surveillance scenes:
+1. Copy JPG, PNG, or BMP image files to this folder
+2. Use "Load New Scene" button in the application
+3. Select your custom image files
+
+The application will work without images - it will show a placeholder or blank area for the feed display.
