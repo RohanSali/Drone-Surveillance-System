@@ -18,7 +18,7 @@ MODEL_PATH = 'models/anamoly_classifier.h5'
 TEMP_TEXT_FILE = 'Inference Engine/alerts.txt'
 PREDICTION_THRESHOLD = 97 #percent
 TIME_THRESHOLD = 60 #sec
-URL = "https://web-production-a0e2.up.railway.app/api/alerts"
+URL = "http://web-production-190fc.up.railway.app/api/alerts"
 class_names = ['Blood Detected', 'Face Mask Detected', 'Gun Detected','Knife Detected', 'No Anamoly']
 
 def create_model(input_shape=(IMG_HEIGHT, IMG_WIDTH, 3), num_classes=5, dropout_rate=0.5):  #Do not change parameters
@@ -52,7 +52,7 @@ def preprocess_frame(frame):
 def classify_frame(frame):
     processed_frame = preprocess_frame(frame)
 
-    pred_probs = model.predict(processed_frame)
+    pred_probs = model.predict(processed_frame,verbose=0)
 
     pred_class_idx = np.argmax(pred_probs, axis=1)[0]
     pred_class_name = class_names[pred_class_idx]    
@@ -61,6 +61,7 @@ def classify_frame(frame):
 
 def send_to_server(payload):
     response = requests.post(URL,json=payload)
+    print("Response : ",response)
     # json.dumps(payload)
     if response.ok :
         print(f"✅ Sent to server as {payload['alert']}")

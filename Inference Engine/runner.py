@@ -36,7 +36,7 @@ from pathlib import Path
 from casulty_inference import inference_casulty
 from anamoly_inference import inference_anamoly
 from face_recognition import compare_faces
-from crowd_density import inference_crowd_density
+# from crowd_density import inference_crowd_density
 
 base_dir = os.path.dirname(os.path.abspath(__file__))
 
@@ -133,7 +133,7 @@ while True:
     # Send to inference queues (copy frame to avoid race condition)
     safe_put(casulty_queue, (frame.copy(), timestamp))
     safe_put(anamoly_queue, (frame.copy(), timestamp))
-    safe_put(match_face_queue, (frame.copy(), timestamp))
+    # safe_put(match_face_queue, (frame.copy(), timestamp))
     # safe_put(crowd_queue, (frame.copy(), timestamp))
 
     frame_id += 1

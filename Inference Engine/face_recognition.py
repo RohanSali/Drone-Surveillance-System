@@ -9,7 +9,7 @@ import requests
 from collections import deque
 from datetime import datetime
 
-URL = ""
+URL = "http://web-production-190fc.up.railway.app/api/alerts"
 TEMP_TEXT_FILE = 'Inference Engine/person_found.txt'
 TIME_THRESHOLD = 60 #sec
 
