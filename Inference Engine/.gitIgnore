@@ -9,6 +9,7 @@ person_found.txt
 __pycache__/
 models/checkpoint/
 lost_person/
+temp_my/
 
 # Ignore all .pyc files
 *.pyc

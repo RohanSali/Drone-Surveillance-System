@@ -32,10 +32,11 @@ import cv2
 import threading
 import queue
 from datetime import datetime
+from pathlib import Path
 from casulty_inference import inference_casulty
 from anamoly_inference import inference_anamoly
 from face_recognition import compare_faces
-from pathlib import Path
+from crowd_density import inference_crowd_density
 
 base_dir = os.path.dirname(os.path.abspath(__file__))
 
@@ -68,6 +69,7 @@ LOST_FINDING_IMG_PATH = Path(os.path.join(base_dir, 'lost_person\image1.jpg'))
 casulty_queue = queue.Queue(maxsize=1)
 anamoly_queue = queue.Queue(maxsize=1)
 match_face_queue = queue.Queue(maxsize=1)
+crowd_queue = queue.Queue(maxsize=1)
 
 # Function to safely insert latest frame into a queue (replaces old)
 def safe_put(q, item):
@@ -92,7 +94,7 @@ def anamoly_worker():
         inference_anamoly(frame, timestamp)
         anamoly_queue.task_done()
 
-# Async inference thread for anomaly
+# Async inference thread for face recognition
 def match_face_worker():
     while True:
         frame2 = cv2.imread(LOST_FINDING_IMG_PATH)
@@ -104,10 +106,18 @@ def match_face_worker():
         compare_faces(frame, frame2, LOST_FINDING_IMG_PATH.stem , timestamp)
         match_face_queue.task_done()
 
+# Async inference thread for crowd density
+def crowd_density_worker():
+    while True:
+        frame, timestamp = crowd_queue.get()
+        inference_crowd_density(frame, timestamp)
+        anamoly_queue.task_done()
+
 # Start both threads as daemons
 threading.Thread(target=casulty_worker, daemon=True).start()
 threading.Thread(target=anamoly_worker, daemon=True).start()
 threading.Thread(target=match_face_worker, daemon=True).start()
+threading.Thread(target=crowd_density_worker, daemon=True).start()
 
 # Capture from webcam or drone feed
 cap = cv2.VideoCapture(0)
@@ -124,6 +134,7 @@ while True:
     safe_put(casulty_queue, (frame.copy(), timestamp))
     safe_put(anamoly_queue, (frame.copy(), timestamp))
     safe_put(match_face_queue, (frame.copy(), timestamp))
+    # safe_put(crowd_queue, (frame.copy(), timestamp))
 
     frame_id += 1
 
