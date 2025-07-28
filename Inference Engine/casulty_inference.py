@@ -15,7 +15,11 @@ MODEL_PATH = 'models\casualty_classifier.h5'
 TEMP_TEXT_FILE = 'Inference Engine/alerts.txt'
 PREDICTION_THRESHOLD = 93 #percent
 TIME_THRESHOLD = 60 #sec
-URL = "http://web-production-190fc.up.railway.app/api/alerts"
+URL = "https://web-production-190fc.up.railway.app/api/alerts"
+HEADERS = {
+    "Content-Type": "application/json",
+    "User-Agent": "PythonScript/1.0"
+}
 class_names = ['Accident Detected', 'Fire Detected', 'Flood Detected', 'No Casualty']
 model = load_model(MODEL_PATH)
 
@@ -41,8 +45,8 @@ def classify_frame(frame):
     return pred_class_name , pred_probs[0,pred_class_idx] * 100
 
 def send_to_server(payload):
-    response = requests.post(URL,json=payload)
-    print("Response : ",response)
+    response = requests.post(URL,json=payload, headers=HEADERS)
+    print("Response : ",response.text)
     # json.dumps(payload)
     if response.ok :
         print(f"✅ Sent to server as {payload['alert']}")
@@ -65,7 +69,7 @@ def inference_casulty(frame , capture_timestamp):
         payload = {
             "alert" : "Casualty - " + label,
             "drone_id" : "NO DRONE",
-            "alert_location" : (0,0,0),
+            "alert_location" : [0,0,0],
             "image" : None,
             "image_received" : 0,
             "rl_responsed" : 0,
@@ -92,11 +96,11 @@ def inference_casulty(frame , capture_timestamp):
             print(f"Time difference between last {label} prediction is : {time_difference} ⏳")
             if time_difference > TIME_THRESHOLD:
                 save_to_machine(payload)
-                send_to_server(payload)
+                # send_to_server(payload)
         else :
             print(f"🔒 Saving {new_label} for first time!")
             save_to_machine(payload)
-            send_to_server(payload)
+            # send_to_server(payload)
 
         
 

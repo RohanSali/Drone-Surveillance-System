@@ -1,32 +1,3 @@
-# import cv2
-# from casulty_inference import inference_casulty
-# from anamoly_inference import inference_anamoly
-# from datetime import datetime
-
-# cap = cv2.VideoCapture(0)
-# frame_id = 0
-
-# while True:
-#     ret, frame = cap.read()
-#     timestamp = datetime.now()
-
-#     if not ret:
-#         break
-    
-#     if frame_id % 200 == 0:
-#         inference_casulty(frame,timestamp)
-#         inference_anamoly(frame,timestamp)
-
-#     frame_id += 1
-
-#     cv2.imshow("Live Feed", frame)
-#     if cv2.waitKey(1) == ord('q'):
-#         break
-
-# cap.release()
-# cv2.destroyAllWindows()
-
-
 import os
 import cv2
 import threading
@@ -36,7 +7,7 @@ from pathlib import Path
 from casulty_inference import inference_casulty
 from anamoly_inference import inference_anamoly
 from face_recognition import compare_faces
-# from crowd_density import inference_crowd_density
+from crowd_density import inference_crowd_density
 
 base_dir = os.path.dirname(os.path.abspath(__file__))
 
@@ -97,9 +68,10 @@ def anamoly_worker():
 # Async inference thread for face recognition
 def match_face_worker():
     while True:
-        frame2 = cv2.imread(LOST_FINDING_IMG_PATH)
+        frame2 = cv2.imread(str(LOST_FINDING_IMG_PATH))
         
         if frame2 is None:
+            match_face_queue.task_done()
             return
         
         frame, timestamp = match_face_queue.get()
@@ -111,7 +83,7 @@ def crowd_density_worker():
     while True:
         frame, timestamp = crowd_queue.get()
         inference_crowd_density(frame, timestamp)
-        anamoly_queue.task_done()
+        crowd_queue.task_done()
 
 # Start both threads as daemons
 threading.Thread(target=casulty_worker, daemon=True).start()
@@ -133,8 +105,8 @@ while True:
     # Send to inference queues (copy frame to avoid race condition)
     safe_put(casulty_queue, (frame.copy(), timestamp))
     safe_put(anamoly_queue, (frame.copy(), timestamp))
-    # safe_put(match_face_queue, (frame.copy(), timestamp))
-    # safe_put(crowd_queue, (frame.copy(), timestamp))
+    safe_put(match_face_queue, (frame.copy(), timestamp))
+    safe_put(crowd_queue, (frame.copy(), timestamp))
 
     frame_id += 1
 

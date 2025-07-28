@@ -9,7 +9,7 @@ import requests
 from collections import deque
 from datetime import datetime
 
-URL = "http://web-production-190fc.up.railway.app/api/alerts"
+URL = "https://web-production-190fc.up.railway.app/api/alerts"
 TEMP_TEXT_FILE = 'Inference Engine/person_found.txt'
 TIME_THRESHOLD = 60 #sec
 
@@ -40,12 +40,12 @@ def send_to_server(payload):
     response = requests.post(URL,json=payload)
     # json.dumps(payload)
     if response.ok :
-        print(f"✅ Sent to server as {payload['alert']}")
+        print(f"✅ Sent to server as {payload['name']}")
 
 def save_to_machine(payload):
     with open(TEMP_TEXT_FILE, 'a') as f:
         f.write(str(payload) + '\n')
-    print(f"✅ Saved to machine as {payload['Timestamp']}")
+    print(f"✅ Saved to machine as {payload['name']}")
 
 
 def compare_faces(frame1, frame2 , name ,capture_timestamp):
@@ -61,12 +61,12 @@ def compare_faces(frame1, frame2 , name ,capture_timestamp):
             frame1_blob = encode_frame(frame1)
             frame2_blob = encode_frame(frame2)
             payload = {
-                "Found":1,
-                "Name":name,
-                "Actual Image":frame1_blob,
-                "Matched Frame" : frame2_blob,
-                "Location" : (0,0,0),
-                "Timestamp":capture_timestamp.isoformat()
+                "found":1,
+                "name":name,
+                "actual image": frame2_blob,
+                "matched frame" : frame1_blob,
+                "location" : [0,0,0],
+                "timestamp":capture_timestamp.isoformat()
             }
 
             timestamp = None
@@ -76,8 +76,8 @@ def compare_faces(frame1, frame2 , name ,capture_timestamp):
             for line in reversed(lines):
                 try:
                     data = ast.literal_eval(line.strip())
-                    if isinstance(data, dict) and data.get('Name') == name:
-                        timestamp = datetime.fromisoformat(data.get('Timestamp'))
+                    if isinstance(data, dict) and data.get('name') == name:
+                        timestamp = datetime.fromisoformat(data.get('timestamp'))
                         break
                 except Exception as e:
                     print(f"❌ Error parsing line: {line} -> {e}")
