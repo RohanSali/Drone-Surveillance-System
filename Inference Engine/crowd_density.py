@@ -1,18 +1,19 @@
-import requests
 import ast
 from collections import deque
 from datetime import datetime
 from ultralytics import YOLO
+from websocket_call import send_alert
+import asyncio
 
 MODEL_PATH = 'models/crowd_density.pt'
 TEMP_TEXT_FILE = 'Inference Engine/alerts.txt'
-CONFIDENCE = 0.15 #confidence threshold
-TIME_THRESHOLD = 10 #sec
-URL = "https://web-production-190fc.up.railway.app/api/alerts"
-HEADERS = {
-    "Content-Type": "application/json",
-    "User-Agent": "PythonScript/1.0"
-}
+CONFIDENCE = 0.25 #confidence threshold
+TIME_THRESHOLD = 60 #sec
+# URL = "https://web-production-190fc.up.railway.app/api/alerts"
+# HEADERS = {
+#     "Content-Type": "application/json",
+#     "User-Agent": "PythonScript/1.0"
+# }
 
 model = YOLO(MODEL_PATH) 
 
@@ -67,12 +68,12 @@ def get_idx(number_of_people):
         idx = 10
     return idx
 
-def send_to_server(payload):
-    response = requests.post(URL,json=payload, headers=HEADERS)
-    print("Response : ",response.text)
-    # json.dumps(payload)
-    if response.ok :
-        print(f"✅ Sent to server as {payload['alert']}")
+# def send_to_server(payload):
+#     response = requests.post(URL,json=payload, headers=HEADERS)
+#     print("Response : ",response.text)
+#     # json.dumps(payload)
+#     if response.ok :
+#         print(f"✅ Sent to server as {payload['alert']}")
 
 def save_to_machine(payload):
     with open(TEMP_TEXT_FILE, 'a') as f:
@@ -125,9 +126,12 @@ def inference_crowd_density(frame,capture_timestamp):
             print(f"Time difference between last {new_label} prediction is : {time_difference} ⏳")
             if time_difference > TIME_THRESHOLD:
                 save_to_machine(payload)
+                asyncio.run(send_alert(payload))
                 # send_to_server(payload)
         else :
             print(f"🔒 Saving {new_label} for first time!")
             save_to_machine(payload)
+            asyncio.run(send_alert(payload))
             # send_to_server(payload)
+
     print(f"Found {number_of_people} peoples in the frame!")

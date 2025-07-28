@@ -3,11 +3,11 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.keras.models import load_model
 from tensorflow.keras.preprocessing import image
-import json
 from datetime import datetime
 import ast
 from collections import deque
-import requests
+from websocket_call import send_alert
+import asyncio
 
 IMG_HEIGHT = 380
 IMG_WIDTH = 380
@@ -15,11 +15,6 @@ MODEL_PATH = 'models\casualty_classifier.h5'
 TEMP_TEXT_FILE = 'Inference Engine/alerts.txt'
 PREDICTION_THRESHOLD = 93 #percent
 TIME_THRESHOLD = 60 #sec
-URL = "https://web-production-190fc.up.railway.app/api/alerts"
-HEADERS = {
-    "Content-Type": "application/json",
-    "User-Agent": "PythonScript/1.0"
-}
 class_names = ['Accident Detected', 'Fire Detected', 'Flood Detected', 'No Casualty']
 model = load_model(MODEL_PATH)
 
@@ -43,13 +38,6 @@ def classify_frame(frame):
     pred_class_name = class_names[pred_class_idx]    
 
     return pred_class_name , pred_probs[0,pred_class_idx] * 100
-
-def send_to_server(payload):
-    response = requests.post(URL,json=payload, headers=HEADERS)
-    print("Response : ",response.text)
-    # json.dumps(payload)
-    if response.ok :
-        print(f"✅ Sent to server as {payload['alert']}")
 
 def save_to_machine(payload):
     with open(TEMP_TEXT_FILE, 'a') as f:
@@ -96,12 +84,10 @@ def inference_casulty(frame , capture_timestamp):
             print(f"Time difference between last {label} prediction is : {time_difference} ⏳")
             if time_difference > TIME_THRESHOLD:
                 save_to_machine(payload)
-                # send_to_server(payload)
+                asyncio.run(send_alert(payload))
         else :
             print(f"🔒 Saving {new_label} for first time!")
             save_to_machine(payload)
-            # send_to_server(payload)
-
-        
+            asyncio.run(send_alert(payload))
 
     print(f"▶️  Frame processed in time {processing_duration:.3f} seconds & label : {label}")

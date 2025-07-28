@@ -91,16 +91,49 @@ threading.Thread(target=anamoly_worker, daemon=True).start()
 threading.Thread(target=match_face_worker, daemon=True).start()
 threading.Thread(target=crowd_density_worker, daemon=True).start()
 
-# Capture from webcam or drone feed
-cap = cv2.VideoCapture(0)
-frame_id = 0
 
-while True:
-    ret, frame = cap.read()
+def runner_app(device="lap",img=None):
+    if device == "lap":
+        cap = cv2.VideoCapture(0)
+    elif device == "cam":
+        cap = cv2.VideoCapture(1)
+    else :
+        cap = None
+
+    while True:
+        if cap:
+            ret, frame = cap.read()
+        else:
+            ret = False
+            frame = None
+
+        timestamp = datetime.now()
+
+        if not ret:
+            break
+
+        # Send to inference queues (copy frame to avoid race condition)
+        safe_put(casulty_queue, (frame.copy(), timestamp))
+        safe_put(anamoly_queue, (frame.copy(), timestamp))
+        safe_put(match_face_queue, (frame.copy(), timestamp))
+        safe_put(crowd_queue, (frame.copy(), timestamp))
+
+        # Display live feed
+        cv2.imshow("Live Feed", frame)
+        if cv2.waitKey(1) == ord('q'):
+            break
+
+    cap.release()
+    cv2.destroyAllWindows()
+
+def runner_sim(img=None):
+    frame = None
+    if img:
+        frame = cv2.cvtColor(img,cv2.COLOR_RGB2BGR)
+
+    if not frame:
+        return
     timestamp = datetime.now()
-
-    if not ret:
-        break
 
     # Send to inference queues (copy frame to avoid race condition)
     safe_put(casulty_queue, (frame.copy(), timestamp))
@@ -108,12 +141,12 @@ while True:
     safe_put(match_face_queue, (frame.copy(), timestamp))
     safe_put(crowd_queue, (frame.copy(), timestamp))
 
-    frame_id += 1
-
     # Display live feed
     cv2.imshow("Live Feed", frame)
     if cv2.waitKey(1) == ord('q'):
-        break
+        return
 
-cap.release()
+    cv2.destroyAllWindows()
+
 cv2.destroyAllWindows()
+runner_app()

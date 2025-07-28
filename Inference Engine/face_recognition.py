@@ -1,15 +1,14 @@
 import torch
 from facenet_pytorch import InceptionResnetV1, MTCNN
 from PIL import Image
-import numpy as np
 import cv2
 import ast
 import base64
-import requests
 from collections import deque
 from datetime import datetime
+from websocket_call import send_alert
+import asyncio
 
-URL = "https://web-production-190fc.up.railway.app/api/alerts"
 TEMP_TEXT_FILE = 'Inference Engine/person_found.txt'
 TIME_THRESHOLD = 60 #sec
 
@@ -36,17 +35,10 @@ def encode_frame(frame):
     base64_image = base64.b64encode(encoded_image).decode('utf-8')
     return base64_image
 
-def send_to_server(payload):
-    response = requests.post(URL,json=payload)
-    # json.dumps(payload)
-    if response.ok :
-        print(f"✅ Sent to server as {payload['name']}")
-
 def save_to_machine(payload):
     with open(TEMP_TEXT_FILE, 'a') as f:
         f.write(str(payload) + '\n')
     print(f"✅ Saved to machine as {payload['name']}")
-
 
 def compare_faces(frame1, frame2 , name ,capture_timestamp):
     emb1 = get_embedding_from_frame(frame1)
@@ -63,6 +55,7 @@ def compare_faces(frame1, frame2 , name ,capture_timestamp):
             payload = {
                 "found":1,
                 "name":name,
+                "drone_id": "No Drone",
                 "actual image": frame2_blob,
                 "matched frame" : frame1_blob,
                 "location" : [0,0,0],
@@ -87,13 +80,11 @@ def compare_faces(frame1, frame2 , name ,capture_timestamp):
                 print(f"Time difference between last found for  is : {time_difference} ⏳")
                 if time_difference > TIME_THRESHOLD:
                     save_to_machine(payload)
-                    #send_to_server(payload)
+                    asyncio.run(send_alert(payload))
             else :
                 print(f"🔒 Saving {name} for first time!")
                 save_to_machine(payload)
-                #send_to_server(payload)
-
-
+                asyncio.run(send_alert(payload))
         else:
             print("Faces do not match. Similarity:", cosine_sim)
     else:
