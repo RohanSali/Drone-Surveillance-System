@@ -1,5 +1,21 @@
 # 🚀 Quick Start Guide - Drone Surveillance System
 
+## 🆕 Latest Updates (2024)
+
+### New Features Added:
+- ✅ **Casualty & Anomaly Classifiers**: Advanced AI models for detection
+- ✅ **Real-time Drone Tracking**: Live position monitoring with GPS
+- ✅ **FastAPI Backend**: RESTful API server for drone communication
+- ✅ **Enhanced UI**: Monitoring & Alerts, Radar View, Module Selector, Image Viewer
+- ✅ **Multi-drone Support**: Track and control multiple drones simultaneously
+- ✅ **MQTT Integration**: Real-time communication protocol (configurable)
+
+### AI Models Available:
+- **FaceNet Recognition**: Face detection and recognition
+- **Crowd Detection**: YOLOv8-based crowd monitoring (Roboflow integration)
+- **Casualty Classifier**: Accident and emergency detection
+- **Anomaly Classifier**: Unusual behavior pattern detection
+
 ## ⚡ Fastest Way to Run (Choose One Method)
 
 ### Method 1: Install .NET SDK (Recommended)
@@ -124,6 +140,145 @@ If you encounter issues:
 3. **Check the README.md** - For detailed troubleshooting
 4. **Windows Event Viewer** - Look for application errors if it crashes
 
+## 🌐 API Backend Server (Optional)
+
+The system includes a FastAPI backend server for drone communication and data management.
+
+### Start the API Server:
+
+1. **Navigate to Server directory:**
+   ```powershell
+   cd "C:\Users\91880\Downloads\Surviellance\Drone-Surveillance-System\Server"
+   ```
+
+2. **Install Python dependencies:**
+   ```powershell
+   pip install fastapi uvicorn sqlalchemy
+   ```
+
+3. **Start the server:**
+   ```powershell
+   python main.py
+   ```
+   
+   Server will be available at: `http://localhost:8000`
+   API Documentation: `http://localhost:8000/docs`
+
+### API Endpoints Available:
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/v1/groups/create/` | Create a drone group for operations |
+| POST | `/api/v1/drones/register/` | Register a new drone to the system |
+| POST | `/api/v1/drones/data/` | Upload surveillance data from drone |
+| POST | `/api/v1/drones/control/` | Send control commands to drone groups |
+
+### API Usage Examples:
+
+**Create a Group:**
+```bash
+curl -X POST "http://localhost:8000/api/v1/groups/create/" \
+     -F "region=urban_zone" \
+     -F "purpose=casualty_detection" \
+     -F "rl_model_instance=model_v1"
+```
+
+**Register a Drone:**
+```bash
+curl -X POST "http://localhost:8000/api/v1/drones/register/" \
+     -F "drone_id=101" \
+     -F "location=40.7128,-74.0060" \
+     -F "purpose=casualty_detection"
+```
+
+**Upload Data:**
+```bash
+curl -X POST "http://localhost:8000/api/v1/drones/data/" \
+     -F "drone_id=101" \
+     -F "image=@surveillance_image.jpg" \
+     -F "location=40.7128,-74.0060" \
+     -F "score=0.85"
+```
+
+## 🤖 AI Models & Notebooks
+
+The system includes pre-trained AI models and Jupyter notebooks for development:
+
+### Available Models:
+- `casualty_classifier.h5` - Detects accidents and emergencies
+- `anamoly_classifier.h5` - Identifies unusual behavior patterns
+- `best_model_fold_1.h5` - Face recognition model
+
+### Jupyter Notebooks:
+- `FaceNet_Recognition.ipynb` - Face detection and recognition training
+- `Roboflow_Crowd_Detection.ipynb` - Crowd detection with YOLOv8
+
+### To Use Notebooks:
+1. Install Jupyter: `pip install jupyter`
+2. Navigate to Notebooks folder: `cd "..\Notebooks"`
+3. Start Jupyter: `jupyter notebook`
+4. Open the desired `.ipynb` file
+
+## 🗄️ Database & Data Storage
+
+### Database Locations:
+- **SQLite Database**: `%APPDATA%\DroneSurveillance\surveillance.db`
+- **Detection Logs**: `%APPDATA%\DroneSurveillance\detection_log.json`
+- **Settings**: `%APPDATA%\DroneSurveillance\settings.json`
+- **Server Database**: `Server\drone_surveillance.db`
+
+### Database Schema:
+- **Groups**: Store drone operation groups by region and purpose
+- **Drones**: Individual drone registration and location data
+- **DataLogs**: Surveillance data uploads with scores and timestamps
+
+## 🎮 New UI Features
+
+The application now includes several new interactive windows:
+
+### 📊 Monitoring & Alerts Page
+- Network selection dropdown (NW1, NW2, etc.)
+- Real-time drone position display
+- Interactive alert cards
+- Click "📊 Monitoring" from main dashboard
+
+### 🎯 Radar View
+- Animated radar sweep with drone tracking
+- Live feed panel with image slider (1-100)
+- Recording controls (Play, Pause, Stop)
+- Click "🎯 Radar" from main dashboard
+
+### 🔧 Module Selector
+- AI Detection Module (🤖)
+- Camera Control Module (📷)
+- GPS Navigation Module (🗺️)
+- Emergency Response Module (🚨)
+- Click "🔧 Modules" from main dashboard
+
+### 🖼️ Image Viewer
+- Full-screen image viewing with zoom
+- 90-degree rotation capability
+- Timeline scrubbing (1-150 frames)
+- Playback speed controls (0.5x to 4x)
+- Click "🖼️ Viewer" from main dashboard
+
+## 🔄 Real-time Features
+
+### Drone Tracking System:
+- **Live Position Updates**: GPS coordinates with real-time tracking
+- **Status Monitoring**: Battery level, signal strength, speed
+- **Alert System**: Low battery, weak signal, boundary violations
+- **Multi-drone Support**: Track multiple drones simultaneously
+- **Historical Data**: Flight path visualization and position history
+
+### Data Processing:
+- **Event-driven Architecture**: Real-time UI updates
+- **Async/Await Operations**: Non-blocking database operations
+- **Timer-based Updates**: Configurable refresh intervals
+- **MQTT Integration**: Real-time communication (when enabled)
+
 ---
 
 **🎉 Ready to start? Pick Method 1, 2, or 3 above and follow the steps!**
+
+*For advanced users: Start both the .NET application and the FastAPI server for full functionality.*

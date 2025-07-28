@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Advanced Drone Control Panel" Height="900" Width="1400"
         WindowStartupLocation="CenterScreen"
-        Background="#FF1E1E1E">
+        Background="{StaticResource DarkBackgroundBrush}">
     
     <Window.Resources>
         <Style x:Key="ModernButtonStyle" TargetType="Button">

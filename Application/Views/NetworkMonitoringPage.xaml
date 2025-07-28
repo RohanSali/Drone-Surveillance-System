@@ -1,0 +1,512 @@
+<Window x:Class="DroneSurveillanceSystem.Views.NetworkMonitoringPage"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        Title="Network Monitoring" Height="900" Width="1400"
+        WindowStartupLocation="CenterScreen"
+        WindowState="Maximized"
+        Background="{StaticResource DarkBackgroundBrush}"
+        FontFamily="Segoe UI">
+
+    <Window.Resources>
+        <Style x:Key="NetworkButton" TargetType="Button" BasedOn="{StaticResource ModernButton}">
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Padding" Value="20,15"/>
+            <Setter Property="Margin" Value="10"/>
+        </Style>
+
+        <Style x:Key="HeaderText" TargetType="TextBlock" BasedOn="{StaticResource HeadingMedium}">
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="Margin" Value="0,20"/>
+        </Style>
+
+        <Style x:Key="SubHeaderText" TargetType="TextBlock" BasedOn="{StaticResource BodyText}">
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="Margin" Value="0,10"/>
+        </Style>
+    </Window.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <Border Grid.Row="0" Background="#2d2d2d" Padding="20">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="📡" FontSize="30" Margin="0,0,10,0"/>
+                    <TextBlock Text="Network Monitoring" 
+                              Foreground="White" 
+                              FontWeight="Bold" 
+                              FontSize="24" 
+                              VerticalAlignment="Center"/>
+                </StackPanel>
+
+                <Button Grid.Column="2" 
+                        Name="CloseButton" 
+                        Content="✕ Close" 
+                        Background="#dc3545" 
+                        Foreground="White" 
+                        BorderThickness="0" 
+                        Padding="15,8" 
+                        FontSize="14"
+                        Click="CloseButton_Click"/>
+            </Grid>
+        </Border>
+
+        <!-- Main Content -->
+        <Grid Grid.Row="1" Margin="20">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <!-- Title and Description -->
+            <StackPanel Grid.Row="0">
+                <TextBlock Text="Select Network to Monitor" 
+                          Foreground="White" 
+                          FontSize="18" 
+                          FontWeight="Bold" 
+                          HorizontalAlignment="Center" 
+                          Margin="0,10"/>
+                <TextBlock Text="Choose a network to monitor its connected drones, positions, and alerts" 
+                          Foreground="#cccccc" 
+                          FontSize="12" 
+                          HorizontalAlignment="Center" 
+                          Margin="0,5"/>
+            </StackPanel>
+
+            <!-- Network Selection Grid with ScrollViewer -->
+            <ScrollViewer Grid.Row="1" Margin="0,10" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                <!-- Network 1 -->
+                <Border Grid.Row="0" Grid.Column="0" 
+                        Background="#2d2d2d" 
+                        CornerRadius="8" 
+                        Margin="3" 
+                        Padding="10">
+                    <StackPanel>
+                        <TextBlock Text="🌐" FontSize="20" 
+                                  HorizontalAlignment="Center" 
+                                  Margin="0,0,0,5"/>
+                        <TextBlock Text="Network 1" 
+                                  Foreground="White" 
+                                  FontSize="12" 
+                                  FontWeight="Bold" 
+                                  HorizontalAlignment="Center" 
+                                  Margin="0,0,0,3"/>
+                        <TextBlock Text="Primary Surveillance Network" 
+                                  Foreground="#cccccc" 
+                                  FontSize="9" 
+                                  HorizontalAlignment="Center" 
+                                  Margin="0,0,0,5"/>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,5">
+                            <TextBlock Text="Status: " Foreground="#cccccc" FontSize="8"/>
+                            <Ellipse Width="5" Height="5" Fill="#4CAF50" Margin="2,0"/>
+                            <TextBlock Text="Active" Foreground="#4CAF50" FontSize="8" FontWeight="Bold"/>
+                        </StackPanel>
+                        <Button Name="Network1Button" 
+                                Content="Monitor Network 1" 
+                                Background="#0078d4" 
+                                Foreground="White" 
+                                BorderThickness="0" 
+                                FontSize="10" 
+                                FontWeight="Bold" 
+                                Padding="8,5" 
+                                Margin="3"
+                                Click="Network1Button_Click">
+                            <Button.Template>
+                                <ControlTemplate TargetType="Button">
+                                    <Border Background="{TemplateBinding Background}" 
+                                            CornerRadius="6" 
+                                            BorderThickness="{TemplateBinding BorderThickness}"
+                                            BorderBrush="{TemplateBinding BorderBrush}"
+                                            Padding="{TemplateBinding Padding}">
+                                        <ContentPresenter HorizontalAlignment="Center" 
+                                                        VerticalAlignment="Center"/>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter Property="Background" Value="#106ebe"/>
+                                        </Trigger>
+                                        <Trigger Property="IsPressed" Value="True">
+                                            <Setter Property="Background" Value="#005a9e"/>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Button.Template>
+                        </Button>
+                    </StackPanel>
+                </Border>
+
+                <!-- Network 2 -->
+                <Border Grid.Row="0" Grid.Column="1" 
+                        Background="#2d2d2d" 
+                        CornerRadius="8" 
+                        Margin="3" 
+                        Padding="10">
+                    <StackPanel>
+                        <TextBlock Text="🌐" FontSize="20" 
+                                  HorizontalAlignment="Center" 
+                                  Margin="0,0,0,5"/>
+                        <TextBlock Text="Network 2" 
+                                  Foreground="White" 
+                                  FontSize="12" 
+                                  FontWeight="Bold" 
+                                  HorizontalAlignment="Center" 
+                                  Margin="0,0,0,3"/>
+                        <TextBlock Text="Secondary Patrol Network" 
+                                  Foreground="#cccccc" 
+                                  FontSize="9" 
+                                  HorizontalAlignment="Center" 
+                                  Margin="0,0,0,5"/>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,5">
+                            <TextBlock Text="Status: " Foreground="#cccccc" FontSize="8"/>
+                            <Ellipse Width="5" Height="5" Fill="#4CAF50" Margin="2,0"/>
+                            <TextBlock Text="Active" Foreground="#4CAF50" FontSize="8" FontWeight="Bold"/>
+                        </StackPanel>
+                        <Button Name="Network2Button" 
+                                Content="Monitor Network 2" 
+                                Background="#0078d4" 
+                                Foreground="White" 
+                                BorderThickness="0" 
+                                FontSize="10" 
+                                FontWeight="Bold" 
+                                Padding="8,5" 
+                                Margin="3"
+                                Click="Network2Button_Click">
+                            <Button.Template>
+                                <ControlTemplate TargetType="Button">
+                                    <Border Background="{TemplateBinding Background}" 
+                                            CornerRadius="6" 
+                                            BorderThickness="{TemplateBinding BorderThickness}"
+                                            BorderBrush="{TemplateBinding BorderBrush}"
+                                            Padding="{TemplateBinding Padding}">
+                                        <ContentPresenter HorizontalAlignment="Center" 
+                                                        VerticalAlignment="Center"/>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter Property="Background" Value="#106ebe"/>
+                                        </Trigger>
+                                        <Trigger Property="IsPressed" Value="True">
+                                            <Setter Property="Background" Value="#005a9e"/>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Button.Template>
+                        </Button>
+                    </StackPanel>
+                </Border>
+
+                <!-- Network 3 -->
+                <Border Grid.Row="1" Grid.Column="0" 
+                        Background="#2d2d2d" 
+                        CornerRadius="8" 
+                        Margin="3" 
+                        Padding="10">
+                    <StackPanel>
+                        <TextBlock Text="🌐" FontSize="20" 
+                                  HorizontalAlignment="Center" 
+                                  Margin="0,0,0,5"/>
+                        <TextBlock Text="Network 3" 
+                                  Foreground="White" 
+                                  FontSize="12" 
+                                  FontWeight="Bold" 
+                                  HorizontalAlignment="Center" 
+                                  Margin="0,0,0,3"/>
+                        <TextBlock Text="Perimeter Defense Network" 
+                                  Foreground="#cccccc" 
+                                  FontSize="9" 
+                                  HorizontalAlignment="Center" 
+                                  Margin="0,0,0,5"/>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,5">
+                            <TextBlock Text="Status: " Foreground="#cccccc" FontSize="8"/>
+                            <Ellipse Width="5" Height="5" Fill="#FF9800" Margin="2,0"/>
+                            <TextBlock Text="Standby" Foreground="#FF9800" FontSize="8" FontWeight="Bold"/>
+                        </StackPanel>
+                        <Button Name="Network3Button" 
+                                Content="Monitor Network 3" 
+                                Background="#0078d4" 
+                                Foreground="White" 
+                                BorderThickness="0" 
+                                FontSize="10" 
+                                FontWeight="Bold" 
+                                Padding="8,5" 
+                                Margin="3"
+                                Click="Network3Button_Click">
+                            <Button.Template>
+                                <ControlTemplate TargetType="Button">
+                                    <Border Background="{TemplateBinding Background}" 
+                                            CornerRadius="6" 
+                                            BorderThickness="{TemplateBinding BorderThickness}"
+                                            BorderBrush="{TemplateBinding BorderBrush}"
+                                            Padding="{TemplateBinding Padding}">
+                                        <ContentPresenter HorizontalAlignment="Center" 
+                                                        VerticalAlignment="Center"/>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter Property="Background" Value="#106ebe"/>
+                                        </Trigger>
+                                        <Trigger Property="IsPressed" Value="True">
+                                            <Setter Property="Background" Value="#005a9e"/>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Button.Template>
+                        </Button>
+                    </StackPanel>
+                </Border>
+
+                <!-- Network 4 -->
+                <Border Grid.Row="1" Grid.Column="1" 
+                        Background="#2d2d2d" 
+                        CornerRadius="8" 
+                        Margin="3" 
+                        Padding="10">
+                    <StackPanel>
+                        <TextBlock Text="🌐" FontSize="20" 
+                                  HorizontalAlignment="Center" 
+                                  Margin="0,0,0,5"/>
+                        <TextBlock Text="Network 4" 
+                                  Foreground="White" 
+                                  FontSize="12" 
+                                  FontWeight="Bold" 
+                                  HorizontalAlignment="Center" 
+                                  Margin="0,0,0,3"/>
+                        <TextBlock Text="Emergency Response Network" 
+                                  Foreground="#cccccc" 
+                                  FontSize="9" 
+                                  HorizontalAlignment="Center" 
+                                  Margin="0,0,0,5"/>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,5">
+                            <TextBlock Text="Status: " Foreground="#cccccc" FontSize="8"/>
+                            <Ellipse Width="5" Height="5" Fill="#f44336" Margin="2,0"/>
+                            <TextBlock Text="Offline" Foreground="#f44336" FontSize="8" FontWeight="Bold"/>
+                        </StackPanel>
+                        <Button Name="Network4Button" 
+                                Content="Monitor Network 4" 
+                                Background="#0078d4" 
+                                Foreground="White" 
+                                BorderThickness="0" 
+                                FontSize="10" 
+                                FontWeight="Bold" 
+                                Padding="8,5" 
+                                Margin="3"
+                                Click="Network4Button_Click">
+                            <Button.Template>
+                                <ControlTemplate TargetType="Button">
+                                    <Border Background="{TemplateBinding Background}" 
+                                            CornerRadius="6" 
+                                            BorderThickness="{TemplateBinding BorderThickness}"
+                                            BorderBrush="{TemplateBinding BorderBrush}"
+                                            Padding="{TemplateBinding Padding}">
+                                        <ContentPresenter HorizontalAlignment="Center" 
+                                                        VerticalAlignment="Center"/>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter Property="Background" Value="#106ebe"/>
+                                        </Trigger>
+                                        <Trigger Property="IsPressed" Value="True">
+                                            <Setter Property="Background" Value="#005a9e"/>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Button.Template>
+                        </Button>
+                    </StackPanel>
+                </Border>
+
+                <!-- Network 5 -->
+                <Border Grid.Row="2" Grid.Column="0" 
+                        Background="#2d2d2d" 
+                        CornerRadius="8" 
+                        Margin="3" 
+                        Padding="10">
+                    <StackPanel>
+                        <TextBlock Text="🌐" FontSize="20" 
+                                  HorizontalAlignment="Center" 
+                                  Margin="0,0,0,5"/>
+                        <TextBlock Text="Network 5" 
+                                  Foreground="White" 
+                                  FontSize="12" 
+                                  FontWeight="Bold" 
+                                  HorizontalAlignment="Center" 
+                                  Margin="0,0,0,3"/>
+                        <TextBlock Text="Advanced Reconnaissance Network" 
+                                  Foreground="#cccccc" 
+                                  FontSize="9" 
+                                  HorizontalAlignment="Center" 
+                                  Margin="0,0,0,5"/>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,5">
+                            <TextBlock Text="Status: " Foreground="#cccccc" FontSize="8"/>
+                            <Ellipse Width="5" Height="5" Fill="#9C27B0" Margin="2,0"/>
+                            <TextBlock Text="Testing" Foreground="#9C27B0" FontSize="8" FontWeight="Bold"/>
+                        </StackPanel>
+                        <Button Name="Network5Button" 
+                                Content="Monitor Network 5" 
+                                Background="#0078d4" 
+                                Foreground="White" 
+                                BorderThickness="0" 
+                                FontSize="10" 
+                                FontWeight="Bold" 
+                                Padding="8,5" 
+                                Margin="3"
+                                Click="Network5Button_Click">
+                            <Button.Template>
+                                <ControlTemplate TargetType="Button">
+                                    <Border Background="{TemplateBinding Background}" 
+                                            CornerRadius="6" 
+                                            BorderThickness="{TemplateBinding BorderThickness}"
+                                            BorderBrush="{TemplateBinding BorderBrush}"
+                                            Padding="{TemplateBinding Padding}">
+                                        <ContentPresenter HorizontalAlignment="Center" 
+                                                        VerticalAlignment="Center"/>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter Property="Background" Value="#106ebe"/>
+                                        </Trigger>
+                                        <Trigger Property="IsPressed" Value="True">
+                                            <Setter Property="Background" Value="#005a9e"/>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Button.Template>
+                        </Button>
+                    </StackPanel>
+                </Border>
+
+                <!-- Network 6 -->
+                <Border Grid.Row="2" Grid.Column="1" 
+                        Background="#2d2d2d" 
+                        CornerRadius="8" 
+                        Margin="3" 
+                        Padding="10">
+                    <StackPanel>
+                        <TextBlock Text="🌐" FontSize="20" 
+                                  HorizontalAlignment="Center" 
+                                  Margin="0,0,0,5"/>
+                        <TextBlock Text="Network 6" 
+                                  Foreground="White" 
+                                  FontSize="12" 
+                                  FontWeight="Bold" 
+                                  HorizontalAlignment="Center" 
+                                  Margin="0,0,0,3"/>
+                        <TextBlock Text="Maritime Surveillance Network" 
+                                  Foreground="#cccccc" 
+                                  FontSize="9" 
+                                  HorizontalAlignment="Center" 
+                                  Margin="0,0,0,5"/>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,5">
+                            <TextBlock Text="Status: " Foreground="#cccccc" FontSize="8"/>
+                            <Ellipse Width="5" Height="5" Fill="#00BCD4" Margin="2,0"/>
+                            <TextBlock Text="Deployed" Foreground="#00BCD4" FontSize="8" FontWeight="Bold"/>
+                        </StackPanel>
+                        <Button Name="Network6Button" 
+                                Content="Monitor Network 6" 
+                                Background="#0078d4" 
+                                Foreground="White" 
+                                BorderThickness="0" 
+                                FontSize="10" 
+                                FontWeight="Bold" 
+                                Padding="8,5" 
+                                Margin="3"
+                                Click="Network6Button_Click">
+                            <Button.Template>
+                                <ControlTemplate TargetType="Button">
+                                    <Border Background="{TemplateBinding Background}" 
+                                            CornerRadius="6" 
+                                            BorderThickness="{TemplateBinding BorderThickness}"
+                                            BorderBrush="{TemplateBinding BorderBrush}"
+                                            Padding="{TemplateBinding Padding}">
+                                        <ContentPresenter HorizontalAlignment="Center" 
+                                                        VerticalAlignment="Center"/>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter Property="Background" Value="#106ebe"/>
+                                        </Trigger>
+                                        <Trigger Property="IsPressed" Value="True">
+                                            <Setter Property="Background" Value="#005a9e"/>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Button.Template>
+                        </Button>
+                    </StackPanel>
+                </Border>
+
+            </Grid>
+            </ScrollViewer>
+
+            <!-- Network Statistics -->
+            <Border Grid.Row="2" Background="#1a1a1a" CornerRadius="8" Padding="20" Margin="0,20,0,0">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Column="0" HorizontalAlignment="Center">
+                        <TextBlock Text="Total Networks" Foreground="#cccccc" FontSize="12" HorizontalAlignment="Center"/>
+                        <TextBlock Text="6" Foreground="White" FontSize="24" FontWeight="Bold" HorizontalAlignment="Center"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="1" HorizontalAlignment="Center">
+                        <TextBlock Text="Active Networks" Foreground="#cccccc" FontSize="12" HorizontalAlignment="Center"/>
+                        <TextBlock Text="4" Foreground="#4CAF50" FontSize="24" FontWeight="Bold" HorizontalAlignment="Center"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="2" HorizontalAlignment="Center">
+                        <TextBlock Text="Total Drones" Foreground="#cccccc" FontSize="12" HorizontalAlignment="Center"/>
+                        <TextBlock Text="21" Foreground="White" FontSize="24" FontWeight="Bold" HorizontalAlignment="Center"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="3" HorizontalAlignment="Center">
+                        <TextBlock Text="Active Alerts" Foreground="#cccccc" FontSize="12" HorizontalAlignment="Center"/>
+                        <TextBlock Text="12" Foreground="#FF9800" FontSize="24" FontWeight="Bold" HorizontalAlignment="Center"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- Footer -->
+        <Border Grid.Row="2" Background="#2d2d2d" Padding="15">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+<TextBlock Text="📡" FontSize="14" Margin="0,0,6,0"/>
+                <TextBlock Text="Network Monitoring System - Select a network to view detailed drone information and alerts" 
+                          Foreground="#cccccc" 
+                          FontSize="10" 
+                          VerticalAlignment="Center"/>
+            </StackPanel>
+        </Border>
+    </Grid>
+</Window>

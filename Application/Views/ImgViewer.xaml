@@ -1,0 +1,203 @@
+<Window x:Class="DroneSurveillanceSystem.Views.ImgViewer"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="IMG Viewer" Height="900" Width="1400"
+        WindowStartupLocation="CenterScreen"
+        WindowState="Maximized"
+        Initialized="ImgViewer_Initialized"
+        Background="#0a0a0a">
+    <Window.Resources>
+        <!-- IMG Viewer specific styles -->
+        <Style x:Key="ViewerButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="#0078d4" />
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="10,5" />
+            <Setter Property="Margin" Value="5" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" CornerRadius="5">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#005a9e"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter Property="Background" Value="#003f6b"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="RecordSliderStyle" TargetType="Slider">
+            <Setter Property="Background" Value="#2d2d2d"/>
+            <Setter Property="Foreground" Value="#0078d4"/>
+            <Setter Property="Height" Value="25"/>
+            <Setter Property="Margin" Value="10"/>
+        </Style>
+    </Window.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="60"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="100"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header with Controls -->
+        <Border Grid.Row="0" Background="#1e1e1e">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Title -->
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="20,0">
+                    <TextBlock Text="🖼️ Image Viewer" Foreground="White" FontWeight="Bold" FontSize="20"/>
+                </StackPanel>
+
+                <!-- Image Info -->
+                <StackPanel Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Center">
+                    <TextBlock Name="ImageIdText" Text="Image ID: IMG_001" 
+                               Foreground="#ccc" FontSize="14" HorizontalAlignment="Center"/>
+                    <TextBlock Name="ImageInfoText" Text="Resolution: 1920x1080 | Size: 2.4MB | Date: 2023-07-28 10:32 AM" 
+                               Foreground="#888" FontSize="12" HorizontalAlignment="Center"/>
+                </StackPanel>
+
+                <!-- Action Buttons -->
+                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="20,0">
+                    <Button Content="💾 Save" Style="{StaticResource ViewerButtonStyle}"/>
+                    <Button Content="🔄 Rotate" Style="{StaticResource ViewerButtonStyle}"/>
+                    <Button Content="🔍 Zoom" Style="{StaticResource ViewerButtonStyle}"/>
+                    <Button Content="✖ Close" Style="{StaticResource ViewerButtonStyle}" 
+                            Click="CloseButton_Click"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Main Image Display -->
+        <Border Grid.Row="1" Background="#1a1a1a" Margin="10">
+            <Grid>
+                <!-- Image Container -->
+                <ScrollViewer Name="ImageScrollViewer" 
+                              HorizontalScrollBarVisibility="Auto" 
+                              VerticalScrollBarVisibility="Auto"
+                              Background="Transparent">
+                    <Image Name="MainImage" 
+                           Source="/Images/surveillance_placeholder.svg" 
+                           Stretch="Uniform"
+                           RenderTransformOrigin="0.5,0.5">
+                        <Image.RenderTransform>
+                            <TransformGroup>
+                                <ScaleTransform x:Name="ImageScaleTransform"/>
+                                <RotateTransform x:Name="ImageRotateTransform"/>
+                            </TransformGroup>
+                        </Image.RenderTransform>
+                    </Image>
+                </ScrollViewer>
+
+                <!-- Overlay Controls (visible on hover) -->
+                <Grid Name="OverlayControls" Background="#AA000000" Opacity="0" 
+                      MouseEnter="OverlayControls_MouseEnter" 
+                      MouseLeave="OverlayControls_MouseLeave">
+                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="10">
+                            <Button Content="◀◀ Previous" Style="{StaticResource ViewerButtonStyle}" 
+                                    Width="100" Click="PreviousImageButton_Click"/>
+                            <Button Content="▶▶ Next" Style="{StaticResource ViewerButtonStyle}" 
+                                    Width="100" Click="NextImageButton_Click"/>
+                        </StackPanel>
+                        
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="10">
+                            <Button Content="🔍+ Zoom In" Style="{StaticResource ViewerButtonStyle}" 
+                                    Width="100" Click="ZoomInButton_Click"/>
+                            <Button Content="🔍- Zoom Out" Style="{StaticResource ViewerButtonStyle}" 
+                                    Width="100" Click="ZoomOutButton_Click"/>
+                            <Button Content="🔄 Rotate 90°" Style="{StaticResource ViewerButtonStyle}" 
+                                Width="100" Click="RotateButton_Click"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Grid>
+                
+                <!-- Image Attributes Display -->
+                <StackPanel Orientation="Horizontal" Grid.Row="2" HorizontalAlignment="Center" Margin="10">
+                    <TextBlock Text="Brightness: " Foreground="White" FontSize="12"/>
+                    <Slider Minimum="0" Maximum="1" Value="0.5" Width="200" />
+
+                    <TextBlock Text="Contrast: " Foreground="White" FontSize="12" Margin="10,0,0,0"/>
+                    <Slider Minimum="0" Maximum="1" Value="0.5" Width="200" />
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Recording Controls -->
+        <Border Grid.Row="2" Background="#2d2d2d">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Playback Controls -->
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="20,0">
+                    <Button Content="⏮️" Style="{StaticResource ViewerButtonStyle}" Width="40" 
+                            ToolTip="First Image"/>
+                    <Button Content="⏪" Style="{StaticResource ViewerButtonStyle}" Width="40" 
+                            ToolTip="Fast Backward"/>
+                    <Button Content="▶️" Style="{StaticResource ViewerButtonStyle}" Width="40" 
+                            ToolTip="Play"/>
+                    <Button Content="⏸️" Style="{StaticResource ViewerButtonStyle}" Width="40" 
+                            ToolTip="Pause"/>
+                    <Button Content="⏩" Style="{StaticResource ViewerButtonStyle}" Width="40" 
+                            ToolTip="Fast Forward"/>
+                    <Button Content="⏭️" Style="{StaticResource ViewerButtonStyle}" Width="40" 
+                            ToolTip="Last Image"/>
+                </StackPanel>
+
+                <!-- Progress Slider -->
+                <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="20,0">
+                    <TextBlock Text="📊 Record Progress" Foreground="White" FontWeight="Bold" 
+                               FontSize="12" Margin="0,0,0,5" HorizontalAlignment="Center"/>
+                    <Slider Name="RecordSlider" Style="{StaticResource RecordSliderStyle}" 
+                            Minimum="1" Maximum="150" Value="75" 
+                            ValueChanged="RecordSlider_ValueChanged"/>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                        <TextBlock Name="CurrentFrameText" Text="Frame 75" 
+                                   Foreground="#ccc" FontSize="11" Margin="5,0"/>
+                        <TextBlock Text="/" Foreground="#888" FontSize="11"/>
+                        <TextBlock Name="TotalFramesText" Text="150" 
+                                   Foreground="#ccc" FontSize="11" Margin="5,0"/>
+                        <TextBlock Text="(" Foreground="#888" FontSize="11" Margin="10,0,0,0"/>
+                        <TextBlock Name="TimestampText" Text="10:32:45" 
+                                   Foreground="#ccc" FontSize="11"/>
+                        <TextBlock Text=")" Foreground="#888" FontSize="11"/>
+                    </StackPanel>
+                </StackPanel>
+
+                <!-- Speed and Options -->
+                <StackPanel Grid.Column="2" VerticalAlignment="Center" Margin="20,0">
+                    <TextBlock Text="⚡ Speed" Foreground="White" FontWeight="Bold" 
+                               FontSize="12" HorizontalAlignment="Center"/>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,5">
+                        <Button Content="0.5x" Style="{StaticResource ViewerButtonStyle}" Width="40" FontSize="10"/>
+                        <Button Content="1x" Style="{StaticResource ViewerButtonStyle}" Width="40" FontSize="10"/>
+                        <Button Content="2x" Style="{StaticResource ViewerButtonStyle}" Width="40" FontSize="10"/>
+                        <Button Content="4x" Style="{StaticResource ViewerButtonStyle}" Width="40" FontSize="10"/>
+                    </StackPanel>
+                    <CheckBox Content="Loop" Foreground="White" FontSize="11" 
+                              HorizontalAlignment="Center" Margin="0,5"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>

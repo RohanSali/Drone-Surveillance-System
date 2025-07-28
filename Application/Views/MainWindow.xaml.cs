@@ -203,7 +203,6 @@ namespace DroneSurveillanceSystem.Views
 
         public MainWindow()
         {
-            InitializeComponent();
             DataContext = this;
 
             // Initialize collections
@@ -365,7 +364,6 @@ namespace DroneSurveillanceSystem.Views
             
             if (_isDetectionRunning)
             {
-                StartSimulationButton.Content = "Stop Simulation";
                 AiStatusColor = new SolidColorBrush(Colors.Green);
                 SystemStatusMessage = "AI Detection Active - Monitoring all zones";
                 DetectionStatus = "Monitoring Active";
@@ -384,7 +382,6 @@ namespace DroneSurveillanceSystem.Views
             }
             else
             {
-                StartSimulationButton.Content = "Start Simulation";
                 AiStatusColor = new SolidColorBrush(Colors.Orange);
                 DetectionStatus = "Detection Stopped";
                 DetectionStatusColor = new SolidColorBrush(Colors.Orange);
@@ -449,6 +446,20 @@ namespace DroneSurveillanceSystem.Views
             droneTrackingWindow.Show();
         }
 
+        private void NetworkButton_Click(object sender, RoutedEventArgs e)
+        {
+            var networkMonitoringWindow = new NetworkMonitoringPage();
+            networkMonitoringWindow.Owner = this;
+            networkMonitoringWindow.Show();
+        }
+
+        private void MonitoringButton_Click(object sender, RoutedEventArgs e)
+        {
+            var monitoringWindow = new MonitoringAlertsPage();
+            monitoringWindow.Owner = this;
+            monitoringWindow.Show();
+        }
+
         private void AdvancedControlButton_Click(object sender, RoutedEventArgs e)
         {
             var controlPanelWindow = new ControlPanelWindow();
@@ -473,53 +484,10 @@ namespace DroneSurveillanceSystem.Views
         // New dashboard event handlers
         private void ConnectDroneButton_Click(object sender, RoutedEventArgs e)
         {
-            if (!_isDroneConnected)
-            {
-                // Simulate drone connection
-                _isDroneConnected = true;
-                DroneConnectionStatus = "Connected";
-                DroneConnectionColor = new SolidColorBrush(Colors.Green);
-                ConnectDroneButton.Content = "Disconnect Drone";
-                
-                // Update drone data
-                BatteryLevel = 85.0 + _random.NextDouble() * 10; // 85-95%
-                CurrentZone = GetRandomZone();
-                Altitude = 45.0 + _random.NextDouble() * 15; // 45-60m
-                
-                var connectEntry = new DetectionEvent
-                {
-                    Timestamp = DateTime.Now,
-                    Zone = "System",
-                    Status = "Drone Connected Successfully",
-                    DroneId = CurrentDroneId,
-                    Latitude = 37.7749,
-                    Longitude = -122.4194
-                };
-                ActivityLog.Insert(0, connectEntry);
-                
-                MessageBox.Show("Drone connected successfully!", "Connection Status", MessageBoxButton.OK, MessageBoxImage.Information);
-            }
-            else
-            {
-                // Simulate drone disconnection
-                _isDroneConnected = false;
-                DroneConnectionStatus = "Disconnected";
-                DroneConnectionColor = new SolidColorBrush(Colors.Red);
-                ConnectDroneButton.Content = "Connect Drone";
-                
-                var disconnectEntry = new DetectionEvent
-                {
-                    Timestamp = DateTime.Now,
-                    Zone = "System",
-                    Status = "Drone Disconnected",
-                    DroneId = CurrentDroneId,
-                    Latitude = 37.7749,
-                    Longitude = -122.4194
-                };
-                ActivityLog.Insert(0, disconnectEntry);
-                
-                MessageBox.Show("Drone disconnected.", "Connection Status", MessageBoxButton.OK, MessageBoxImage.Warning);
-            }
+            // Navigate to Connected Drones Page to show USB connected drones
+            ConnectedDronesPage connectedDronesPage = new ConnectedDronesPage();
+            connectedDronesPage.Show();
+            // Keep main window visible or minimize it
         }
         
         private void MonitorDroneButton_Click(object sender, RoutedEventArgs e)

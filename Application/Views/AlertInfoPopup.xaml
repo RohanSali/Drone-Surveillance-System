@@ -1,0 +1,126 @@
+<Window x:Class="DroneSurveillanceSystem.Views.AlertInfoPopup"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Alert Details" Height="700" Width="800"
+        WindowStartupLocation="CenterOwner"
+        Background="#0a0a0a">
+    <Window.Resources>
+        <Style x:Key="PopupButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="#0078d4" />
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="20,10" />
+            <Setter Property="Margin" Value="8" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="MinWidth" Value="120" />
+            <Setter Property="Height" Value="35" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" CornerRadius="6">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#005a9e"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter Property="Background" Value="#003f6b"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        
+        <Style x:Key="DetailLabelStyle" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="#888" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Margin" Value="0,3,0,0" />
+        </Style>
+        
+        <Style x:Key="DetailValueStyle" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="#fff" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="Margin" Value="0,0,0,12" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+        </Style>
+    </Window.Resources>
+
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <Border Grid.Row="0" Background="#1e1e1e" CornerRadius="10" Padding="20" Margin="0,0,0,15">
+            <StackPanel>
+                <TextBlock Text="🚨 Alert Details" Foreground="White" FontWeight="Bold" FontSize="20" HorizontalAlignment="Center"/>
+                <TextBlock x:Name="AlertTitleText" Foreground="#ff6b6b" FontWeight="Bold" FontSize="18" HorizontalAlignment="Center" Margin="0,8,0,0"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Content -->
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+                <!-- Alert Information -->
+                <Border Background="#2d2d2d" CornerRadius="10" Padding="20" Margin="0,0,0,15">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        
+                        <!-- Left Column -->
+                        <StackPanel Grid.Column="0" Margin="0,0,15,0">
+                            <TextBlock Text="Alert Information" Style="{StaticResource DetailLabelStyle}" FontSize="16" FontWeight="Bold" Foreground="#0078d4"/>
+                            <TextBlock x:Name="AlertDescriptionText" Style="{StaticResource DetailValueStyle}" FontWeight="Bold" Foreground="#ff6b6b"/>
+                            
+                            <TextBlock Text="Drone ID" Style="{StaticResource DetailLabelStyle}"/>
+                            <TextBlock x:Name="DroneIdText" Style="{StaticResource DetailValueStyle}"/>
+                            
+                            <TextBlock Text="Detection Score" Style="{StaticResource DetailLabelStyle}"/>
+                            <TextBlock x:Name="ScoreText" Style="{StaticResource DetailValueStyle}"/>
+                            
+                            <TextBlock Text="Timestamp" Style="{StaticResource DetailLabelStyle}"/>
+                            <TextBlock x:Name="TimestampText" Style="{StaticResource DetailValueStyle}"/>
+                        </StackPanel>
+                        
+                        <!-- Right Column -->
+                        <StackPanel Grid.Column="1" Margin="15,0,0,0">
+                            <TextBlock Text="Location &amp; Status" Style="{StaticResource DetailLabelStyle}" FontSize="16" FontWeight="Bold" Foreground="#0078d4"/>
+                            <TextBlock x:Name="LocationText" Style="{StaticResource DetailValueStyle}"/>
+                            
+                            <TextBlock Text="RL Response Status" Style="{StaticResource DetailLabelStyle}"/>
+                            <TextBlock x:Name="RLStatusText" Style="{StaticResource DetailValueStyle}"/>
+                            
+                            <TextBlock Text="Image Status" Style="{StaticResource DetailLabelStyle}"/>
+                            <TextBlock x:Name="ImageStatusText" Style="{StaticResource DetailValueStyle}"/>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <!-- Image Section (Conditional) -->
+                <Border x:Name="ImageSection" Background="#2d2d2d" CornerRadius="10" Padding="20" Margin="0,0,0,15" Visibility="Collapsed">
+                    <StackPanel>
+                        <TextBlock Text="📷 Alert Image" Foreground="White" FontWeight="Bold" FontSize="18" Margin="0,0,0,15"/>
+                        <Border Background="#1e1e1e" CornerRadius="8" Padding="15">
+                            <Image x:Name="AlertImage" Height="250" Stretch="Uniform" HorizontalAlignment="Center"/>
+                        </Border>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- Footer / Action Buttons -->
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,15,0,0">
+            <Button x:Name="ViewFullImageButton" Content="View Full Image" Style="{StaticResource PopupButtonStyle}" Click="ViewFullImageButton_Click" Visibility="Collapsed"/>
+            <Button Content="Close" Style="{StaticResource PopupButtonStyle}" Click="CloseButton_Click" />
+        </StackPanel>
+    </Grid>
+</Window>
