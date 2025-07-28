@@ -6,7 +6,9 @@
 # Ignore a folder and its contents
 __pycache__/
 /.vscode
-
+/gym_pybullet_drones
+/temp_my
+/results
 # Ignore all .pyc files
 *.pyc
 

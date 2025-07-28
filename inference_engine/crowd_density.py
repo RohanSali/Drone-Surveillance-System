@@ -1,12 +1,15 @@
 import ast
+import os
 from collections import deque
 from datetime import datetime
 from ultralytics import YOLO
 from websocket_call import send_alert
 import asyncio
 
-MODEL_PATH = 'models/crowd_density.pt'
-TEMP_TEXT_FILE = 'Inference Engine/alerts.txt'
+current_dir = os.path.dirname(os.path.abspath(__file__))
+project_dir = os.path.abspath(os.path.join(current_dir, '..'))
+MODEL_PATH = os.path.join(project_dir,'models','crowd_density.pt')
+TEMP_TEXT_FILE = os.path.join(current_dir,'alerts.txt')
 CONFIDENCE = 0.25 #confidence threshold
 TIME_THRESHOLD = 60 #sec
 # URL = "https://web-production-190fc.up.railway.app/api/alerts"

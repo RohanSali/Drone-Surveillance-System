@@ -1,4 +1,5 @@
 import cv2
+import os
 import numpy as np
 import tensorflow as tf
 from tensorflow.keras.preprocessing import image
@@ -13,8 +14,10 @@ import asyncio
 
 IMG_HEIGHT = 224
 IMG_WIDTH = 224
-MODEL_PATH = 'models/anamoly_classifier.h5'
-TEMP_TEXT_FILE = 'Inference Engine/alerts.txt'
+current_dir = os.path.dirname(os.path.abspath(__file__))
+project_dir = os.path.abspath(os.path.join(current_dir, '..'))
+MODEL_PATH = os.path.join(project_dir,'models','anamoly_classifier.h5')
+TEMP_TEXT_FILE = os.path.join(current_dir,'alerts.txt')
 PREDICTION_THRESHOLD = 97 #percent
 TIME_THRESHOLD = 60 #sec
 
@@ -104,11 +107,9 @@ def inference_anamoly(frame , capture_timestamp):
             if time_difference > TIME_THRESHOLD:
                 save_to_machine(payload)
                 asyncio.run(send_alert(payload))
-                # send_to_server(payload)
         else :
             print(f"🔒 Saving {new_label} for first time!")
             save_to_machine(payload)
             asyncio.run(send_alert(payload))
-            # send_to_server(payload)
 
     print(f"▶️  Frame processed in time {processing_duration:.3f} seconds & label : {label}")

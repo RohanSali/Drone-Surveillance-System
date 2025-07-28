@@ -1,4 +1,5 @@
 import cv2
+import os
 import numpy as np
 import tensorflow as tf
 from tensorflow.keras.models import load_model
@@ -11,8 +12,10 @@ import asyncio
 
 IMG_HEIGHT = 380
 IMG_WIDTH = 380
-MODEL_PATH = 'models\casualty_classifier.h5'
-TEMP_TEXT_FILE = 'Inference Engine/alerts.txt'
+current_dir = os.path.dirname(os.path.abspath(__file__))
+project_dir = os.path.abspath(os.path.join(current_dir, '..'))
+MODEL_PATH = os.path.join(project_dir,'models','casualty_classifier.h5')
+TEMP_TEXT_FILE = os.path.join(current_dir,'alerts.txt')
 PREDICTION_THRESHOLD = 93 #percent
 TIME_THRESHOLD = 60 #sec
 class_names = ['Accident Detected', 'Fire Detected', 'Flood Detected', 'No Casualty']
