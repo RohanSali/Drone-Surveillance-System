@@ -6,24 +6,23 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Threading;
 using DroneSurveillanceSystem.Models;
+using DroneSurveillanceSystem.Services;
 
 namespace DroneSurveillanceSystem.Views
 {
     public partial class NetworkDetailsPage : Window
     {
-        private readonly string _networkName;
-        private readonly string _networkDescription;
+        private readonly Network _network;
         private readonly DispatcherTimer _updateTimer;
         private readonly Random _random = new Random();
         private List<NetworkDrone> _connectedDrones;
         private List<NetworkAlert> _activeAlerts;
 
-        public NetworkDetailsPage(string networkName, string networkDescription)
+        public NetworkDetailsPage(Network network)
         {
             InitializeComponent();
             
-            _networkName = networkName;
-            _networkDescription = networkDescription;
+            _network = network;
             
             // Initialize collections
             _connectedDrones = new List<NetworkDrone>();
@@ -32,8 +31,8 @@ namespace DroneSurveillanceSystem.Views
             // Setup UI
             InitializeUI();
             
-            // Generate sample data
-            GenerateSampleData();
+            // Generate data based on actual network
+            GenerateNetworkData();
             
             // Populate UI with data
             PopulateDrones();
@@ -49,48 +48,61 @@ namespace DroneSurveillanceSystem.Views
 
         private void InitializeUI()
         {
-            NetworkNameText.Text = _networkName;
-            NetworkDescriptionText.Text = _networkDescription;
+            NetworkNameText.Text = _network.Name;
+            NetworkDescriptionText.Text = _network.Description;
             
-            // Set network status based on network name
-            switch (_networkName)
+            // Set network status and icon color based on network name
+            switch (_network.Name)
             {
                 case "Network 1":
-                case "Network 2":
-                case "Network 6":
                     NetworkStatusIndicator.Fill = new SolidColorBrush(Colors.LimeGreen);
                     NetworkStatusText.Text = "Active";
                     NetworkStatusText.Foreground = new SolidColorBrush(Colors.LimeGreen);
+                    NetworkIcon.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#4CAF50")); // Green
+                    break;
+                case "Network 2":
+                    NetworkStatusIndicator.Fill = new SolidColorBrush(Colors.LimeGreen);
+                    NetworkStatusText.Text = "Active";
+                    NetworkStatusText.Foreground = new SolidColorBrush(Colors.LimeGreen);
+                    NetworkIcon.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#2196F3")); // Blue
                     break;
                 case "Network 3":
                     NetworkStatusIndicator.Fill = new SolidColorBrush(Colors.Orange);
                     NetworkStatusText.Text = "Standby";
                     NetworkStatusText.Foreground = new SolidColorBrush(Colors.Orange);
+                    NetworkIcon.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FF9800")); // Orange
                     break;
                 case "Network 4":
                     NetworkStatusIndicator.Fill = new SolidColorBrush(Colors.Red);
                     NetworkStatusText.Text = "Offline";
                     NetworkStatusText.Foreground = new SolidColorBrush(Colors.Red);
+                    NetworkIcon.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#F44336")); // Red
                     break;
                 case "Network 5":
                     NetworkStatusIndicator.Fill = new SolidColorBrush(Colors.Purple);
                     NetworkStatusText.Text = "Testing";
                     NetworkStatusText.Foreground = new SolidColorBrush(Colors.Purple);
+                    NetworkIcon.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#9C27B0")); // Purple
+                    break;
+                case "Network 6":
+                    NetworkStatusIndicator.Fill = new SolidColorBrush(Colors.LimeGreen);
+                    NetworkStatusText.Text = "Active";
+                    NetworkStatusText.Foreground = new SolidColorBrush(Colors.LimeGreen);
+                    NetworkIcon.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#00BCD4")); // Cyan
                     break;
             }
         }
 
-        private void GenerateSampleData()
+        private void GenerateNetworkData()
         {
-            // Generate sample drones based on network
-            int droneCount = GetDroneCountForNetwork(_networkName);
-            
-            for (int i = 1; i <= droneCount; i++)
+            // Generate drones based on actual network assignments
+            int droneIndex = 1;
+            foreach (var assignedDrone in _network.Drones)
             {
                 var drone = new NetworkDrone
                 {
-                    Id = $"{_networkName.Replace(" ", "")}-D{i:D3}",
-                    Name = $"Drone {_networkName.Replace("Network ", "")} - {i}",
+                    Id = $"{_network.Name.Replace(" ", "")}-D{droneIndex:D3}",
+                    Name = assignedDrone.Name,
                     Status = GetRandomDroneStatus(),
                     Battery = 60 + _random.Next(35), // 60-95%
                     Latitude = 37.7749 + (_random.NextDouble() - 0.5) * 0.02,
@@ -100,10 +112,29 @@ namespace DroneSurveillanceSystem.Views
                 };
                 
                 _connectedDrones.Add(drone);
+                droneIndex++;
             }
 
-            // Generate sample alerts
-            int alertCount = GetAlertCountForNetwork(_networkName);
+            // If no drones are assigned, show a message
+            if (_connectedDrones.Count == 0)
+            {
+                // Add a placeholder drone to show "No drones assigned"
+                var placeholderDrone = new NetworkDrone
+                {
+                    Id = "NO-DRONES",
+                    Name = "No drones assigned to this network",
+                    Status = "Inactive",
+                    Battery = 0,
+                    Latitude = 0,
+                    Longitude = 0,
+                    Altitude = 0,
+                    LastSeen = DateTime.Now
+                };
+                _connectedDrones.Add(placeholderDrone);
+            }
+
+            // Generate sample alerts based on network
+            int alertCount = GetAlertCountForNetwork(_network.Name);
             string[] alertTypes = { "Intrusion Detected", "Low Battery Warning", "Communication Lost", "Anomaly Detected", "Crowd Detected" };
             string[] alertSeverities = { "High", "Medium", "Low" };
 
@@ -114,7 +145,7 @@ namespace DroneSurveillanceSystem.Views
                     Id = $"ALERT-{i + 1:D4}",
                     Type = alertTypes[_random.Next(alertTypes.Length)],
                     Severity = alertSeverities[_random.Next(alertSeverities.Length)],
-                    DroneId = _connectedDrones[_random.Next(_connectedDrones.Count)].Id,
+                    DroneId = _connectedDrones.Count > 0 ? _connectedDrones[_random.Next(_connectedDrones.Count)].Id : "NO-DRONES",
                     Message = GenerateAlertMessage(),
                     Timestamp = DateTime.Now.AddMinutes(-_random.Next(30)),
                     IsActive = true
@@ -186,6 +217,46 @@ namespace DroneSurveillanceSystem.Views
 
         private Border CreateDroneCard(NetworkDrone drone)
         {
+            // Special handling for placeholder drone
+            if (drone.Id == "NO-DRONES")
+            {
+                var placeholderCard = new Border
+                {
+                    Background = new SolidColorBrush(Color.FromRgb(30, 30, 30)),
+                    CornerRadius = new CornerRadius(8),
+                    Padding = new Thickness(20),
+                    Margin = new Thickness(0, 0, 0, 10),
+                    BorderThickness = new Thickness(1),
+                    BorderBrush = new SolidColorBrush(Color.FromRgb(100, 100, 100))
+                };
+
+                var placeholderContent = new StackPanel { HorizontalAlignment = HorizontalAlignment.Center };
+                
+                var iconText = new TextBlock
+                {
+                    Text = "🚁",
+                    FontSize = 32,
+                    Foreground = new SolidColorBrush(Color.FromRgb(100, 100, 100)),
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    Margin = new Thickness(0, 0, 0, 10)
+                };
+                placeholderContent.Children.Add(iconText);
+
+                var messageText = new TextBlock
+                {
+                    Text = drone.Name,
+                    Foreground = new SolidColorBrush(Color.FromRgb(150, 150, 150)),
+                    FontSize = 14,
+                    FontWeight = FontWeights.Medium,
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    TextAlignment = TextAlignment.Center
+                };
+                placeholderContent.Children.Add(messageText);
+
+                placeholderCard.Child = placeholderContent;
+                return placeholderCard;
+            }
+
             var card = new Border
             {
                 Background = new SolidColorBrush(Color.FromRgb(45, 45, 45)),
@@ -197,8 +268,21 @@ namespace DroneSurveillanceSystem.Views
             };
 
             var grid = new Grid();
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
             grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+            // Drone icon
+            var droneIcon = new TextBlock
+            {
+                Text = "🚁",
+                FontSize = 24,
+                Foreground = new SolidColorBrush(Color.FromRgb(0, 188, 212)), // Cyan
+                VerticalAlignment = VerticalAlignment.Top,
+                Margin = new Thickness(0, 0, 10, 0)
+            };
+            Grid.SetColumn(droneIcon, 0);
+            grid.Children.Add(droneIcon);
 
             // Left side - Drone info
             var leftPanel = new StackPanel();
@@ -258,7 +342,7 @@ namespace DroneSurveillanceSystem.Views
             };
             leftPanel.Children.Add(altitudeText);
 
-            Grid.SetColumn(leftPanel, 0);
+            Grid.SetColumn(leftPanel, 1);
             grid.Children.Add(leftPanel);
 
             // Right side - Battery and last seen
@@ -295,7 +379,7 @@ namespace DroneSurveillanceSystem.Views
             };
             rightPanel.Children.Add(lastSeenText);
 
-            Grid.SetColumn(rightPanel, 1);
+            Grid.SetColumn(rightPanel, 2);
             grid.Children.Add(rightPanel);
 
             card.Child = grid;
@@ -342,6 +426,16 @@ namespace DroneSurveillanceSystem.Views
             var panel = new StackPanel();
 
             var headerPanel = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 5) };
+            
+            // Alert icon
+            var alertIcon = new TextBlock
+            {
+                Text = "⚠️",
+                FontSize = 16,
+                Foreground = GetSeverityColor(alert.Severity),
+                Margin = new Thickness(0, 0, 8, 0)
+            };
+            headerPanel.Children.Add(alertIcon);
             
             var severityIndicator = new System.Windows.Shapes.Ellipse
             {
@@ -442,9 +536,12 @@ namespace DroneSurveillanceSystem.Views
 
         private void UpdateNetworkSummary()
         {
-            int activeDrones = _connectedDrones.Count;
+            // Count actual assigned drones (excluding placeholder)
+            int activeDrones = _connectedDrones.Count(d => d.Id != "NO-DRONES");
             int totalAlerts = _activeAlerts.Count;
-            double avgBattery = _connectedDrones.Count > 0 ? _connectedDrones.Average(d => d.Battery) : 0;
+            double avgBattery = _connectedDrones.Count > 0 && _connectedDrones.Any(d => d.Id != "NO-DRONES") 
+                ? _connectedDrones.Where(d => d.Id != "NO-DRONES").Average(d => d.Battery) 
+                : 0;
             
             ActiveDronesText.Text = activeDrones.ToString();
             TotalAlertsText.Text = totalAlerts.ToString();
@@ -452,7 +549,7 @@ namespace DroneSurveillanceSystem.Views
             AvgBatteryText.Text = $"{avgBattery:F0}%";
             
             // Update coverage area based on network
-            CoverageAreaText.Text = _networkName switch
+            CoverageAreaText.Text = _network.Name switch
             {
                 "Network 1" => "15.2 km²",
                 "Network 2" => "12.8 km²",

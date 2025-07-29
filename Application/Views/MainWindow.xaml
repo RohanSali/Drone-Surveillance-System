@@ -15,8 +15,39 @@
             <Setter Property="Background" Value="#0078d4"/>
             <Setter Property="Foreground" Value="White"/>
             <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Padding" Value="10,5"/>
+            <Setter Property="Padding" Value="16,10"/>
             <Setter Property="Margin" Value="5"/>
+            <Setter Property="FontWeight" Value="Medium"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="Width" Value="140"/>
+            <Setter Property="Height" Value="40"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" 
+                                CornerRadius="8"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                BorderBrush="{TemplateBinding BorderBrush}">
+                            <ContentPresenter HorizontalAlignment="Center" 
+                                            VerticalAlignment="Center"
+                                            Margin="{TemplateBinding Padding}"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#106EBE"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter Property="Background" Value="#005A9E"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Background" Value="#666666"/>
+                                <Setter Property="Foreground" Value="#cccccc"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
         
         <Style x:Key="StatusTextBlock" TargetType="TextBlock">
@@ -75,7 +106,7 @@
                 
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="20,0">
                     <Ellipse Width="35" Height="35" Fill="#2563EB" Margin="0,0,12,0"/>
-                    <TextBlock Text="🚁" FontSize="24" VerticalAlignment="Center" Margin="-28,0,15,0"/>
+                    <TextBlock Text="🚁" FontSize="24" VerticalAlignment="Center" Margin="-28,0,15,0" Foreground="White"/>
                     <TextBlock Text="Drone Surveillance System" 
                               Foreground="White" 
                               FontWeight="Bold" 
@@ -148,12 +179,17 @@
                                 <TextBlock Text="🚁" FontSize="32" HorizontalAlignment="Center" Margin="0,-48,0,15" Foreground="White"/>
                             </StackPanel>
                             
-                            <Button Grid.Row="2" x:Name="ConnectDroneButton" 
-                                   Content="Connect Drone" 
-                                   Style="{StaticResource DarkButton}" 
-                                   Click="ConnectDroneButton_Click" 
-                                   FontSize="14" 
-                                   Padding="15,8"/>
+                            <StackPanel Grid.Row="2" Orientation="Vertical">
+                                <Button x:Name="ConnectDroneButton" 
+                                       Content="Connect Drone" 
+                                       Style="{StaticResource DarkButton}" 
+                                       Click="ConnectDroneButton_Click" 
+                                       Margin="0,0,0,8"/>
+                                <Button x:Name="AddNetworkButton" 
+                                       Content="Add Network" 
+                                       Style="{StaticResource DarkButton}" 
+                                       Click="AddNetworkButton_Click"/>
+                            </StackPanel>
                         </Grid>
                     </Border>
                     
@@ -183,15 +219,11 @@
                                        Content="Network" 
                                        Style="{StaticResource DarkButton}" 
                                        Click="NetworkButton_Click" 
-                                       FontSize="14" 
-                                       Padding="15,8" 
                                        Margin="0,0,5,0"/>
                                 <Button Name="MonitoringButton" 
                                        Content="All Drones" 
                                        Style="{StaticResource DarkButton}" 
                                        Click="MonitoringButton_Click" 
-                                       FontSize="14" 
-                                       Padding="15,8" 
                                        Margin="5,0,0,0"/>
                             </StackPanel>
                         </Grid>
@@ -200,95 +232,97 @@
                 
                 <!-- Bottom Row - Simulation -->
                 <Grid Grid.Row="1" Margin="0,10,0,0">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="*" />
-                    </Grid.RowDefinitions>
-                    
-                    <!-- Simulation Title -->
-                    <TextBlock Grid.Row="0" Text="Simulation" 
-                              Foreground="White" 
-                              FontWeight="Bold" 
-                              FontSize="20" 
-                              HorizontalAlignment="Center" 
-                              Margin="0,0,0,20"/>
-                    
-                    <!-- Simulation Content -->
-                    <Grid Grid.Row="1">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="*" />
-                        </Grid.ColumnDefinitions>
-                        
-                        <!-- 3D Environment Section -->
-                        <Border Grid.Column="0" Background="#2d2d2d" CornerRadius="12" Margin="0,0,8,0" Padding="20">
-                            <Grid>
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="*" />
-                                </Grid.RowDefinitions>
+                    <!-- Single Large Simulation Container -->
+                    <Border Background="#2d2d2d" CornerRadius="12" Padding="25">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+                            
+                            <!-- Simulation Title -->
+                            <TextBlock Grid.Row="0" Text="Simulation" 
+                                      Foreground="White" 
+                                      FontWeight="Bold" 
+                                      FontSize="24" 
+                                      HorizontalAlignment="Center" 
+                                      Margin="0,0,0,25"/>
+                            
+                            <!-- Simulation Content -->
+                            <Grid Grid.Row="1">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
                                 
-                                <TextBlock Grid.Row="0" Text="3D Environment" 
-                                          Foreground="White" 
-                                          FontWeight="Bold" 
-                                          FontSize="18" 
-                                          HorizontalAlignment="Center" 
-                                          Margin="0,0,0,15"/>
-                                
-                                <StackPanel Grid.Row="1" VerticalAlignment="Center">
-                                    <Ellipse Width="60" Height="60" Fill="#FF6B35" HorizontalAlignment="Center" Margin="0,0,0,10"/>
-                                    <TextBlock Text="🌐" FontSize="32" HorizontalAlignment="Center" Margin="0,-48,0,15" Foreground="White"/>
-                                    
+                                <!-- 3D Environment Section -->
+                                <Border Grid.Column="0" Background="#1e1e1e" CornerRadius="8" Margin="0,0,8,0" Padding="20">
                                     <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="*" />
-                                        </Grid.ColumnDefinitions>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="*" />
+                                        </Grid.RowDefinitions>
                                         
-                                        <StackPanel Grid.Column="0" Margin="0,0,5,0">
-                                            <TextBlock Text="Scene Mode:" Foreground="#ccc" FontSize="10"/>
-                                            <TextBlock Text="Urban Zone" Foreground="#00ff00" FontSize="11" FontWeight="Bold"/>
-                                        </StackPanel>
+                                        <TextBlock Grid.Row="0" Text="3D Environment" 
+                                                  Foreground="White" 
+                                                  FontWeight="Bold" 
+                                                  FontSize="18" 
+                                                  HorizontalAlignment="Center" 
+                                                  Margin="0,0,0,15"/>
                                         
-                                        <StackPanel Grid.Column="1" Margin="5,0,0,0">
-                                            <TextBlock Text="Objects:" Foreground="#ccc" FontSize="10"/>
-                                            <TextBlock Text="25 Items" Foreground="#00ff00" FontSize="11" FontWeight="Bold"/>
+                                        <StackPanel Grid.Row="1" VerticalAlignment="Center">
+                                            <Ellipse Width="60" Height="60" Fill="#FF6B35" HorizontalAlignment="Center" Margin="0,0,0,10"/>
+                                            <TextBlock Text="🌐" FontSize="32" HorizontalAlignment="Center" Margin="0,-48,0,15" Foreground="White"/>
+                                            
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="*" />
+                                                </Grid.ColumnDefinitions>
+                                                
+                                                <StackPanel Grid.Column="0" Margin="0,0,5,0">
+                                                    <TextBlock Text="Scene Mode:" Foreground="#ccc" FontSize="10"/>
+                                                    <TextBlock Text="Urban Zone" Foreground="#00ff00" FontSize="11" FontWeight="Bold"/>
+                                                </StackPanel>
+                                                
+                                                <StackPanel Grid.Column="1" Margin="5,0,0,0">
+                                                    <TextBlock Text="Objects:" Foreground="#ccc" FontSize="10"/>
+                                                    <TextBlock Text="25 Items" Foreground="#00ff00" FontSize="11" FontWeight="Bold"/>
+                                                </StackPanel>
+                                            </Grid>
                                         </StackPanel>
                                     </Grid>
-                                </StackPanel>
+                                </Border>
+                                
+                                <!-- Drone Tracking Section -->
+                                <Border Grid.Column="1" Background="#1e1e1e" CornerRadius="8" Margin="8,0,0,0" Padding="20">
+                                    <StackPanel>
+                                        <TextBlock Text="Drone Tracking" 
+                                                  Foreground="White" 
+                                                  FontWeight="Bold" 
+                                                  FontSize="18" 
+                                                  HorizontalAlignment="Center" 
+                                                  Margin="0,0,0,15"/>
+                                        
+                                        <StackPanel VerticalAlignment="Center" Margin="0,0,0,20">
+                                            <Ellipse Width="60" Height="60" Fill="#9C27B0" HorizontalAlignment="Center" Margin="0,0,0,10"/>
+                                            <TextBlock Text="📡" FontSize="32" HorizontalAlignment="Center" Margin="0,-48,0,15" Foreground="White"/>
+                                        </StackPanel>
+                                        
+                                        <Button Name="DroneTrackingButton" 
+                                               Content="🗺️ Open Tracking" 
+                                               Style="{StaticResource DarkButton}" 
+                                               Click="DroneTrackingButton_Click"
+                                               HorizontalAlignment="Center"
+                                               MinWidth="160"
+                                               Height="45"
+                                               FontSize="14"
+                                               FontWeight="SemiBold"/>
+                                    </StackPanel>
+                                </Border>
                             </Grid>
-                        </Border>
-                        
-                        <!-- Drone Tracking Section -->
-                        <Border Grid.Column="1" Background="#2d2d2d" CornerRadius="12" Margin="8,0,0,0" Padding="20">
-                            <Grid>
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="*" />
-                                    <RowDefinition Height="Auto" />
-                                </Grid.RowDefinitions>
-                                
-                                <TextBlock Grid.Row="0" Text="Drone Tracking" 
-                                          Foreground="White" 
-                                          FontWeight="Bold" 
-                                          FontSize="18" 
-                                          HorizontalAlignment="Center" 
-                                          Margin="0,0,0,15"/>
-                                
-                                <StackPanel Grid.Row="1" VerticalAlignment="Center">
-                                    <Ellipse Width="60" Height="60" Fill="#9C27B0" HorizontalAlignment="Center" Margin="0,0,0,10"/>
-                                    <TextBlock Text="📡" FontSize="32" HorizontalAlignment="Center" Margin="0,-48,0,15" Foreground="White"/>
-                                </StackPanel>
-                                
-                                <Button Grid.Row="2" Name="DroneTrackingButton" 
-                                       Content="🗺️ Open Tracking" 
-                                       Style="{StaticResource DarkButton}" 
-                                       Click="DroneTrackingButton_Click" 
-                                       FontSize="14" 
-                                       Padding="15,8"/>
-                            </Grid>
-                        </Border>
-                    </Grid>
+                        </Grid>
+                    </Border>
                 </Grid>
             </Grid>
 
@@ -297,51 +331,42 @@
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
                     
-                    <TextBlock Grid.Row="0" Text="Active Drones" 
-                              Foreground="White" 
-                              FontWeight="Bold" 
-                              FontSize="18" 
-                              HorizontalAlignment="Center" 
-                              Margin="0,0,0,5"/>
-                    
-                    <TextBlock Grid.Row="1" Text="Network" 
-                              Foreground="White" 
-                              FontWeight="Bold" 
-                              FontSize="18" 
-                              HorizontalAlignment="Center" 
-                              Margin="0,0,0,20"/>
+
                     
                     <!-- Live Drone Tracking Status -->
-                    <StackPanel Grid.Row="2" Margin="0,0,0,15">
+                    <StackPanel Grid.Row="0" Margin="0,0,0,15">
                         <TextBlock Text="Live Tracking Status" Foreground="#ccc" FontSize="14" FontWeight="Bold" Margin="0,0,0,10"/>
                         
                         <!-- Dynamic Active Drones Status -->
-                        <Border Background="#333" CornerRadius="6" Padding="10" Margin="0,5">
+                        <Border Background="#333" CornerRadius="6" Padding="10" Margin="0,5"
+                                MouseLeftButtonUp="ActiveDronesCard_Click" Cursor="Hand">
                             <StackPanel>
                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,5">
-                                    <TextBlock Text="🚁" FontSize="16" Margin="0,0,5,0"/>
+                                    <TextBlock Text="🚁" FontSize="16" Margin="0,0,5,0" Foreground="#4CAF50"/>
                                     <TextBlock Text="Active Drones" Foreground="White" FontSize="12" FontWeight="Bold"/>
                                 </StackPanel>
-                                <TextBlock Text="{Binding ActiveDronesCount}" 
-                                          Foreground="#4CAF50" 
-                                          FontSize="20" 
-                                          FontWeight="Bold" 
-                                          HorizontalAlignment="Center"/>
+                                <!-- Active Drones count with colored parts -->
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                  <TextBlock Text="{Binding NetworkActiveDronesCount}" Foreground="#4CAF50" FontSize="20" FontWeight="Bold"/>
+                                  <TextBlock Text="/" Foreground="White" FontSize="20" FontWeight="Bold"/>
+                                  <TextBlock Text="{Binding TotalDronesCount}" Foreground="#FF4444" FontSize="20" FontWeight="Bold"/>
+                                </StackPanel>
                             </StackPanel>
                         </Border>
                         
-                        <!-- Casualties Status -->
-                        <Border Background="#4a1a1a" CornerRadius="6" Padding="10" Margin="0,5">
+                        <!-- Active Alerts Status -->
+                        <Border Background="#4a1a1a" CornerRadius="6" Padding="10" Margin="0,5"
+                                MouseLeftButtonUp="ActiveAlertsCard_Click" Cursor="Hand">
                             <StackPanel>
                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,5">
-                                    <TextBlock Text="⚠️" FontSize="16" Margin="0,0,5,0"/>
-                                    <TextBlock Text="Casualties" Foreground="White" FontSize="12" FontWeight="Bold"/>
+                                    <TextBlock Text="⚠️" FontSize="16" Margin="0,0,5,0" Foreground="#ff4444"/>
+                                    <TextBlock Text="Active Alerts" Foreground="White" FontSize="12" FontWeight="Bold"/>
                                 </StackPanel>
-                                <TextBlock Text="{Binding TotalCasualtiesCount}" 
+                                <TextBlock Text="{Binding ActiveAlertsCount}" 
                                           Foreground="#ff4444" 
                                           FontSize="20" 
                                           FontWeight="Bold" 
@@ -349,29 +374,70 @@
                             </StackPanel>
                         </Border>
                         
-                        <!-- Anomalies Status -->
-                        <Border Background="#4a3a1a" CornerRadius="6" Padding="10" Margin="0,5">
+                        <!-- Networks Section -->
+                        <Border Background="#333" CornerRadius="6" Padding="10" Margin="0,15,0,5">
+                            <ScrollViewer VerticalScrollBarVisibility="Hidden" MaxHeight="600">
                             <StackPanel>
-                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,5">
-                                    <TextBlock Text="🔍" FontSize="16" Margin="0,0,5,0"/>
-                                    <TextBlock Text="Anomalies" Foreground="White" FontSize="12" FontWeight="Bold"/>
+                                    <TextBlock Text="NETWORKS" Foreground="#ccc" FontSize="12" FontWeight="Bold" Margin="0,0,0,8"/>
+                                    <ItemsControl ItemsSource="{Binding Networks}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Expander Background="#2a2a2a" 
+                                                          BorderBrush="#444" 
+                                                          BorderThickness="1"
+                                                          Margin="0,2"
+                                                          Foreground="White"
+                                                          FontSize="11"
+                                                          FontWeight="Bold"
+                                                          IsExpanded="True">
+                                                    <Expander.HeaderTemplate>
+                                                        <DataTemplate>
+                                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                                <!-- Network Icon -->
+                                                                <TextBlock Text="🌐" FontSize="14" Foreground="#4CAF50" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                                                <!-- Network Name -->
+                                                                <TextBlock Text="{Binding Name}" Foreground="White" FontSize="12" FontWeight="Bold" VerticalAlignment="Center"/>
+                                                            </StackPanel>
+                                                        </DataTemplate>
+                                                    </Expander.HeaderTemplate>
+                                                    <!-- Drones List -->
+                                                    <ItemsControl ItemsSource="{Binding Drones}" Margin="8,0,0,0">
+                                                        <ItemsControl.ItemTemplate>
+                                                            <DataTemplate>
+                                                                <Border Background="#1a1a1a" CornerRadius="3" Padding="6" Margin="0,1">
+                                                                    <Grid>
+                                                                        <Grid.ColumnDefinitions>
+                                                                            <ColumnDefinition Width="Auto"/>
+                                                                            <ColumnDefinition Width="*"/>
+                                                                            <ColumnDefinition Width="Auto"/>
+                                                                        </Grid.ColumnDefinitions>
+                                                                        <!-- Drone Icon -->
+                                                                        <TextBlock Grid.Column="0" Text="🚁" FontSize="12" Foreground="#4CAF50" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                                                        <!-- Drone Info -->
+                                                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                                            <TextBlock Text="{Binding Name}" Foreground="White" FontSize="10" FontWeight="Bold"/>
+                                                                            <TextBlock Text="{Binding StatusText}" Foreground="#ccc" FontSize="8"/>
+                                                                        </StackPanel>
+                                                                        <!-- Status Indicator -->
+                                                                        <Ellipse Grid.Column="2" Width="4" Height="4" Fill="#4CAF50" VerticalAlignment="Center"/>
+                                                                    </Grid>
+                                                                </Border>
+                                                            </DataTemplate>
+                                                        </ItemsControl.ItemTemplate>
+                                                    </ItemsControl>
+                                                </Expander>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
                                 </StackPanel>
-                                <TextBlock Text="{Binding TotalAnomaliesCount}" 
-                                          Foreground="#ffaa00" 
-                                          FontSize="20" 
-                                          FontWeight="Bold" 
-                                          HorizontalAlignment="Center"/>
-                            </StackPanel>
+                            </ScrollViewer>
                         </Border>
-                        
-                        <Separator Background="#444" Height="1" Margin="0,15,0,10"/>
-                        
-                        <!-- System Status Summary -->
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                    </StackPanel>
+                    
+                    <!-- System Status at Bottom -->
+                    <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,10">
                             <TextBlock Text="System Status:" Foreground="#ccc" FontSize="12" Margin="0,0,8,0"/>
-                            <Ellipse Width="8" Height="8" Fill="{Binding SystemStatusColor}" Margin="0,0,5,0"/>
-                            <TextBlock Text="{Binding SystemStatusText}" Foreground="{Binding SystemStatusColor}" FontSize="12" FontWeight="Bold"/>
-                        </StackPanel>
+                        <TextBlock Text="System Ready" Foreground="#4CAF50" FontSize="12" FontWeight="Bold"/>
                     </StackPanel>
                 </Grid>
             </Border>

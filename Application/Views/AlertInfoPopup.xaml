@@ -50,7 +50,11 @@
         </Style>
     </Window.Resources>
 
-    <Grid Margin="20">
+    <Window.Effect>
+        <DropShadowEffect BlurRadius="18" ShadowDepth="0" Color="#99000000"/>
+    </Window.Effect>
+
+    <Grid Margin="30">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
@@ -59,17 +63,24 @@
 
         <!-- Header -->
         <Border Grid.Row="0" Background="#1e1e1e" CornerRadius="10" Padding="20" Margin="0,0,0,15">
-            <StackPanel>
-                <TextBlock Text="🚨 Alert Details" Foreground="White" FontWeight="Bold" FontSize="20" HorizontalAlignment="Center"/>
-                <TextBlock x:Name="AlertTitleText" Foreground="#ff6b6b" FontWeight="Bold" FontSize="18" HorizontalAlignment="Center" Margin="0,8,0,0"/>
-            </StackPanel>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0">
+                    <TextBlock Text="🚨 Alert Details" Foreground="#00d4ff" FontWeight="ExtraBold" FontSize="26" HorizontalAlignment="Center"/>
+                    <TextBlock x:Name="AlertTitleText" Foreground="#ff6b6b" FontWeight="Bold" FontSize="20" HorizontalAlignment="Center" Margin="0,10,0,0"/>
+                </StackPanel>
+                <Button Grid.Column="1" Content="✕" Style="{StaticResource PopupButtonStyle}" Width="40" Height="40" Click="CloseButton_Click" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,0,0,0"/>
+            </Grid>
         </Border>
 
         <!-- Content -->
         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
             <StackPanel>
                 <!-- Alert Information -->
-                <Border Background="#2d2d2d" CornerRadius="10" Padding="20" Margin="0,0,0,15">
+                <Border Background="#232a33" CornerRadius="12" Padding="24" Margin="0,0,0,18">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
@@ -106,11 +117,11 @@
                 </Border>
 
                 <!-- Image Section (Conditional) -->
-                <Border x:Name="ImageSection" Background="#2d2d2d" CornerRadius="10" Padding="20" Margin="0,0,0,15" Visibility="Collapsed">
+                <Border x:Name="ImageSection" Background="#232a33" CornerRadius="12" Padding="24" Margin="0,0,0,18" Visibility="Visible">
                     <StackPanel>
-                        <TextBlock Text="📷 Alert Image" Foreground="White" FontWeight="Bold" FontSize="18" Margin="0,0,0,15"/>
-                        <Border Background="#1e1e1e" CornerRadius="8" Padding="15">
-                            <Image x:Name="AlertImage" Height="250" Stretch="Uniform" HorizontalAlignment="Center"/>
+                        <TextBlock Text="📷 Alert Image" Foreground="#00d4ff" FontWeight="Bold" FontSize="22" Margin="0,0,0,18" HorizontalAlignment="Center"/>
+                        <Border Background="#1e1e1e" CornerRadius="10" Padding="18">
+                            <Image x:Name="AlertImage" Height="320" Stretch="Uniform" HorizontalAlignment="Center"/>
                         </Border>
                     </StackPanel>
                 </Border>
@@ -120,7 +131,6 @@
         <!-- Footer / Action Buttons -->
         <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,15,0,0">
             <Button x:Name="ViewFullImageButton" Content="View Full Image" Style="{StaticResource PopupButtonStyle}" Click="ViewFullImageButton_Click" Visibility="Collapsed"/>
-            <Button Content="Close" Style="{StaticResource PopupButtonStyle}" Click="CloseButton_Click" />
         </StackPanel>
     </Grid>
 </Window>

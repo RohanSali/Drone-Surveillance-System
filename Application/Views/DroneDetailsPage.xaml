@@ -3,46 +3,115 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:DroneSurveillanceSystem.Services"
         mc:Ignorable="d"
-        Title="Drone Details - Module Installation" Height="700" Width="900"
+        Title="Drone Details - Module Installation" Height="800" Width="1100"
         WindowStartupLocation="CenterScreen"
+        WindowState="Maximized"
         Background="#0a0a0a"
-        FontFamily="Segoe UI">
+        FontFamily="Segoe UI"
+        ResizeMode="CanResize"
+        WindowStyle="SingleBorderWindow">
 
     <Window.Resources>
+        <local:DroneColorConverter x:Key="DroneColorConverter"/>
+        
         <Style x:Key="DarkButton" TargetType="Button">
             <Setter Property="Background" Value="#0078d4"/>
             <Setter Property="Foreground" Value="White"/>
             <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Padding" Value="15,10"/>
-            <Setter Property="Margin" Value="10"/>
-            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="Padding" Value="20,15"/>
+            <Setter Property="Margin" Value="15"/>
+            <Setter Property="FontSize" Value="16"/>
             <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="MinWidth" Value="120"/>
+            <Setter Property="MinHeight" Value="50"/>
         </Style>
         
         <Style x:Key="RemoveButton" TargetType="Button">
             <Setter Property="Background" Value="#dc3545"/>
             <Setter Property="Foreground" Value="White"/>
             <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Padding" Value="15,10"/>
-            <Setter Property="Margin" Value="10"/>
-            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="Padding" Value="20,15"/>
+            <Setter Property="Margin" Value="15"/>
+            <Setter Property="FontSize" Value="16"/>
             <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="MinWidth" Value="120"/>
+            <Setter Property="MinHeight" Value="50"/>
         </Style>
 
         <Style x:Key="OptionButton" TargetType="Button">
             <Setter Property="Background" Value="#28a745"/>
             <Setter Property="Foreground" Value="White"/>
             <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Padding" Value="12,8"/>
-            <Setter Property="Margin" Value="5"/>
-            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Padding" Value="25,15"/>
+            <Setter Property="Margin" Value="15"/>
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="MinWidth" Value="120"/>
+            <Setter Property="MinHeight" Value="50"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" 
+                                CornerRadius="6"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                BorderBrush="{TemplateBinding BorderBrush}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#218838"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter Property="Background" Value="#1e7e34"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        
+        <Style x:Key="RedBackButton" TargetType="Button">
+            <Setter Property="Background" Value="#FFDC3545"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="40,20"/>
+            <Setter Property="Margin" Value="20"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="FontSize" Value="22"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="MinWidth" Value="220"/>
+            <Setter Property="MinHeight" Value="70"/>
+            <Setter Property="Width" Value="220"/>
+            <Setter Property="Height" Value="70"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" 
+                                CornerRadius="8"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                BorderBrush="{TemplateBinding BorderBrush}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#FFC82333"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter Property="Background" Value="#FFBD2130"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
     </Window.Resources>
 
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="70" />
+            <RowDefinition Height="110" />
             <RowDefinition Height="*" />
             <RowDefinition Height="60" />
         </Grid.RowDefinitions>
@@ -56,7 +125,7 @@
                 </Grid.ColumnDefinitions>
                 
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="20,0">
-                    <TextBlock Text="🚁" FontSize="24" VerticalAlignment="Center" Margin="0,0,15,0"/>
+                    <TextBlock Text="🚁" FontSize="28" VerticalAlignment="Center" Margin="0,0,15,0" Foreground="#FF00BCD4"/>
                     <TextBlock x:Name="DroneNameHeader" Text="Drone Details" 
                               Foreground="White" 
                               FontWeight="Bold" 
@@ -64,28 +133,35 @@
                               VerticalAlignment="Center"/>
                 </StackPanel>
                 
-                <Button Grid.Column="1" Name="BackToDronesListButton" Content="← Back to List" 
-                       Style="{StaticResource DarkButton}" 
-                       Click="BackToDronesListButton_Click" 
+                <Button Grid.Column="1" Name="BackToDronesListButton" Content="← Back to List"
+                       Style="{StaticResource RedBackButton}"
+                       Click="BackToDronesListButton_Click"
                        Margin="20,0"/>
             </Grid>
         </Border>
 
         <!-- Main Content -->
-        <Grid Grid.Row="1" Margin="40">
-            <Border Background="#2d2d2d" CornerRadius="12" Padding="30">
-                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+        <Grid Grid.Row="1" Margin="50">
+            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                <Border Background="#2d2d2d" CornerRadius="12" Padding="40" MinHeight="600">
+                    <StackPanel HorizontalAlignment="Center">
                     
-                    <!-- Drone Icon -->
-                    <TextBlock Text="🚁" FontSize="80" HorizontalAlignment="Center" Margin="0,0,0,20"/>
+                    <!-- Drone Icon with Enhanced Styling -->
+                    <Border Background="#1a1a1a" CornerRadius="15" Padding="25" Margin="0,0,0,30">
+                        <Grid>
+                            <Ellipse Fill="#2d2d2d" Width="140" Height="140"/>
+                            <TextBlock Text="🚁" FontSize="120" HorizontalAlignment="Center" VerticalAlignment="Center" 
+                                       Foreground="{Binding Name, Converter={StaticResource DroneColorConverter}}"/>
+                        </Grid>
+                    </Border>
                     
                     <!-- Drone Name -->
                     <TextBlock x:Name="DroneNameDisplay" Text="Drone_Alpha_1" 
                               Foreground="White" 
                               FontWeight="Bold" 
-                              FontSize="28" 
+                              FontSize="32" 
                               HorizontalAlignment="Center" 
-                              Margin="0,0,0,10"/>
+                              Margin="0,0,0,15"/>
                     
                     <!-- Connection Status -->
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,20">
@@ -100,10 +176,28 @@
                               Foreground="#ccc" 
                               FontSize="12" 
                               HorizontalAlignment="Center" 
-                              Margin="0,0,0,30"/>
+                              Margin="0,0,0,10"/>
+                    
+                    <!-- Additional Drone Info -->
+                    <StackPanel HorizontalAlignment="Center" Margin="0,0,0,40">
+                        <TextBlock Text="{Binding DroneType}" 
+                                  Foreground="#FF9800" 
+                                  FontSize="16" 
+                                  HorizontalAlignment="Center" 
+                                  Margin="0,0,0,8"/>
+                        <TextBlock Text="{Binding FirmwareVersion}" 
+                                  Foreground="#ccc" 
+                                  FontSize="14" 
+                                  HorizontalAlignment="Center" 
+                                  Margin="0,0,0,8"/>
+                        <TextBlock Text="{Binding BatteryLevel, StringFormat='Battery: {0}%'}" 
+                                  Foreground="#4CAF50" 
+                                  FontSize="14" 
+                                  HorizontalAlignment="Center"/>
+                    </StackPanel>
                     
                     <!-- Action Buttons -->
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,20,0,0">
                         <Button x:Name="ConnectButton" Content="🔗 Connect" 
                                Style="{StaticResource DarkButton}" 
                                Click="ConnectButton_Click"/>
@@ -113,27 +207,34 @@
                     </StackPanel>
                     
                     <!-- Connection Options (Initially Hidden) -->
-                    <StackPanel x:Name="ConnectionOptionsPanel" 
-                               Orientation="Horizontal" 
-                               HorizontalAlignment="Center" 
-                               Margin="0,20,0,0"
-                               Visibility="Collapsed">
-                        <TextBlock Text="Choose Action:" 
-                                  Foreground="White" 
-                                  FontSize="14" 
-                                  VerticalAlignment="Center" 
-                                  Margin="0,0,15,0"/>
-                        <Button x:Name="FetchButton" Content="📥 Fetch" 
-                               Style="{StaticResource OptionButton}" 
-                               Click="FetchButton_Click"/>
-                        <Button x:Name="InstallButton" Content="⚙️ Install" 
-                               Style="{StaticResource OptionButton}" 
-                               Click="InstallButton_Click"/>
-                    </StackPanel>
+                    <Border x:Name="ConnectionOptionsPanel" 
+                            Background="#1a1a1a" 
+                            CornerRadius="8" 
+                            Padding="25" 
+                            Margin="0,40,0,20"
+                            BorderThickness="2"
+                            BorderBrush="#28a745"
+                            Visibility="Collapsed">
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                            <TextBlock Text="Choose Action:" 
+                                      Foreground="White" 
+                                      FontSize="18" 
+                                      FontWeight="Bold"
+                                      VerticalAlignment="Center" 
+                                      Margin="0,0,25,0"/>
+                            <Button x:Name="FetchButton" Content="📥 Fetch" 
+                                   Style="{StaticResource OptionButton}" 
+                                   Click="FetchButton_Click"/>
+                            <Button x:Name="InstallButton" Content="⚙️ Install" 
+                                   Style="{StaticResource OptionButton}" 
+                                   Click="InstallButton_Click"/>
+                        </StackPanel>
+                    </Border>
                     
                 </StackPanel>
             </Border>
-        </Grid>
+        </ScrollViewer>
+    </Grid>
 
         <!-- Footer -->
         <Border Grid.Row="2" Background="#2d2d2d">

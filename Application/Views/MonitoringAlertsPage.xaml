@@ -1,41 +1,73 @@
 <Window x:Class="DroneSurveillanceSystem.Views.MonitoringAlertsPage"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Monitoring and Alerts Page" Height="900" Width="1400"
-        WindowStartupLocation="CenterScreen" Background="#1a1a1a">
+        Title="Monitoring and Alerts Page" 
+        WindowState="Maximized"
+        WindowStartupLocation="CenterScreen" 
+        Background="#1a1a1a"
+        ResizeMode="CanResize"
+        WindowStyle="SingleBorderWindow">
     <Window.Resources>
         <!-- Comfortable UI Styles -->
         <Style x:Key="ButtonStyle" TargetType="Button">
-            <Setter Property="Background" Value="#404040" />
+            <Setter Property="Background" Value="#0078D4" />
             <Setter Property="Foreground" Value="White" />
-            <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="BorderBrush" Value="#666" />
-            <Setter Property="Padding" Value="12,8" />
-            <Setter Property="Margin" Value="5" />
-            <Setter Property="FontWeight" Value="Normal" />
-            <Setter Property="FontSize" Value="13" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="Padding" Value="20,12" />
+            <Setter Property="Margin" Value="8" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="FontSize" Value="14" />
             <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="MinWidth" Value="160" />
+            <Setter Property="Height" Value="45" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
                         <Border Background="{TemplateBinding Background}" 
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="4">
+                                CornerRadius="8">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Background" Value="#505050"/>
-                                <Setter Property="BorderBrush" Value="#888"/>
+                                <Setter Property="Background" Value="#106EBE"/>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter Property="Background" Value="#353535"/>
+                                <Setter Property="Background" Value="#005A9E"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
+        </Style>
+
+        <Style x:Key="SuccessButtonStyle" TargetType="Button" BasedOn="{StaticResource ButtonStyle}">
+            <Setter Property="Background" Value="#28A745" />
+            <Setter Property="MinWidth" Value="200" />
+            <Setter Property="Padding" Value="25,12" />
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#218838"/>
+                </Trigger>
+                <Trigger Property="IsPressed" Value="True">
+                    <Setter Property="Background" Value="#1E7E34"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="WarningButtonStyle" TargetType="Button" BasedOn="{StaticResource ButtonStyle}">
+            <Setter Property="Background" Value="#FFC107" />
+            <Setter Property="Foreground" Value="#212529" />
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#E0A800"/>
+                </Trigger>
+                <Trigger Property="IsPressed" Value="True">
+                    <Setter Property="Background" Value="#D39E00"/>
+                </Trigger>
+            </Style.Triggers>
         </Style>
 
         <Style x:Key="AlertCardStyle" TargetType="Border">
@@ -75,7 +107,7 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="60" />
             <RowDefinition Height="*" />
-            <RowDefinition Height="40" />
+            <RowDefinition Height="80" />
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="2*" />
@@ -84,13 +116,60 @@
 
         <!-- Header Section -->
         <Border Grid.Row="0" Grid.ColumnSpan="2" Background="#1e1e1e">
-            <TextBlock Text="Drone Network Monitoring" Style="{StaticResource HeaderStyle}" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                
+                <TextBlock Grid.Column="0" Text="Drone Network Monitoring" Style="{StaticResource HeaderStyle}" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                
+                <Button Grid.Column="1" 
+                        Name="CloseButton" 
+                        Content="✕ Close" 
+                        Background="#dc3545" 
+                        Foreground="White" 
+                        BorderThickness="0" 
+                        Padding="20,10" 
+                        FontSize="14"
+                        FontWeight="Bold"
+                        MinWidth="120"
+                        Height="40"
+                        Margin="10,0,10,0"
+                        Click="CloseButton_Click">
+                    <Button.Template>
+                        <ControlTemplate TargetType="Button">
+                            <Border Background="{TemplateBinding Background}" 
+                                    CornerRadius="6">
+                                <ContentPresenter HorizontalAlignment="Center" 
+                                                VerticalAlignment="Center"
+                                                Margin="{TemplateBinding Padding}"/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter Property="Background" Value="#c82333"/>
+                                </Trigger>
+                                <Trigger Property="IsPressed" Value="True">
+                                    <Setter Property="Background" Value="#bd2130"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Button.Template>
+                </Button>
+            </Grid>
         </Border>
 
         <!-- All Drones Display -->
         <Border Grid.Row="1" Grid.Column="0" Background="#2a2a2a" CornerRadius="6" Padding="15" Margin="10">
                 <StackPanel>
-                    <TextBlock Text="🚁 Active Drones" Style="{StaticResource HeaderStyle}" Margin="0,0,0,15"/>
+                    <TextBlock Text="🚁 Active Drones" Style="{StaticResource HeaderStyle}" Margin="0,0,0,15">
+                    <TextBlock.Foreground>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                            <GradientStop Color="#FF00BCD4" Offset="0"/>
+                            <GradientStop Color="#FF2196F3" Offset="1"/>
+                        </LinearGradientBrush>
+                    </TextBlock.Foreground>
+                </TextBlock>
                     
                     <!-- Drone 1 -->
                     <Border Background="#333" CornerRadius="4" Padding="10" Margin="0,5">
@@ -156,7 +235,14 @@
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
                 
-                <TextBlock Grid.Row="0" Text="🚨 Active Alerts" Style="{StaticResource HeaderStyle}" Margin="0,0,0,15"/>
+                <TextBlock Grid.Row="0" Text="🚨 Active Alerts" Style="{StaticResource HeaderStyle}" Margin="0,0,0,15">
+                    <TextBlock.Foreground>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                            <GradientStop Color="#FFF44336" Offset="0"/>
+                            <GradientStop Color="#FFE91E63" Offset="1"/>
+                        </LinearGradientBrush>
+                    </TextBlock.Foreground>
+                </TextBlock>
                 
                 <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
                     <ItemsControl ItemsSource="{Binding ActiveAlerts}">
@@ -186,11 +272,10 @@
         </Border>
 
         <!-- Footer / Action Buttons -->
-        <Border Grid.Row="2" Grid.ColumnSpan="2" Background="#1e1e1e">
+        <Border Grid.Row="2" Grid.ColumnSpan="2" Background="#1e1e1e" Padding="15,10">
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                <Button Content="Acknowledge All Alerts" Style="{StaticResource ButtonStyle}" Margin="10" Click="AcknowledgeAlerts_Click"/>
-                <Button Content="Refresh Data" Style="{StaticResource ButtonStyle}" Margin="10" Click="RefreshData_Click"/>
-                <Button Content="Back to Dashboard" Style="{StaticResource ButtonStyle}" Margin="10" Click="BackToDashboard_Click"/>
+                <Button Content="✅ Acknowledge All Alerts" Style="{StaticResource SuccessButtonStyle}" Click="AcknowledgeAlerts_Click"/>
+                <Button x:Name="LostFindingButton" Content="Lost Finding" Style="{StaticResource ButtonStyle}" Click="LostFindingButton_Click"/>
             </StackPanel>
         </Border>
 

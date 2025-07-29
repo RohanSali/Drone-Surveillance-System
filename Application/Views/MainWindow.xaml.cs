@@ -1,11 +1,13 @@
 using System;
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using System.ComponentModel;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
@@ -22,6 +24,7 @@ namespace DroneSurveillanceSystem.Views
     {
         private readonly SurveillanceService _surveillanceService;
         private readonly DroneTrackingService _droneTrackingService;
+        private readonly NetworkService _networkService;
         private readonly Timer _updateTimer;
         private readonly Random _random = new Random();
         private bool _isDetectionRunning = false;
@@ -195,6 +198,20 @@ namespace DroneSurveillanceSystem.Views
         
         public string AnomaliesText => $"Anomalies Detected: {_totalAnomalies}";
         
+        public int ActiveAlertsCount => AlertManager.Instance.ActiveAlerts.Count;
+        
+        public int NetworkActiveDronesCount => _networkService.Networks
+            .Where(n => n.Status == "Active" && n.Drones != null)
+            .Sum(n => n.Drones.Count);
+        
+        public int TotalDronesCount => _networkService.Networks
+            .Where(n => n.Drones != null)
+            .Sum(n => n.Drones.Count);
+        
+        public string ActiveDronesDisplayText => $"{NetworkActiveDronesCount}/{TotalDronesCount}";
+        
+        public ObservableCollection<Network> Networks => _networkService.Networks;
+        
         public string SystemStatusDisplay
         {
             get => _systemStatusDisplay;
@@ -212,10 +229,25 @@ namespace DroneSurveillanceSystem.Views
             // Initialize services
             _surveillanceService = new SurveillanceService();
             _droneTrackingService = new DroneTrackingService();
+            _networkService = new NetworkService();
             
-// Subscribe to drone tracking events
+            // Subscribe to drone tracking events
             _droneTrackingService.DronePositionUpdated += OnDronePositionUpdated;
             _droneTrackingService.TrackingAlert += OnDroneAlert;
+            
+            // Subscribe to AlertManager's ActiveAlerts collection changes
+            AlertManager.Instance.ActiveAlerts.CollectionChanged += (s, e) =>
+            {
+                OnPropertyChanged(nameof(ActiveAlertsCount));
+            };
+            
+            // Subscribe to NetworkService's Networks collection changes
+            _networkService.Networks.CollectionChanged += (s, e) =>
+            {
+                OnPropertyChanged(nameof(NetworkActiveDronesCount));
+                OnPropertyChanged(nameof(TotalDronesCount));
+                OnPropertyChanged(nameof(ActiveDronesDisplayText));
+            };
             
             // Initialize some drones for demonstration
             _ = InitializeDemoData();
@@ -448,16 +480,32 @@ namespace DroneSurveillanceSystem.Views
 
         private void NetworkButton_Click(object sender, RoutedEventArgs e)
         {
-            var networkMonitoringWindow = new NetworkMonitoringPage();
-            networkMonitoringWindow.Owner = this;
-            networkMonitoringWindow.Show();
+            var networkMonitoringPage = new NetworkMonitoringPage(_networkService);
+            networkMonitoringPage.Show();
         }
 
         private void MonitoringButton_Click(object sender, RoutedEventArgs e)
         {
             var monitoringWindow = new MonitoringAlertsPage();
             monitoringWindow.Owner = this;
+            monitoringWindow.WindowState = WindowState.Maximized;
             monitoringWindow.Show();
+        }
+
+        private void ActiveAlertsCard_Click(object sender, MouseButtonEventArgs e)
+        {
+            var monitoringWindow = new MonitoringAlertsPage();
+            monitoringWindow.Owner = this;
+            monitoringWindow.WindowState = WindowState.Maximized;
+            monitoringWindow.Show();
+        }
+
+        private void ActiveDronesCard_Click(object sender, MouseButtonEventArgs e)
+        {
+            var networkMonitoringWindow = new NetworkMonitoringPage(_networkService);
+            networkMonitoringWindow.Owner = this;
+            networkMonitoringWindow.WindowState = WindowState.Maximized;
+            networkMonitoringWindow.Show();
         }
 
         private void AdvancedControlButton_Click(object sender, RoutedEventArgs e)
@@ -484,10 +532,19 @@ namespace DroneSurveillanceSystem.Views
         // New dashboard event handlers
         private void ConnectDroneButton_Click(object sender, RoutedEventArgs e)
         {
-            // Navigate to Connected Drones Page to show USB connected drones
+            // Navigate to Connected Drones Page to show USB connected drones in full screen
             ConnectedDronesPage connectedDronesPage = new ConnectedDronesPage();
+            connectedDronesPage.WindowState = WindowState.Maximized;
             connectedDronesPage.Show();
             // Keep main window visible or minimize it
+        }
+
+        private void AddNetworkButton_Click(object sender, RoutedEventArgs e)
+        {
+            // Open Network Profile Manager for creating/managing networks
+            var networkProfileManager = new NetworkProfileManager(_networkService, _droneTrackingService);
+            networkProfileManager.Owner = this;
+            networkProfileManager.Show();
         }
         
         private void MonitorDroneButton_Click(object sender, RoutedEventArgs e)

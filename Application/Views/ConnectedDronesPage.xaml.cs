@@ -1,14 +1,26 @@
 using System;
 using System.Windows;
 using System.Windows.Input;
+using System.Collections.Generic;
+using System.Linq;
+using DroneSurveillanceSystem.Services;
 
 namespace DroneSurveillanceSystem.Views
 {
     public partial class ConnectedDronesPage : Window
     {
+        private readonly UsbDroneService _usbDroneService;
+        private List<UsbDrone> _connectedDrones = new List<UsbDrone>();
+
         public ConnectedDronesPage()
         {
             InitializeComponent();
+            _usbDroneService = new UsbDroneService();
+            _usbDroneService.DronesListChanged += OnDronesListChanged;
+            LoadConnectedDrones();
+            
+            // Ensure window opens in full screen
+            this.WindowState = WindowState.Maximized;
         }
 
         private void BackButton_Click(object sender, RoutedEventArgs e)
@@ -26,31 +38,42 @@ namespace DroneSurveillanceSystem.Views
             this.Close();
         }
 
-        private void DronesList_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+        private async void LoadConnectedDrones()
         {
-            if (DronesList.SelectedItem != null)
+            try
             {
-                // Get the selected drone name from the UI
-                string selectedDroneName = GetSelectedDroneName();
-                
-                // Open drone details page
-                DroneDetailsPage droneDetailsPage = new DroneDetailsPage(selectedDroneName);
-                droneDetailsPage.Show();
-                this.Close();
+                _connectedDrones = await _usbDroneService.DetectUsbDronesAsync();
+                UpdateDronesList();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error loading connected drones: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
-        private string GetSelectedDroneName()
+        private void OnDronesListChanged(object? sender, List<UsbDrone> drones)
         {
-            // Extract drone name from selected item
-            var selectedIndex = DronesList.SelectedIndex;
-            switch (selectedIndex)
+            Dispatcher.Invoke(() =>
             {
-                case 0: return "Drone_Alpha_1";
-                case 1: return "Drone_Beta_2";
-                case 2: return "Drone_Gamma_3";
-                case 3: return "Drone_Theta_4";
-                default: return "Unknown_Drone";
+                _connectedDrones = drones;
+                UpdateDronesList();
+            });
+        }
+
+        private void UpdateDronesList()
+        {
+            DronesList.ItemsSource = _connectedDrones;
+        }
+
+        private void DronesList_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+        {
+            if (DronesList.SelectedItem is UsbDrone selectedDrone)
+            {
+                // Open drone details page with the selected drone in full screen
+                DroneDetailsPage droneDetailsPage = new DroneDetailsPage(selectedDrone);
+                droneDetailsPage.WindowState = WindowState.Maximized;
+                droneDetailsPage.Show();
+                this.Close();
             }
         }
     }

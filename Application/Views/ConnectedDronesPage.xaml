@@ -3,14 +3,55 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:DroneSurveillanceSystem.Services"
         mc:Ignorable="d"
-        Title="USB Connected Drones - Module Installation" Height="800" Width="1200"
+        Title="USB Connected Drones - Module Installation" Height="900" Width="1400"
         WindowStartupLocation="CenterScreen"
+        WindowState="Maximized"
         Background="{StaticResource DarkBackgroundBrush}"
-        FontFamily="Segoe UI">
+        FontFamily="Segoe UI"
+        ResizeMode="CanResize"
+        WindowStyle="SingleBorderWindow">
 
     <Window.Resources>
+        <local:DroneColorConverter x:Key="DroneColorConverter"/>
+        
         <Style x:Key="DarkButton" TargetType="Button" BasedOn="{StaticResource ModernButton}">
+        </Style>
+        
+        <Style x:Key="RedBackButton" TargetType="Button">
+            <Setter Property="Background" Value="#FFDC3545"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="40,20"/>
+            <Setter Property="Margin" Value="20"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="FontSize" Value="22"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="MinWidth" Value="220"/>
+            <Setter Property="MinHeight" Value="70"/>
+            <Setter Property="Width" Value="220"/>
+            <Setter Property="Height" Value="70"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" 
+                                CornerRadius="6"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                BorderBrush="{TemplateBinding BorderBrush}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#FFC82333"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter Property="Background" Value="#FFBD2130"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
         
         <Style x:Key="DroneListBoxItem" TargetType="ListBoxItem" BasedOn="{StaticResource ModernListBoxItem}">
@@ -19,7 +60,7 @@
 
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="70" />
+            <RowDefinition Height="110" />
             <RowDefinition Height="*" />
             <RowDefinition Height="60" />
         </Grid.RowDefinitions>
@@ -33,7 +74,7 @@
                 </Grid.ColumnDefinitions>
                 
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="20,0">
-                    <TextBlock Text="🔌" FontSize="24" VerticalAlignment="Center" Margin="0,0,15,0"/>
+                    <TextBlock Text="🔌" FontSize="24" VerticalAlignment="Center" Margin="0,0,15,0" Foreground="#FF00BCD4"/>
                     <TextBlock Text="USB Connected Drones" 
                               Foreground="White" 
                               FontWeight="Bold" 
@@ -41,8 +82,8 @@
                               VerticalAlignment="Center"/>
                 </StackPanel>
                 
-                <Button Grid.Column="1" Name="BackButton" Content="← Back" 
-                       Style="{StaticResource DarkButton}" 
+                <Button Grid.Column="1" Name="BackButton" Content="← Back to Main" 
+                       Style="{StaticResource RedBackButton}" 
                        Click="BackButton_Click" 
                        Margin="20,0"/>
             </Grid>
@@ -59,10 +100,16 @@
             <Border Grid.Row="0" Background="#2d2d2d" CornerRadius="8" Padding="15" Margin="0,0,0,15">
                 <StackPanel>
                     <TextBlock Text="📋 Available USB Connected Drones" 
-                              Foreground="White" 
                               FontWeight="Bold" 
                               FontSize="16" 
-                              Margin="0,0,0,10"/>
+                              Margin="0,0,0,10">
+                        <TextBlock.Foreground>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                <GradientStop Color="#FF4CAF50" Offset="0"/>
+                                <GradientStop Color="#FF8BC34A" Offset="1"/>
+                            </LinearGradientBrush>
+                        </TextBlock.Foreground>
+                    </TextBlock>
                     <TextBlock Text="Select a drone to install new modules via USB connection" 
                               Foreground="#ccc" 
                               FontSize="12"/>
@@ -103,7 +150,9 @@
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
                                     
-                                    <TextBlock Grid.Column="0" Text="🚁" FontSize="20" Margin="0,0,15,0"/>
+                                    <Border Grid.Column="0" Background="#1a1a1a" CornerRadius="8" Padding="8" Margin="0,0,15,0">
+                                        <TextBlock Text="🚁" FontSize="24" Foreground="{Binding Name, Converter={StaticResource DroneColorConverter}}"/>
+                                    </Border>
                                     
                                     <StackPanel Grid.Column="1">
                                         <TextBlock Text="{Binding Name}" 
@@ -115,6 +164,9 @@
                                                   FontSize="12"/>
                                         <TextBlock Text="{Binding UsbPort}" 
                                                   Foreground="#ccc" 
+                                                  FontSize="10"/>
+                                        <TextBlock Text="{Binding DroneType}" 
+                                                  Foreground="#FF9800" 
                                                   FontSize="10"/>
                                     </StackPanel>
                                     
@@ -129,138 +181,7 @@
                             </DataTemplate>
                         </ListBox.ItemTemplate>
                         
-                        <!-- Sample Data Items -->
-                        <ListBoxItem>
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-                                
-                                <TextBlock Grid.Column="0" Text="🚁" FontSize="20" Margin="0,0,15,0"/>
-                                
-                                <StackPanel Grid.Column="1">
-                                    <TextBlock Text="Drone_Alpha_1" 
-                                              Foreground="White" 
-                                              FontWeight="Bold" 
-                                              FontSize="14"/>
-                                    <TextBlock Text="Ready for Module Installation" 
-                                              Foreground="#4CAF50" 
-                                              FontSize="12"/>
-                                    <TextBlock Text="USB Port: COM3" 
-                                              Foreground="#ccc" 
-                                              FontSize="10"/>
-                                </StackPanel>
-                                
-                                <StackPanel Grid.Column="2" Orientation="Horizontal">
-                                    <Ellipse Width="12" Height="12" Fill="#4CAF50" Margin="0,0,5,0"/>
-                                    <TextBlock Text="USB Connected" 
-                                              Foreground="#4CAF50" 
-                                              FontSize="10" 
-                                              VerticalAlignment="Center"/>
-                                </StackPanel>
-                            </Grid>
-                        </ListBoxItem>
-                        
-                        <ListBoxItem>
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-                                
-                                <TextBlock Grid.Column="0" Text="🚁" FontSize="20" Margin="0,0,15,0"/>
-                                
-                                <StackPanel Grid.Column="1">
-                                    <TextBlock Text="Drone_Beta_2" 
-                                              Foreground="White" 
-                                              FontWeight="Bold" 
-                                              FontSize="14"/>
-                                    <TextBlock Text="Ready for Module Installation" 
-                                              Foreground="#4CAF50" 
-                                              FontSize="12"/>
-                                    <TextBlock Text="USB Port: COM5" 
-                                              Foreground="#ccc" 
-                                              FontSize="10"/>
-                                </StackPanel>
-                                
-                                <StackPanel Grid.Column="2" Orientation="Horizontal">
-                                    <Ellipse Width="12" Height="12" Fill="#4CAF50" Margin="0,0,5,0"/>
-                                    <TextBlock Text="USB Connected" 
-                                              Foreground="#4CAF50" 
-                                              FontSize="10" 
-                                              VerticalAlignment="Center"/>
-                                </StackPanel>
-                            </Grid>
-                        </ListBoxItem>
-                        
-                        <ListBoxItem>
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-                                
-                                <TextBlock Grid.Column="0" Text="🚁" FontSize="20" Margin="0,0,15,0"/>
-                                
-                                <StackPanel Grid.Column="1">
-                                    <TextBlock Text="Drone_Gamma_3" 
-                                              Foreground="White" 
-                                              FontWeight="Bold" 
-                                              FontSize="14"/>
-                                    <TextBlock Text="Ready for Module Installation" 
-                                              Foreground="#4CAF50" 
-                                              FontSize="12"/>
-                                    <TextBlock Text="USB Port: COM7" 
-                                              Foreground="#ccc" 
-                                              FontSize="10"/>
-                                </StackPanel>
-                                
-                                <StackPanel Grid.Column="2" Orientation="Horizontal">
-                                    <Ellipse Width="12" Height="12" Fill="#4CAF50" Margin="0,0,5,0"/>
-                                    <TextBlock Text="USB Connected" 
-                                              Foreground="#4CAF50" 
-                                              FontSize="10" 
-                                              VerticalAlignment="Center"/>
-                                </StackPanel>
-                            </Grid>
-                        </ListBoxItem>
-                        
-                        <ListBoxItem>
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-                                
-                                <TextBlock Grid.Column="0" Text="🚁" FontSize="20" Margin="0,0,15,0"/>
-                                
-                                <StackPanel Grid.Column="1">
-                                    <TextBlock Text="Drone_Theta_4" 
-                                              Foreground="White" 
-                                              FontWeight="Bold" 
-                                              FontSize="14"/>
-                                    <TextBlock Text="Ready for Module Installation" 
-                                              Foreground="#4CAF50" 
-                                              FontSize="12"/>
-                                    <TextBlock Text="USB Port: COM9" 
-                                              Foreground="#ccc" 
-                                              FontSize="10"/>
-                                </StackPanel>
-                                
-                                <StackPanel Grid.Column="2" Orientation="Horizontal">
-                                    <Ellipse Width="12" Height="12" Fill="#4CAF50" Margin="0,0,5,0"/>
-                                    <TextBlock Text="USB Connected" 
-                                              Foreground="#4CAF50" 
-                                              FontSize="10" 
-                                              VerticalAlignment="Center"/>
-                                </StackPanel>
-                            </Grid>
-                        </ListBoxItem>
+
                     </ListBox>
                 </Grid>
             </Border>
@@ -270,8 +191,14 @@
         <Border Grid.Row="2" Background="#2d2d2d">
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
                 <TextBlock Text="💡 Click on a drone to access module installation options" 
-                          Foreground="#ccc" 
-                          FontSize="12"/>
+                          FontSize="12">
+                    <TextBlock.Foreground>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                            <GradientStop Color="#FFFF9800" Offset="0"/>
+                            <GradientStop Color="#FFFF5722" Offset="1"/>
+                        </LinearGradientBrush>
+                    </TextBlock.Foreground>
+                </TextBlock>
             </StackPanel>
         </Border>
     </Grid>

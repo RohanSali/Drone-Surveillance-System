@@ -62,6 +62,11 @@ namespace DroneSurveillanceSystem.Views
             this.Close();
         }
 
+        private void BackButton_Click(object sender, RoutedEventArgs e)
+        {
+            this.Close();
+        }
+
         private List<string> GetSelectedModules()
         {
             List<string> selectedModules = new List<string>();

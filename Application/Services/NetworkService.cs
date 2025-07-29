@@ -1,199 +1,408 @@
 using System;
 using System.Collections.Generic;
-using System.Net;
-using System.Net.NetworkInformation;
-using System.Threading.Tasks;
-using System.Threading;
-using DroneSurveillanceSystem.Models;
+using System.Collections.ObjectModel;
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
+using System.Linq; // Added for .FirstOrDefault() and .Sum()
+using System.IO;
+using System.Text.Json;
+using DroneSurveillanceSystem.Services; // For DroneFlightStatus
 
 namespace DroneSurveillanceSystem.Services
 {
-    public enum NetworkStatus
+    public class Network : INotifyPropertyChanged
     {
-        Connected,
-        Disconnected,
-        Connecting,
-        Error,
-        WeakSignal
+        private string _name;
+        private string _description;
+        private string _status;
+        private string _statusColor;
+        private string _iconColor;
+        private int _droneCount;
+        private int _alertCount;
+        private string _coverageRegion;
+        private string _priorityLevel;
+        private string _operationMode;
+        private bool _autoActivate;
+        private bool _alertNotifications;
+        private List<DronePosition> _assignedDrones;
+        private DateTime _createdDate;
+        private DateTime _lastModified;
+
+        public string Name
+        {
+            get => _name;
+            set => SetProperty(ref _name, value);
+        }
+
+        public string Description
+        {
+            get => _description;
+            set => SetProperty(ref _description, value);
+        }
+
+        public string Status
+        {
+            get => _status;
+            set => SetProperty(ref _status, value);
+        }
+
+        public string StatusColor
+        {
+            get => _statusColor;
+            set => SetProperty(ref _statusColor, value);
+        }
+
+        public string IconColor
+        {
+            get => _iconColor;
+            set => SetProperty(ref _iconColor, value);
+        }
+
+        public int DroneCount
+        {
+            get => _droneCount;
+            set => SetProperty(ref _droneCount, value);
+        }
+
+        public int AlertCount
+        {
+            get => _alertCount;
+            set => SetProperty(ref _alertCount, value);
+        }
+        
+        public string CoverageRegion
+        {
+            get => _coverageRegion;
+            set => SetProperty(ref _coverageRegion, value);
+        }
+        
+        public string PriorityLevel
+        {
+            get => _priorityLevel;
+            set => SetProperty(ref _priorityLevel, value);
+        }
+        
+        public string OperationMode
+        {
+            get => _operationMode;
+            set => SetProperty(ref _operationMode, value);
+        }
+        
+        public bool AutoActivate
+        {
+            get => _autoActivate;
+            set => SetProperty(ref _autoActivate, value);
+        }
+        
+        public bool AlertNotifications
+        {
+            get => _alertNotifications;
+            set => SetProperty(ref _alertNotifications, value);
+        }
+        
+        public List<DronePosition> Drones
+        {
+            get => _assignedDrones ?? new List<DronePosition>();
+            set => SetProperty(ref _assignedDrones, value);
+        }
+        
+        public DateTime CreatedDate
+        {
+            get => _createdDate;
+            set => SetProperty(ref _createdDate, value);
+        }
+        
+        public DateTime LastModified
+        {
+            get => _lastModified;
+            set => SetProperty(ref _lastModified, value);
+        }
+        
+        public Network()
+        {
+            _name = "";
+            _description = "";
+            _status = "Active";
+            _statusColor = "#4CAF50";
+            _iconColor = "#4CAF50";
+            _assignedDrones = new List<DronePosition>();
+            _createdDate = DateTime.Now;
+            _lastModified = DateTime.Now;
+            _coverageRegion = "Urban Zone";
+            _priorityLevel = "Medium Priority";
+            _operationMode = "Patrol Mode";
+            _alertNotifications = true;
+        }
+
+        public event PropertyChangedEventHandler? PropertyChanged;
+
+        protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+
+        protected bool SetProperty<T>(ref T field, T value, [CallerMemberName] string? propertyName = null)
+        {
+            if (EqualityComparer<T>.Default.Equals(field, value)) return false;
+            field = value;
+            OnPropertyChanged(propertyName);
+            return true;
+        }
+    }
+
+    public class NetworkStatistics : INotifyPropertyChanged
+    {
+        private int _totalNetworks;
+        private int _activeNetworks;
+        private int _totalDrones;
+        private int _activeAlerts;
+
+        public int TotalNetworks
+        {
+            get => _totalNetworks;
+            set => SetProperty(ref _totalNetworks, value);
+        }
+
+        public int ActiveNetworks
+        {
+            get => _activeNetworks;
+            set => SetProperty(ref _activeNetworks, value);
+        }
+
+        public int TotalDrones
+        {
+            get => _totalDrones;
+            set => SetProperty(ref _totalDrones, value);
+        }
+
+        public int ActiveAlerts
+        {
+            get => _activeAlerts;
+            set => SetProperty(ref _activeAlerts, value);
+        }
+
+        public event PropertyChangedEventHandler? PropertyChanged;
+
+        protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+
+        protected bool SetProperty<T>(ref T field, T value, [CallerMemberName] string? propertyName = null)
+        {
+            if (EqualityComparer<T>.Default.Equals(field, value)) return false;
+            field = value;
+            OnPropertyChanged(propertyName);
+            return true;
+        }
     }
 
     public class NetworkService
     {
-        private readonly Timer _connectionMonitor;
-        private bool _isConnected = false;
-        private string _currentNetwork = "";
-        private int _signalStrength = 0;
+        private readonly ObservableCollection<Network> _networks;
+        private readonly NetworkStatistics _statistics;
+        private const string StorageFile = "networks.json";
 
-        public event EventHandler<NetworkStatusEventArgs>? NetworkStatusChanged;
+        public ObservableCollection<Network> Networks => _networks;
+        public NetworkStatistics Statistics => _statistics;
 
-        public NetworkStatus CurrentStatus { get; private set; } = NetworkStatus.Disconnected;
-        public string CurrentNetwork => _currentNetwork;
-        public int SignalStrength => _signalStrength;
+        public event EventHandler? StatisticsUpdated;
 
         public NetworkService()
         {
-            // Monitor network connectivity every 5 seconds
-            _connectionMonitor = new Timer(MonitorConnection, null, TimeSpan.Zero, TimeSpan.FromSeconds(5));
+            _networks = new ObservableCollection<Network>();
+            _statistics = new NetworkStatistics();
+            LoadNetworks();
+            UpdateStatistics();
         }
 
-        private void MonitorConnection(object? state)
+        private void LoadNetworks()
         {
-            try
+            _networks.Clear();
+            if (File.Exists(StorageFile))
             {
-                var ping = new Ping();
-                var reply = ping.Send("8.8.8.8", 3000); // Google DNS
-
-                var wasConnected = _isConnected;
-                _isConnected = reply.Status == IPStatus.Success;
-
-                if (_isConnected != wasConnected)
+                var json = File.ReadAllText(StorageFile);
+                var loaded = JsonSerializer.Deserialize<List<Network>>(json);
+                if (loaded != null)
                 {
-                    CurrentStatus = _isConnected ? NetworkStatus.Connected : NetworkStatus.Disconnected;
-                    _signalStrength = _isConnected ? new Random().Next(70, 100) : 0;
-                    
-                    NetworkStatusChanged?.Invoke(this, new NetworkStatusEventArgs
+                    foreach (var net in loaded)
                     {
-                        Status = CurrentStatus,
-                        Network = _currentNetwork,
-                        SignalStrength = _signalStrength,
-                        Timestamp = DateTime.Now
-                    });
+                        _networks.Add(net);
+                        net.PropertyChanged += OnNetworkPropertyChanged;
+                    }
                 }
             }
-            catch (Exception)
+            
+            // If no networks exist, create sample networks
+            if (_networks.Count == 0)
             {
-                if (CurrentStatus != NetworkStatus.Error)
+                CreateSampleNetworks();
+            }
+        }
+
+        private void SaveNetworks()
+        {
+            var list = _networks.ToList();
+            var json = JsonSerializer.Serialize(list, new JsonSerializerOptions { WriteIndented = true });
+            File.WriteAllText(StorageFile, json);
+        }
+
+        public void OnNetworkPropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(Network.Status) || 
+                e.PropertyName == nameof(Network.DroneCount) || 
+                e.PropertyName == nameof(Network.AlertCount))
+            {
+                UpdateStatistics();
+            }
+        }
+
+        private void UpdateStatistics()
+        {
+            _statistics.TotalNetworks = _networks.Count;
+            _statistics.ActiveNetworks = _networks.Count(n => n.Status == "Active");
+            _statistics.TotalDrones = _networks.Sum(n => n.DroneCount);
+            _statistics.ActiveAlerts = _networks.Sum(n => n.AlertCount);
+
+            StatisticsUpdated?.Invoke(this, EventArgs.Empty);
+        }
+
+        public void UpdateNetworkStatus(string networkName, string newStatus)
+        {
+            var network = _networks.FirstOrDefault(n => n.Name == networkName);
+            if (network != null)
+            {
+                network.Status = newStatus;
+                // Update status color based on new status
+                network.StatusColor = newStatus switch
                 {
-                    CurrentStatus = NetworkStatus.Error;
-                    _isConnected = false;
-                    _signalStrength = 0;
-                    
-                    NetworkStatusChanged?.Invoke(this, new NetworkStatusEventArgs
+                    "Active" => "#4CAF50",
+                    "Standby" => "#FF9800",
+                    "Offline" => "#F44336",
+                    "Testing" => "#9C27B0",
+                    "Deployed" => "#00BCD4",
+                    _ => "#cccccc"
+                };
+                SaveNetworks(); // Save after status change
+            }
+        }
+
+        public void UpdateNetworkDrones(string networkName, int droneCount)
+        {
+            var network = _networks.FirstOrDefault(n => n.Name == networkName);
+            if (network != null)
+            {
+                network.DroneCount = droneCount;
+                SaveNetworks(); // Save after drone count change
+            }
+        }
+
+        public void UpdateNetworkAlerts(string networkName, int alertCount)
+        {
+            var network = _networks.FirstOrDefault(n => n.Name == networkName);
+            if (network != null)
+            {
+                network.AlertCount = alertCount;
+                SaveNetworks(); // Save after alert count change
+            }
+        }
+
+        // Call SaveNetworks after any add/edit/delete
+        public void AddNetwork(Network network)
+        {
+            _networks.Add(network);
+            network.PropertyChanged += OnNetworkPropertyChanged;
+            SaveNetworks();
+            UpdateStatistics();
+        }
+
+        public void RemoveNetwork(Network network)
+        {
+            _networks.Remove(network);
+            SaveNetworks();
+            UpdateStatistics();
+        }
+
+        public void UpdateNetwork(Network updatedNetwork)
+        {
+            var existing = _networks.FirstOrDefault(n => n.Name == updatedNetwork.Name);
+            if (existing != null)
+            {
+                var idx = _networks.IndexOf(existing);
+                _networks[idx] = updatedNetwork;
+                SaveNetworks();
+                UpdateStatistics();
+            }
+        }
+        
+        private void CreateSampleNetworks()
+        {
+            // Create sample networks with proper names and sample drones
+            var sampleNetworks = new[]
+            {
+                new Network 
+                { 
+                    Name = "Network 1", 
+                    Description = "Primary Surveillance Network",
+                    Status = "Active",
+                    Drones = new List<DronePosition>
                     {
-                        Status = CurrentStatus,
-                        Network = _currentNetwork,
-                        SignalStrength = _signalStrength,
-                        Timestamp = DateTime.Now
-                    });
+                        new DronePosition { Id = "DRONE-001", Name = "Surveillance Alpha", Status = DroneFlightStatus.Flying },
+                        new DronePosition { Id = "DRONE-002", Name = "Surveillance Beta", Status = DroneFlightStatus.Hovering }
+                    }
+                },
+                new Network 
+                { 
+                    Name = "Network 2", 
+                    Description = "Secondary Patrol Network",
+                    Status = "Active",
+                    Drones = new List<DronePosition>
+                    {
+                        new DronePosition { Id = "DRONE-003", Name = "Patrol Gamma", Status = DroneFlightStatus.Flying },
+                        new DronePosition { Id = "DRONE-004", Name = "Patrol Delta", Status = DroneFlightStatus.Grounded }
+                    }
+                },
+                new Network 
+                { 
+                    Name = "Network 3", 
+                    Description = "Emergency Response Network",
+                    Status = "Standby",
+                    Drones = new List<DronePosition>
+                    {
+                        new DronePosition { Id = "DRONE-005", Name = "Emergency Echo", Status = DroneFlightStatus.Grounded }
+                    }
+                },
+                new Network 
+                { 
+                    Name = "Network 4", 
+                    Description = "Perimeter Security Network",
+                    Status = "Active",
+                    Drones = new List<DronePosition>
+                    {
+                        new DronePosition { Id = "DRONE-006", Name = "Security Foxtrot", Status = DroneFlightStatus.Flying },
+                        new DronePosition { Id = "DRONE-007", Name = "Security Golf", Status = DroneFlightStatus.Hovering },
+                        new DronePosition { Id = "DRONE-008", Name = "Security Hotel", Status = DroneFlightStatus.Flying }
+                    }
+                },
+                new Network 
+                { 
+                    Name = "Network 5", 
+                    Description = "Research and Development Network",
+                    Status = "Testing",
+                    Drones = new List<DronePosition>
+                    {
+                        new DronePosition { Id = "DRONE-009", Name = "Research India", Status = DroneFlightStatus.Grounded }
+                    }
                 }
+            };
+            
+            foreach (var network in sampleNetworks)
+            {
+                _networks.Add(network);
+                network.PropertyChanged += OnNetworkPropertyChanged;
             }
+            
+            SaveNetworks();
         }
-
-        public async Task<bool> ConnectToDroneAsync(string droneId, string ipAddress)
-        {
-            try
-            {
-                CurrentStatus = NetworkStatus.Connecting;
-                NetworkStatusChanged?.Invoke(this, new NetworkStatusEventArgs
-                {
-                    Status = CurrentStatus,
-                    Network = $"Drone-{droneId}",
-                    SignalStrength = 0,
-                    Timestamp = DateTime.Now
-                });
-
-                // Simulate connection process
-                await Task.Delay(2000);
-
-                // Simulate connection success/failure
-                var random = new Random();
-                var success = random.Next(1, 10) > 2; // 80% success rate
-
-                if (success)
-                {
-                    CurrentStatus = NetworkStatus.Connected;
-                    _currentNetwork = $"Drone-{droneId}";
-                    _signalStrength = random.Next(60, 95);
-                    _isConnected = true;
-                }
-                else
-                {
-                    CurrentStatus = NetworkStatus.Error;
-                    _signalStrength = 0;
-                    _isConnected = false;
-                }
-
-                NetworkStatusChanged?.Invoke(this, new NetworkStatusEventArgs
-                {
-                    Status = CurrentStatus,
-                    Network = _currentNetwork,
-                    SignalStrength = _signalStrength,
-                    Timestamp = DateTime.Now
-                });
-
-                return success;
-            }
-            catch (Exception)
-            {
-                CurrentStatus = NetworkStatus.Error;
-                return false;
-            }
-        }
-
-        public async Task<bool> SendCommandToDroneAsync(string command, Dictionary<string, object> parameters)
-        {
-            if (!_isConnected) return false;
-
-            try
-            {
-                // Simulate command transmission
-                await Task.Delay(100);
-                
-                // Simulate occasional transmission failures
-                var random = new Random();
-                return random.Next(1, 20) > 1; // 95% success rate
-            }
-            catch
-            {
-                return false;
-            }
-        }
-
-        public async Task<T?> ReceiveDataFromDroneAsync<T>() where T : class
-        {
-            if (!_isConnected) return null;
-
-            try
-            {
-                // Simulate data reception delay
-                await Task.Delay(50);
-                
-                // This would normally deserialize actual drone data
-                return null; // Placeholder for real implementation
-            }
-            catch
-            {
-                return null;
-            }
-        }
-
-        public void Disconnect()
-        {
-            _isConnected = false;
-            CurrentStatus = NetworkStatus.Disconnected;
-            _currentNetwork = "";
-            _signalStrength = 0;
-
-            NetworkStatusChanged?.Invoke(this, new NetworkStatusEventArgs
-            {
-                Status = CurrentStatus,
-                Network = _currentNetwork,
-                SignalStrength = _signalStrength,
-                Timestamp = DateTime.Now
-            });
-        }
-
-        public void Dispose()
-        {
-            _connectionMonitor?.Dispose();
-        }
-    }
-
-    public class NetworkStatusEventArgs : EventArgs
-    {
-        public NetworkStatus Status { get; set; }
-        public string Network { get; set; } = "";
-        public int SignalStrength { get; set; }
-        public DateTime Timestamp { get; set; }
     }
 }

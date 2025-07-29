@@ -12,16 +12,18 @@
             <Setter Property="Background" Value="#FF0078D4"/>
             <Setter Property="Foreground" Value="White"/>
             <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Padding" Value="15,8"/>
-            <Setter Property="Margin" Value="5"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="Padding" Value="20,12"/>
+            <Setter Property="Margin" Value="8"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="FontSize" Value="16"/>
             <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="MinWidth" Value="140"/>
+            <Setter Property="Height" Value="45"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
                         <Border Background="{TemplateBinding Background}" 
-                                CornerRadius="5"
+                                CornerRadius="8"
                                 BorderThickness="{TemplateBinding BorderThickness}"
                                 BorderBrush="{TemplateBinding BorderBrush}">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
@@ -100,7 +102,7 @@
                 <!-- Title Section -->
                 <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="20,0">
                     <Ellipse Width="50" Height="50" Fill="#FF0078D4" Margin="0,0,15,0"/>
-                    <TextBlock Text="🚁" FontSize="35" VerticalAlignment="Center" Margin="-42,0,20,0"/>
+                    <TextBlock Text="🚁" FontSize="35" VerticalAlignment="Center" Margin="-42,0,20,0" Foreground="#FF00BCD4"/>
                     <StackPanel VerticalAlignment="Center">
                         <TextBlock Text="DRONE TRACKING SYSTEM" 
                                   Foreground="White" 
@@ -168,7 +170,14 @@
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
                             
-                            <TextBlock Grid.Column="0" Text="🗺️ Live Drone Map" Style="{StaticResource HeaderStyle}"/>
+                            <TextBlock Grid.Column="0" Text="🗺️ Live Drone Map" Style="{StaticResource HeaderStyle}">
+                                <TextBlock.Foreground>
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                        <GradientStop Color="#FF4CAF50" Offset="0"/>
+                                        <GradientStop Color="#FF2196F3" Offset="1"/>
+                                    </LinearGradientBrush>
+                                </TextBlock.Foreground>
+                            </TextBlock>
                             
                             <StackPanel Grid.Column="1" Orientation="Horizontal">
                                 <TextBlock Text="Total Distance:" Style="{StaticResource DataTextStyle}" VerticalAlignment="Center"/>
@@ -200,7 +209,7 @@
                                 CornerRadius="15" 
                                 Width="30" Height="30"
                                 BorderBrush="White" BorderThickness="2">
-                            <TextBlock Text="🚁" FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            <TextBlock Text="🚁" FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="#FF00BCD4"/>
                         </Border>
                         
                         <!-- Drone trail lines -->
@@ -223,7 +232,14 @@
 
                     <!-- Status Header -->
                     <Border Grid.Row="0" Background="#FF2D2D30" Padding="15,10">
-                        <TextBlock Text="📊 Drone Status" Style="{StaticResource HeaderStyle}"/>
+                        <TextBlock Text="📊 Drone Status" Style="{StaticResource HeaderStyle}">
+                            <TextBlock.Foreground>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                    <GradientStop Color="#FFFF9800" Offset="0"/>
+                                    <GradientStop Color="#FFFF5722" Offset="1"/>
+                                </LinearGradientBrush>
+                            </TextBlock.Foreground>
+                        </TextBlock>
                     </Border>
 
                     <!-- Drone List -->
@@ -325,7 +341,14 @@
                             <RowDefinition Height="*"/>
                         </Grid.RowDefinitions>
 
-                        <TextBlock Grid.Row="0" Text="📈 Tracking Statistics" Style="{StaticResource HeaderStyle}"/>
+                        <TextBlock Grid.Row="0" Text="📈 Tracking Statistics" Style="{StaticResource HeaderStyle}">
+                            <TextBlock.Foreground>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                    <GradientStop Color="#FF4CAF50" Offset="0"/>
+                                    <GradientStop Color="#FF8BC34A" Offset="1"/>
+                                </LinearGradientBrush>
+                            </TextBlock.Foreground>
+                        </TextBlock>
                         
                         <Grid Grid.Row="1">
                             <Grid.ColumnDefinitions>
@@ -370,7 +393,14 @@
                             <RowDefinition Height="*"/>
                         </Grid.RowDefinitions>
 
-                        <TextBlock Grid.Row="0" Text="🚨 Live Alerts" Style="{StaticResource HeaderStyle}"/>
+                        <TextBlock Grid.Row="0" Text="🚨 Live Alerts" Style="{StaticResource HeaderStyle}">
+                            <TextBlock.Foreground>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                    <GradientStop Color="#FFF44336" Offset="0"/>
+                                    <GradientStop Color="#FFE91E63" Offset="1"/>
+                                </LinearGradientBrush>
+                            </TextBlock.Foreground>
+                        </TextBlock>
                         
                         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
                             <StackPanel Name="AlertsPanel">
