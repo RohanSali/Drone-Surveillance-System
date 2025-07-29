@@ -1,4 +1,5 @@
 import torch
+import os
 from facenet_pytorch import InceptionResnetV1, MTCNN
 from PIL import Image
 import cv2
@@ -9,7 +10,10 @@ from datetime import datetime
 from websocket_call import send_alert
 import asyncio
 
-TEMP_TEXT_FILE = 'Inference Engine/person_found.txt'
+current_dir = os.path.dirname(os.path.abspath(__file__))
+project_dir = os.path.abspath(os.path.join(current_dir, '..'))
+
+TEMP_TEXT_FILE = os.path.join(current_dir,"person_found.txt")
 TIME_THRESHOLD = 60 #sec
 
 # Load pretrained FaceNet model
@@ -80,11 +84,11 @@ def compare_faces(frame1, frame2 , name ,capture_timestamp):
                 print(f"Time difference between last found for  is : {time_difference} ⏳")
                 if time_difference > TIME_THRESHOLD:
                     save_to_machine(payload)
-                    asyncio.run(send_alert(payload))
+                    # asyncio.run(send_alert(payload))
             else :
                 print(f"🔒 Saving {name} for first time!")
                 save_to_machine(payload)
-                asyncio.run(send_alert(payload))
+                # asyncio.run(send_alert(payload))
         else:
             print("Faces do not match. Similarity:", cosine_sim)
     else:

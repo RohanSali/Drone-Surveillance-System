@@ -126,13 +126,14 @@ def runner_app(device="lap",img=None):
     cap.release()
     cv2.destroyAllWindows()
 
-def runner_sim(img=None):
+def runner_sim(img_array=None):
     frame = None
-    if img:
-        frame = cv2.cvtColor(img,cv2.COLOR_RGB2BGR)
+    if img_array is not None:
+        frame = cv2.cvtColor(img_array,cv2.COLOR_RGB2BGR)
 
-    if not frame:
+    if frame is None:
         return
+    
     timestamp = datetime.now()
 
     # Send to inference queues (copy frame to avoid race condition)
@@ -144,9 +145,6 @@ def runner_sim(img=None):
     # Display live feed
     cv2.imshow("Live Feed", frame)
     if cv2.waitKey(1) == ord('q'):
-        return
-
-    cv2.destroyAllWindows()
+        cv2.destroyAllWindows()
 
 cv2.destroyAllWindows()
-runner_app()

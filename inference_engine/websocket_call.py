@@ -2,8 +2,10 @@ import asyncio
 import websockets
 import json
 from datetime import datetime
+import os
 
-JSON_FILE_PATH = "Inference Engine\drone_info.json"
+current_dir = os.path.dirname(os.path.abspath(__file__))
+JSON_FILE_PATH = os.path.join(current_dir,"drone_info.json")
 
 with open(JSON_FILE_PATH, 'r') as f:
     data = json.load(f)
