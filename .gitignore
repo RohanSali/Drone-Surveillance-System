@@ -2,6 +2,7 @@
 *.log
 
 # Ignore a specific file
+sim4.py
 
 # Ignore a folder and its contents
 __pycache__/
@@ -9,6 +10,7 @@ __pycache__/
 /gym_pybullet_drones
 /temp_my
 /results
+/environment_assets
 # Ignore all .pyc files
 *.pyc
 

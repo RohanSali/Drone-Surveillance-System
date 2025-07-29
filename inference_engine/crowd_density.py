@@ -8,15 +8,10 @@ import asyncio
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 project_dir = os.path.abspath(os.path.join(current_dir, '..'))
-MODEL_PATH = os.path.join(project_dir,'models','crowd_density.pt')
+MODEL_PATH = os.path.join(project_dir,'models','crowd_density_colab.pt')
 TEMP_TEXT_FILE = os.path.join(current_dir,'alerts.txt')
-CONFIDENCE = 0.25 #confidence threshold
+CONFIDENCE = 0.209 #confidence threshold
 TIME_THRESHOLD = 60 #sec
-# URL = "https://web-production-190fc.up.railway.app/api/alerts"
-# HEADERS = {
-#     "Content-Type": "application/json",
-#     "User-Agent": "PythonScript/1.0"
-# }
 
 model = YOLO(MODEL_PATH) 
 
@@ -70,13 +65,6 @@ def get_idx(number_of_people):
     else :
         idx = 10
     return idx
-
-# def send_to_server(payload):
-#     response = requests.post(URL,json=payload, headers=HEADERS)
-#     print("Response : ",response.text)
-#     # json.dumps(payload)
-#     if response.ok :
-#         print(f"✅ Sent to server as {payload['alert']}")
 
 def save_to_machine(payload):
     with open(TEMP_TEXT_FILE, 'a') as f:
