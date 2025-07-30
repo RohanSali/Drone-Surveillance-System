@@ -18,7 +18,7 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 project_dir = os.path.abspath(os.path.join(current_dir, '..'))
 MODEL_PATH = os.path.join(project_dir,'models','anamoly_classifier.h5')
 TEMP_TEXT_FILE = os.path.join(current_dir,'alerts.txt')
-PREDICTION_THRESHOLD = 97 #percent
+PREDICTION_THRESHOLD = 99 #percent
 TIME_THRESHOLD = 60 #sec
 
 class_names = ['Blood Detected', 'Face Mask Detected', 'Gun Detected','Knife Detected', 'No Anamoly']

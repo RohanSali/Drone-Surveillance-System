@@ -262,5 +262,47 @@
     ],
     "CreatedDate": "2025-07-29T17:00:40.0076662+05:30",
     "LastModified": "2025-07-29T17:00:40.0076663+05:30"
+  },
+  {
+    "Name": "Rohan",
+    "Description": "gyfgysgjdbk",
+    "Status": "Active",
+    "StatusColor": "#4CAF50",
+    "IconColor": "#4CAF50",
+    "DroneCount": 0,
+    "AlertCount": 0,
+    "CoverageRegion": "Residential District",
+    "PriorityLevel": "Medium Priority",
+    "OperationMode": "Surveillance Mode",
+    "AutoActivate": false,
+    "AlertNotifications": true,
+    "Drones": [
+      {
+        "Id": "",
+        "Name": "Surveillance Beta",
+        "Latitude": 0,
+        "Longitude": 0,
+        "Altitude": 0,
+        "Speed": 0,
+        "BatteryLevel": 100,
+        "SignalStrength": 85,
+        "Status": 0,
+        "LastSeen": "2025-07-30T09:39:58.1612685+05:30",
+        "CasualtiesDetected": 0,
+        "AnomaliesDetected": 0,
+        "LastCasualtyTime": "0001-01-01T00:00:00",
+        "LastAnomalyTime": "0001-01-01T00:00:00",
+        "StatusText": "Grounded",
+        "CoordinatesText": "0.000000, 0.000000",
+        "AltitudeText": "0.0m",
+        "SpeedText": "0.0 m/min",
+        "BatteryText": "100.0%",
+        "SignalText": "85%",
+        "CasualtiesText": "0 detected",
+        "AnomaliesText": "0 detected"
+      }
+    ],
+    "CreatedDate": "2025-07-30T09:39:58.1595046+05:30",
+    "LastModified": "2025-07-30T09:39:58.1595055+05:30"
   }
 ]

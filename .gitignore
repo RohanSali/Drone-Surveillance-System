@@ -3,6 +3,7 @@
 
 # Ignore a specific file
 sim4.py
+sim2.py
 
 # Ignore a folder and its contents
 __pycache__/

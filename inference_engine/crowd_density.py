@@ -11,7 +11,7 @@ project_dir = os.path.abspath(os.path.join(current_dir, '..'))
 MODEL_PATH = os.path.join(project_dir,'models','crowd_density_colab.pt')
 TEMP_TEXT_FILE = os.path.join(current_dir,'alerts.txt')
 CONFIDENCE = 0.209 #confidence threshold
-TIME_THRESHOLD = 60 #sec
+TIME_THRESHOLD = 60*3 #sec
 
 model = YOLO(MODEL_PATH) 
 
