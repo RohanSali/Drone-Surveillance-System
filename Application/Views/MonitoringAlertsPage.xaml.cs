@@ -10,12 +10,19 @@ using Microsoft.Win32;
 using System.Net.Http;
 using System.Text.Json;
 using System.Text;
+using System.Collections.Generic;
+using System.Windows.Controls;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using DroneSurveillanceSystem.Models;
 
 namespace DroneSurveillanceSystem.Views
 {
     public partial class MonitoringAlertsPage : Window, INotifyPropertyChanged
     {
         public ObservableCollection<AlertData> ActiveAlerts => AlertManager.Instance.ActiveAlerts;
+        private List<string> pendingRequests = new List<string>();
+        private List<LostFindingData> lostFindingData = new List<LostFindingData>();
 
         public event PropertyChangedEventHandler? PropertyChanged;
         protected void OnPropertyChanged(string propertyName)
@@ -23,17 +30,71 @@ namespace DroneSurveillanceSystem.Views
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
+        // Class to store Lost Finding data
+        public class LostFindingData
+        {
+            public string RequestId { get; set; } = "";
+            public string ActualImageBase64 { get; set; } = "";
+            public string MatchedImageBase64 { get; set; } = "";
+            public string Location { get; set; } = "";
+            public string Score { get; set; } = "";
+            public DateTime Timestamp { get; set; }
+            public string Name { get; set; } = ""; // Initialize with empty string
+        }
+
         public MonitoringAlertsPage()
         {
             InitializeComponent();
+            Console.WriteLine($"[MonitoringAlertsPage] 🏗️ MonitoringAlertsPage constructor called - Window created");
+            
+            // Set up data context
             DataContext = this;
-            AlertManager.Instance.ActiveAlerts.CollectionChanged += (s, e) =>
+            
+            // Subscribe to alert updates
+            AlertManager.Instance.ActiveAlerts.CollectionChanged += (sender, e) =>
             {
                 Dispatcher.Invoke(() =>
                 {
                     OnPropertyChanged(nameof(ActiveAlerts));
                 });
             };
+            
+            Console.WriteLine($"[MonitoringAlertsPage] ✅ MonitoringAlertsPage initialization completed");
+            // Initialize pending status button as always visible
+            PendingStatusButton.Visibility = Visibility.Visible;
+            PendingStatusButton.Content = "⏳0";
+        }
+
+        protected override void OnSourceInitialized(EventArgs e)
+        {
+            base.OnSourceInitialized(e);
+            Console.WriteLine($"[MonitoringAlertsPage] 📱 Window source initialized - Window is now active");
+        }
+
+        protected override void OnActivated(EventArgs e)
+        {
+            base.OnActivated(e);
+            Console.WriteLine($"[MonitoringAlertsPage] 🎯 Window activated - Page is now in focus");
+        }
+
+        protected override void OnDeactivated(EventArgs e)
+        {
+            base.OnDeactivated(e);
+            Console.WriteLine($"[MonitoringAlertsPage] 🔄 Window deactivated - Page lost focus");
+        }
+
+        public static bool IsMonitoringAlertsPageOpen()
+        {
+            foreach (Window window in System.Windows.Application.Current.Windows)
+            {
+                if (window is MonitoringAlertsPage)
+                {
+                    Console.WriteLine($"[MonitoringAlertsPage] ✅ MonitoringAlertsPage is currently open and available");
+                    return true;
+                }
+            }
+            Console.WriteLine($"[MonitoringAlertsPage] ❌ MonitoringAlertsPage is not currently open");
+            return false;
         }
 
         private void Alert_Click(object sender, MouseButtonEventArgs e)
@@ -106,15 +167,17 @@ namespace DroneSurveillanceSystem.Views
             }
 
             // 3. Prepare WebSocket message (type 'alert_image' with required fields)
+            string uniqueName = $"LostFinding_{DateTime.UtcNow:yyyyMMddHHmmss}_{Guid.NewGuid().ToString().Substring(0, 8)}";
+            
             var wsMessage = new
             {
                 type = "alert_image",
                 data = new {
-                    found = 1,
-                    name = "Lost Finding",
-                    drone_id = "No Drone",
+                    found = 0,
+                    name = uniqueName,
+                    drone_id = "drone_001",
                     actual_image = base64Image,
-                    matched_frame = base64Image, // Use same image if no matched frame
+                    matched_frame = "", // Send empty string instead of the same image
                     location = new double[] { 0, 0, 0 },
                     timestamp = DateTime.UtcNow.ToString("o")
                 }
@@ -136,7 +199,29 @@ namespace DroneSurveillanceSystem.Views
                 if (apiService._client != null && apiService._client.IsRunning)
                 {
                     await apiService._client.SendInstant(json);
+                    Console.WriteLine($"[MonitoringAlertsPage] Sent alert_image request with name: {uniqueName}");
                     MessageBox.Show("Lost Finding alert image sent via WebSocket!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                    
+                    // Add to pending requests and store data
+                    string requestId = DateTime.UtcNow.ToString("yyyyMMddHHmmss");
+                    pendingRequests.Add(uniqueName); // Store uniqueName instead of requestId
+                    
+                    var lostFindingItem = new LostFindingData
+                    {
+                        RequestId = requestId,
+                        ActualImageBase64 = base64Image,
+                        MatchedImageBase64 = "",
+                        Location = "0, 0, 0",
+                        Score = "Pending...",
+                        Timestamp = DateTime.Now,
+                        Name = uniqueName // Use the unique name
+                    };
+                    lostFindingData.Add(lostFindingItem);
+                    
+                    ShowPendingStatus();
+                    
+                    // Show the Lost Finding section with only the actual image
+                    ShowAllLostFindingSections();
                 }
                 else
                 {
@@ -146,6 +231,570 @@ namespace DroneSurveillanceSystem.Views
             catch (Exception ex)
             {
                 MessageBox.Show($"Failed to send WebSocket message: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void ShowPendingStatus()
+        {
+            // Always show the button, just update the count
+            PendingStatusButton.Visibility = Visibility.Visible;
+            PendingStatusButton.Content = $"⏳{pendingRequests.Count}";
+        }
+
+        private void PendingStatusButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (lostFindingData.Count > 0)
+            {
+                // Show all Lost Finding analysis sections
+                ShowAllLostFindingSections();
+                
+                MessageBox.Show($"You have {pendingRequests.Count} pending Lost Finding request(s) waiting for drone response.", 
+                              "Pending Requests", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            else
+            {
+                MessageBox.Show("No pending Lost Finding requests.", "Pending Requests", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+        }
+
+        private void ShowAllLostFindingSections()
+        {
+            Console.WriteLine($"[MonitoringAlertsPage] 🔄 ShowAllLostFindingSections called");
+            Console.WriteLine($"[MonitoringAlertsPage]   - Total data items: {lostFindingData.Count}");
+            Console.WriteLine($"[MonitoringAlertsPage]   - LostFindingSection visibility: {LostFindingSection.Visibility}");
+            
+            // Show the main Lost Finding section
+            LostFindingSection.Visibility = Visibility.Visible;
+            Console.WriteLine($"[MonitoringAlertsPage] ✅ Set LostFindingSection visibility to Visible");
+            
+            // Clear existing content and add all Lost Finding analyses
+            ClearLostFindingContent();
+            Console.WriteLine($"[MonitoringAlertsPage] ✅ Cleared existing content");
+            
+            // Add each Lost Finding analysis to the scrollable content
+            foreach (var data in lostFindingData)
+            {
+                Console.WriteLine($"[MonitoringAlertsPage] 📋 Adding analysis for request: {data.Name}");
+                Console.WriteLine($"[MonitoringAlertsPage]   - Has matched image: {!string.IsNullOrEmpty(data.MatchedImageBase64)}");
+                Console.WriteLine($"[MonitoringAlertsPage]   - Matched image length: {data.MatchedImageBase64?.Length ?? 0}");
+                AddLostFindingAnalysis(data);
+            }
+            
+            Console.WriteLine($"[MonitoringAlertsPage] ✅ Finished adding all analyses");
+        }
+
+        private void ClearLostFindingContent()
+        {
+            // Find the content area and clear it
+            var contentPanel = LostFindingSection.FindName("LostFindingContentPanel") as StackPanel;
+            if (contentPanel != null)
+            {
+                contentPanel.Children.Clear();
+            }
+        }
+
+        private void AddLostFindingAnalysis(LostFindingData data)
+        {
+            // Find the content area
+            var contentPanel = LostFindingSection.FindName("LostFindingContentPanel") as StackPanel;
+            if (contentPanel == null) return;
+
+            // Create a new analysis section
+            var analysisSection = CreateLostFindingAnalysisSection(data);
+            contentPanel.Children.Add(analysisSection);
+        }
+
+        private FrameworkElement CreateLostFindingAnalysisSection(LostFindingData data)
+        {
+            // Create a border for this analysis
+            var border = new Border
+            {
+                Background = System.Windows.Media.Brushes.Transparent,
+                CornerRadius = new CornerRadius(8),
+                Padding = new Thickness(15),
+                Margin = new Thickness(0, 10, 0, 10)
+            };
+
+            var grid = new Grid();
+            grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+
+            // Header with timestamp
+            var headerBorder = new Border
+            {
+                Background = new System.Windows.Media.SolidColorBrush((System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#1e1e1e")),
+                CornerRadius = new CornerRadius(6),
+                Padding = new Thickness(15),
+                Margin = new Thickness(0, 0, 0, 15)
+            };
+
+            var headerGrid = new Grid();
+            headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+            var headerText = new TextBlock
+            {
+                Text = $"🔍 Lost Finding Analysis - {data.Timestamp:HH:mm:ss}",
+                Foreground = new System.Windows.Media.SolidColorBrush((System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#00d4ff")),
+                FontWeight = FontWeights.Bold,
+                FontSize = 16,
+                HorizontalAlignment = HorizontalAlignment.Center
+            };
+
+            var closeButton = new Button
+            {
+                Content = "✕",
+                Width = 30,
+                Height = 30,
+                Background = new System.Windows.Media.SolidColorBrush((System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#dc3545")),
+                Foreground = System.Windows.Media.Brushes.White,
+                HorizontalAlignment = HorizontalAlignment.Right,
+                VerticalAlignment = VerticalAlignment.Top
+            };
+            closeButton.Click += (s, e) => RemoveLostFindingAnalysis(border);
+
+            headerGrid.Children.Add(headerText);
+            Grid.SetColumn(headerText, 0);
+            headerGrid.Children.Add(closeButton);
+            Grid.SetColumn(closeButton, 1);
+
+            headerBorder.Child = headerGrid;
+
+            // Content area
+            var contentStack = new StackPanel();
+
+            // Image comparison grid
+            var imageGrid = new Grid();
+            imageGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            imageGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+
+            // Left side - Actual Image
+            var leftBorder = new Border
+            {
+                Background = new System.Windows.Media.SolidColorBrush((System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#333")),
+                CornerRadius = new CornerRadius(8),
+                Padding = new Thickness(15),
+                Margin = new Thickness(0, 0, 10, 0)
+            };
+
+            var leftStack = new StackPanel();
+            var leftTitle = new TextBlock
+            {
+                Text = "📷 Actual Image (Drone)",
+                Foreground = new System.Windows.Media.SolidColorBrush((System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#00d4ff")),
+                FontWeight = FontWeights.Bold,
+                FontSize = 16,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                Margin = new Thickness(0, 0, 0, 10)
+            };
+
+            var leftImageBorder = new Border
+            {
+                Background = new System.Windows.Media.SolidColorBrush((System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#1e1e1e")),
+                CornerRadius = new CornerRadius(6),
+                Padding = new Thickness(10)
+            };
+
+            var actualImage = new Image
+            {
+                Height = 200,
+                Stretch = Stretch.Uniform,
+                HorizontalAlignment = HorizontalAlignment.Center
+            };
+
+            // Convert base64 to image
+            if (!string.IsNullOrEmpty(data.ActualImageBase64))
+            {
+                try
+                {
+                    byte[] imageBytes = Convert.FromBase64String(data.ActualImageBase64);
+                    var bitmap = new BitmapImage();
+                    bitmap.BeginInit();
+                    bitmap.StreamSource = new System.IO.MemoryStream(imageBytes);
+                    bitmap.CacheOption = BitmapCacheOption.OnLoad;
+                    bitmap.EndInit();
+                    actualImage.Source = bitmap;
+                }
+                catch (Exception)
+                {
+                    // Handle image conversion error
+                    var errorText = new TextBlock
+                    {
+                        Text = "Image Error",
+                        Foreground = System.Windows.Media.Brushes.Red,
+                        HorizontalAlignment = HorizontalAlignment.Center,
+                        VerticalAlignment = VerticalAlignment.Center
+                    };
+                    leftImageBorder.Child = errorText;
+                }
+            }
+
+            if (leftImageBorder.Child == null)
+                leftImageBorder.Child = actualImage;
+
+            leftStack.Children.Add(leftTitle);
+            leftStack.Children.Add(leftImageBorder);
+            leftBorder.Child = leftStack;
+
+            // Right side - Matched Image
+            var rightBorder = new Border
+            {
+                Background = new System.Windows.Media.SolidColorBrush((System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#333")),
+                CornerRadius = new CornerRadius(8),
+                Padding = new Thickness(15),
+                Margin = new Thickness(10, 0, 0, 0)
+            };
+
+            var rightStack = new StackPanel();
+            var rightTitle = new TextBlock
+            {
+                Text = "🎯 Matched Image (Application)",
+                Foreground = new System.Windows.Media.SolidColorBrush((System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#00d4ff")),
+                FontWeight = FontWeights.Bold,
+                FontSize = 16,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                Margin = new Thickness(0, 0, 0, 10)
+            };
+
+            var rightImageBorder = new Border
+            {
+                Background = new System.Windows.Media.SolidColorBrush((System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#1e1e1e")),
+                CornerRadius = new CornerRadius(6),
+                Padding = new Thickness(10)
+            };
+
+            var rightStackInner = new StackPanel();
+            var matchedImage = new Image
+            {
+                Height = 200,
+                Stretch = Stretch.Uniform,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                Visibility = Visibility.Collapsed
+            };
+
+            var noImageText = new TextBlock
+            {
+                Text = "No image found",
+                Foreground = new System.Windows.Media.SolidColorBrush((System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#888")),
+                FontSize = 14,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center,
+                Height = 200
+            };
+
+            // Convert matched image if available
+            if (!string.IsNullOrEmpty(data.MatchedImageBase64))
+            {
+                Console.WriteLine($"[MonitoringAlertsPage] 🖼️ Processing matched image for request: {data.Name}");
+                Console.WriteLine($"[MonitoringAlertsPage]   - Base64 length: {data.MatchedImageBase64.Length}");
+                Console.WriteLine($"[MonitoringAlertsPage]   - Base64 starts with: {data.MatchedImageBase64.Substring(0, Math.Min(50, data.MatchedImageBase64.Length))}...");
+                
+                try
+                {
+                    byte[] imageBytes = Convert.FromBase64String(data.MatchedImageBase64);
+                    Console.WriteLine($"[MonitoringAlertsPage]   - Converted to {imageBytes.Length} bytes");
+                    
+                    var bitmap = new BitmapImage();
+                    bitmap.BeginInit();
+                    bitmap.StreamSource = new System.IO.MemoryStream(imageBytes);
+                    bitmap.CacheOption = BitmapCacheOption.OnLoad;
+                    bitmap.EndInit();
+                    
+                    Console.WriteLine($"[MonitoringAlertsPage]   - Created BitmapImage successfully");
+                    Console.WriteLine($"[MonitoringAlertsPage]   - Bitmap dimensions: {bitmap.PixelWidth}x{bitmap.PixelHeight}");
+                    
+                    matchedImage.Source = bitmap;
+                    matchedImage.Visibility = Visibility.Visible;
+                    noImageText.Visibility = Visibility.Collapsed;
+                    
+                    Console.WriteLine($"[MonitoringAlertsPage] ✅ Successfully displayed matched image for request: {data.Name}");
+                    Console.WriteLine($"[MonitoringAlertsPage]   - Image visibility: {matchedImage.Visibility}");
+                    Console.WriteLine($"[MonitoringAlertsPage]   - No image text visibility: {noImageText.Visibility}");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[MonitoringAlertsPage] ❌ Error processing matched image for request {data.Name}: {ex.Message}");
+                    Console.WriteLine($"[MonitoringAlertsPage]   - Stack trace: {ex.StackTrace}");
+                    // Keep showing "No image found"
+                }
+            }
+            else
+            {
+                Console.WriteLine($"[MonitoringAlertsPage] ⚠️ No matched image available for request: {data.Name}");
+                Console.WriteLine($"[MonitoringAlertsPage]   - MatchedImageBase64 is null or empty");
+            }
+
+            rightStackInner.Children.Add(matchedImage);
+            rightStackInner.Children.Add(noImageText);
+            rightImageBorder.Child = rightStackInner;
+
+            rightStack.Children.Add(rightTitle);
+            rightStack.Children.Add(rightImageBorder);
+            rightBorder.Child = rightStack;
+
+            // Add images to grid
+            imageGrid.Children.Add(leftBorder);
+            Grid.SetColumn(leftBorder, 0);
+            imageGrid.Children.Add(rightBorder);
+            Grid.SetColumn(rightBorder, 1);
+
+            // Information grid
+            var infoGrid = new Grid();
+            infoGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            infoGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            infoGrid.Margin = new Thickness(0, 15, 0, 0);
+
+            // Location
+            var locationBorder = new Border
+            {
+                Background = new System.Windows.Media.SolidColorBrush((System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#333")),
+                CornerRadius = new CornerRadius(6),
+                Padding = new Thickness(12),
+                Margin = new Thickness(0, 0, 5, 0)
+            };
+
+            var locationStack = new StackPanel();
+            var locationTitle = new TextBlock
+            {
+                Text = "📍 Location of Person",
+                Foreground = new System.Windows.Media.SolidColorBrush((System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#ff6b6b")),
+                FontWeight = FontWeights.Bold,
+                FontSize = 14,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                Margin = new Thickness(0, 0, 0, 5)
+            };
+
+            var locationText = new TextBlock
+            {
+                Text = data.Location,
+                Foreground = System.Windows.Media.Brushes.White,
+                FontSize = 12,
+                HorizontalAlignment = HorizontalAlignment.Center
+            };
+
+            locationStack.Children.Add(locationTitle);
+            locationStack.Children.Add(locationText);
+            locationBorder.Child = locationStack;
+
+            // Score
+            var scoreBorder = new Border
+            {
+                Background = new System.Windows.Media.SolidColorBrush((System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#333")),
+                CornerRadius = new CornerRadius(6),
+                Padding = new Thickness(12),
+                Margin = new Thickness(5, 0, 0, 0)
+            };
+
+            var scoreStack = new StackPanel();
+            var scoreTitle = new TextBlock
+            {
+                Text = "🎯 Match Score",
+                Foreground = new System.Windows.Media.SolidColorBrush((System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#ff6b6b")),
+                FontWeight = FontWeights.Bold,
+                FontSize = 14,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                Margin = new Thickness(0, 0, 0, 5)
+            };
+
+            var scoreText = new TextBlock
+            {
+                Text = data.Score,
+                Foreground = System.Windows.Media.Brushes.White,
+                FontSize = 12,
+                HorizontalAlignment = HorizontalAlignment.Center
+            };
+
+            scoreStack.Children.Add(scoreTitle);
+            scoreStack.Children.Add(scoreText);
+            scoreBorder.Child = scoreStack;
+
+            // Add info to grid
+            infoGrid.Children.Add(locationBorder);
+            Grid.SetColumn(locationBorder, 0);
+            infoGrid.Children.Add(scoreBorder);
+            Grid.SetColumn(scoreBorder, 1);
+
+            // Add all content
+            contentStack.Children.Add(imageGrid);
+            contentStack.Children.Add(infoGrid);
+
+            grid.Children.Add(headerBorder);
+            Grid.SetRow(headerBorder, 0);
+            grid.Children.Add(contentStack);
+            Grid.SetRow(contentStack, 1);
+
+            border.Child = grid;
+            return border;
+        }
+
+        private void RemoveLostFindingAnalysis(Border analysisBorder)
+        {
+            // Find the content panel and remove this analysis
+            var contentPanel = LostFindingSection.FindName("LostFindingContentPanel") as StackPanel;
+            if (contentPanel != null)
+            {
+                contentPanel.Children.Remove(analysisBorder);
+            }
+        }
+
+        private void CloseLostFindingSection_Click(object sender, RoutedEventArgs e)
+        {
+            LostFindingSection.Visibility = Visibility.Collapsed;
+        }
+
+        public void HandleLostFindingResponse(string actualImageBase64, string matchedImageBase64, string location, string score, int found, string name = "")
+        {
+            // This method will be called when we receive a response from the drone
+            Dispatcher.Invoke(() =>
+            {
+                Console.WriteLine($"[MonitoringAlertsPage] 🔍 Handling lost finding response:");
+                Console.WriteLine($"[MonitoringAlertsPage]   - Name: '{name}'");
+                Console.WriteLine($"[MonitoringAlertsPage]   - Found: {found}");
+                Console.WriteLine($"[MonitoringAlertsPage]   - Matched image length: {matchedImageBase64?.Length ?? 0}");
+                Console.WriteLine($"[MonitoringAlertsPage]   - Total lost finding data items: {lostFindingData.Count}");
+                
+                // If we have a name, try to find the matching request
+                if (!string.IsNullOrEmpty(name))
+                {
+                    var matchingData = lostFindingData.FirstOrDefault(data => data.Name == name);
+                    if (matchingData != null)
+                    {
+                        Console.WriteLine($"[MonitoringAlertsPage] ✅ Found matching request for name: {name}");
+                        Console.WriteLine($"[MonitoringAlertsPage]   - Before update - MatchedImageBase64 length: {matchingData.MatchedImageBase64?.Length ?? 0}");
+                        
+                        // Update the matching data
+                        matchingData.MatchedImageBase64 = found == 1 ? matchedImageBase64 : "";
+                        matchingData.Location = location;
+                        matchingData.Score = score;
+                        
+                        Console.WriteLine($"[MonitoringAlertsPage]   - After update - MatchedImageBase64 length: {matchingData.MatchedImageBase64?.Length ?? 0}");
+                        
+                        // Remove from pending requests if it was there
+                        if (pendingRequests.Contains(name))
+                        {
+                            pendingRequests.Remove(name);
+                            Console.WriteLine($"[MonitoringAlertsPage] ✅ Removed from pending requests");
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine($"[MonitoringAlertsPage] ❌ No matching request found for name: {name}");
+                        Console.WriteLine($"[MonitoringAlertsPage] Available names: {string.Join(", ", lostFindingData.Select(d => $"'{d.Name}'"))}");
+                        
+                        // Fall back to the old behavior
+                        if (pendingRequests.Count > 0)
+                        {
+                            pendingRequests.RemoveAt(0);
+                            
+                            // Update the corresponding Lost Finding data
+                            if (lostFindingData.Count > 0)
+                            {
+                                var latestData = lostFindingData[lostFindingData.Count - 1];
+                                Console.WriteLine($"[MonitoringAlertsPage] 📝 Updating latest data (fallback)");
+                                // Only set matched image if found equals 1
+                                latestData.MatchedImageBase64 = found == 1 ? matchedImageBase64 : "";
+                                latestData.Location = location;
+                                latestData.Score = score;
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    Console.WriteLine($"[MonitoringAlertsPage] ⚠️ No name provided, using fallback behavior");
+                    // Fall back to the old behavior when no name is provided
+                    if (pendingRequests.Count > 0)
+                    {
+                        pendingRequests.RemoveAt(0);
+                        
+                        // Update the corresponding Lost Finding data
+                        if (lostFindingData.Count > 0)
+                        {
+                            var latestData = lostFindingData[lostFindingData.Count - 1];
+                            Console.WriteLine($"[MonitoringAlertsPage] 📝 Updating latest data (no name fallback)");
+                            // Only set matched image if found equals 1
+                            latestData.MatchedImageBase64 = found == 1 ? matchedImageBase64 : "";
+                            latestData.Location = location;
+                            latestData.Score = score;
+                        }
+                    }
+                }
+                
+                ShowPendingStatus();
+                
+                // Refresh the display to show updated data
+                if (LostFindingSection.Visibility == Visibility.Visible)
+                {
+                    Console.WriteLine($"[MonitoringAlertsPage] 🔄 Refreshing display...");
+                    ShowAllLostFindingSections();
+                }
+                else
+                {
+                    Console.WriteLine($"[MonitoringAlertsPage] ⚠️ LostFindingSection is not visible, not refreshing display");
+                }
+            });
+        }
+
+        // Simple test method to manually trigger a response (for debugging)
+        public void TestManualResponse()
+        {
+            Console.WriteLine($"[MonitoringAlertsPage] 🧪 Manual test triggered");
+            
+            if (lostFindingData.Count > 0)
+            {
+                var latestData = lostFindingData[lostFindingData.Count - 1];
+                Console.WriteLine($"[MonitoringAlertsPage] 🧪 Testing with latest data: {latestData.Name}");
+                
+                // Create a simple test image (1x1 pixel)
+                string testImage = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==";
+                
+                // Simulate the correct alert_image_received message structure
+                var testMessage = new
+                {
+                    type = "alert_image_received",
+                    alert_image = new
+                    {
+                        found = 1,
+                        name = latestData.Name,
+                        drone_id = "drone_001",
+                        actual_image = latestData.ActualImageBase64,
+                        matched_frame = testImage,
+                        location = new double[] { 0, 0, 0 },
+                        timestamp = DateTime.UtcNow.ToString("o"),
+                        score = "95.5"
+                    }
+                };
+                
+                string testJson = System.Text.Json.JsonSerializer.Serialize(testMessage);
+                Console.WriteLine($"[MonitoringAlertsPage] 🧪 Simulated alert_image_received message: {testJson}");
+                
+                // Call the ApiService to handle this message
+                var apiService = new DroneSurveillanceSystem.Services.ApiService();
+                apiService.HandleMessage(testJson);
+            }
+            else
+            {
+                Console.WriteLine($"[MonitoringAlertsPage] 🧪 No data available for testing");
+            }
+        }
+
+        // Debug method to test image display logic
+        public void DebugImageDisplay()
+        {
+            Console.WriteLine($"[MonitoringAlertsPage] 🔧 Debug image display called");
+            
+            if (lostFindingData.Count > 0)
+            {
+                var latestData = lostFindingData[lostFindingData.Count - 1];
+                Console.WriteLine($"[MonitoringAlertsPage] 🔧 Testing with data: {latestData.Name}");
+                Console.WriteLine($"[MonitoringAlertsPage] 🔧 MatchedImageBase64 length: {latestData.MatchedImageBase64?.Length ?? 0}");
+                
+                // Force refresh the display
+                ShowAllLostFindingSections();
+            }
+            else
+            {
+                Console.WriteLine($"[MonitoringAlertsPage] 🔧 No data available for debugging");
             }
         }
 

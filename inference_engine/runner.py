@@ -8,6 +8,8 @@ from casulty_inference import inference_casulty
 from anamoly_inference import inference_anamoly
 from face_recognition import compare_faces
 from crowd_density import inference_crowd_density
+import asyncio
+from alert_image_handler import start_alert_image_handler
 
 base_dir = os.path.dirname(os.path.abspath(__file__))
 
@@ -71,8 +73,10 @@ def match_face_worker():
         frame2 = cv2.imread(str(LOST_FINDING_IMG_PATH))
         
         if frame2 is None:
-            match_face_queue.task_done()
-            return
+            # No image found, continue waiting
+            import time
+            time.sleep(1)  # Wait a bit before checking again
+            continue
         
         frame, timestamp = match_face_queue.get()
         compare_faces(frame, frame2, LOST_FINDING_IMG_PATH.stem , timestamp)
@@ -85,12 +89,26 @@ def crowd_density_worker():
         inference_crowd_density(frame, timestamp)
         crowd_queue.task_done()
 
-# Start both threads as daemons
+# WebSocket alert image handler thread
+def alert_image_handler_worker():
+    """Run the alert image handler in a separate thread"""
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    try:
+        loop.run_until_complete(start_alert_image_handler())
+    except Exception as e:
+        print(f"❌ Alert image handler error: {e}")
+    finally:
+        loop.close()
+
+# Start all threads as daemons
 threading.Thread(target=casulty_worker, daemon=True).start()
 threading.Thread(target=anamoly_worker, daemon=True).start()
 threading.Thread(target=match_face_worker, daemon=True).start()
 threading.Thread(target=crowd_density_worker, daemon=True).start()
+threading.Thread(target=alert_image_handler_worker, daemon=True).start()
 
+print("🚀 All inference threads started including alert image handler")
 
 def runner_app(device="lap",img=None):
     if device == "lap":

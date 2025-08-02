@@ -9,6 +9,8 @@ using Newtonsoft.Json;
 using DroneSurveillanceSystem.Models;
 using DroneSurveillanceSystem.Views;
 using System.IO;
+using System.Linq; // Added for .OfType() and .FirstOrDefault()
+using System.Windows; // Added for Window
 
 namespace DroneSurveillanceSystem.Services
 {
@@ -191,19 +193,31 @@ namespace DroneSurveillanceSystem.Services
             _client.ReconnectTimeout = TimeSpan.FromSeconds(30);
 
             _client.ReconnectionHappened.Subscribe(info =>
-                System.Diagnostics.Debug.WriteLine($"[WebSocket] Reconnection happened, type: {info.Type}")
-            );
+            {
+                Console.WriteLine($"[WebSocket] 🔄 Reconnection happened, type: {info.Type}");
+                System.Diagnostics.Debug.WriteLine($"[WebSocket] Reconnection happened, type: {info.Type}");
+            });
+            
             _client.DisconnectionHappened.Subscribe(info =>
-                System.Diagnostics.Debug.WriteLine($"[WebSocket] Disconnection happened, type: {info.Type}, reason: {info.CloseStatusDescription}")
-            );
+            {
+                Console.WriteLine($"[WebSocket] ❌ Disconnection happened, type: {info.Type}, reason: {info.CloseStatusDescription}");
+                System.Diagnostics.Debug.WriteLine($"[WebSocket] Disconnection happened, type: {info.Type}, reason: {info.CloseStatusDescription}");
+            });
 
             _client.MessageReceived
                 .Where(msg => msg.Text != null)
-                .Subscribe(msg => HandleMessage(msg.Text));
+                .Subscribe(msg => 
+                {
+                    Console.WriteLine($"[WebSocket] 📨 Message received from server");
+                    HandleMessage(msg.Text);
+                });
+                
+            Console.WriteLine($"[WebSocket] 🚀 Starting WebSocket connection to: {_wsUrl}");
             await _client.Start();
+            Console.WriteLine($"[WebSocket] ✅ WebSocket connection started successfully");
         }
 
-        private void HandleMessage(string message)
+        public void HandleMessage(string message)
         {
             Console.WriteLine($"[WebSocket] Received raw message: {message}");
             
@@ -230,7 +244,235 @@ namespace DroneSurveillanceSystem.Services
                     // Log all available keys in the message
                     Console.WriteLine($"[WebSocket] Available keys: {string.Join(", ", msgObj.Keys)}");
                     
-                    if (type == "new_alert" && msgObj.ContainsKey("alert"))
+                    // Special handling for alert_image_received messages (drone responses)
+                    if (type == "alert_image_received")
+                    {
+                        Console.WriteLine($"[WebSocket] 🔍 ALERT IMAGE RECEIVED MESSAGE DETECTED!");
+                        Console.WriteLine($"[WebSocket] Full alert_image_received message: {message}");
+                        
+                        if (msgObj.ContainsKey("alert_image"))
+                        {
+                            Console.WriteLine($"[WebSocket] ✅ alert_image field found in message");
+                            var alertImageJson = msgObj["alert_image"]?.ToString();
+                            Console.WriteLine($"[WebSocket] alert_image JSON: {alertImageJson}");
+                            
+                            if (!string.IsNullOrEmpty(alertImageJson))
+                            {
+                                var alertImageObj = JsonConvert.DeserializeObject<Dictionary<string, object>>(alertImageJson);
+                                if (alertImageObj != null)
+                                {
+                                    Console.WriteLine($"[WebSocket] alert_image object keys: {string.Join(", ", alertImageObj.Keys)}");
+                                    
+                                    string actualImage = alertImageObj.ContainsKey("actual_image") ? alertImageObj["actual_image"]?.ToString() ?? "" : "";
+                                    string matchedFrame = alertImageObj.ContainsKey("matched_frame") ? alertImageObj["matched_frame"]?.ToString() ?? "" : "";
+                                    string location = alertImageObj.ContainsKey("location") ? alertImageObj["location"]?.ToString() ?? "0, 0, 0" : "0, 0, 0";
+                                    string score = alertImageObj.ContainsKey("score") ? alertImageObj["score"]?.ToString() ?? "0" : "0";
+                                    int found = alertImageObj.ContainsKey("found") ? Convert.ToInt32(alertImageObj["found"]) : 0;
+                                    string name = alertImageObj.ContainsKey("name") ? alertImageObj["name"]?.ToString() ?? "" : "";
+                                    
+                                    Console.WriteLine($"[WebSocket] 📊 Parsed alert_image_received data:");
+                                    Console.WriteLine($"[WebSocket]   - Name: '{name}'");
+                                    Console.WriteLine($"[WebSocket]   - Found: {found}");
+                                    Console.WriteLine($"[WebSocket]   - Location: {location}");
+                                    Console.WriteLine($"[WebSocket]   - Score: {score}");
+                                    Console.WriteLine($"[WebSocket]   - Actual image length: {actualImage?.Length ?? 0}");
+                                    Console.WriteLine($"[WebSocket]   - Matched frame length: {matchedFrame?.Length ?? 0}");
+                                    
+                                    // Find the MonitoringAlertsPage and call HandleLostFindingResponse
+                                    DroneSurveillanceSystem.Views.MonitoringAlertsPage? monitoringPage = null;
+                                    
+                                    // Check if MonitoringAlertsPage is open
+                                    bool isPageOpen = DroneSurveillanceSystem.Views.MonitoringAlertsPage.IsMonitoringAlertsPageOpen();
+                                    Console.WriteLine($"[WebSocket] 📋 MonitoringAlertsPage open status: {isPageOpen}");
+                                    
+                                    // First try: Look in all windows
+                                    foreach (Window window in System.Windows.Application.Current.Windows)
+                                    {
+                                        Console.WriteLine($"[WebSocket] 🔍 Checking window: {window.GetType().Name}");
+                                        if (window is DroneSurveillanceSystem.Views.MonitoringAlertsPage alertsPage)
+                                        {
+                                            monitoringPage = alertsPage;
+                                            Console.WriteLine($"[WebSocket] ✅ Found MonitoringAlertsPage in main windows list");
+                                            break;
+                                        }
+                                    }
+                                    
+                                    // Second try: Look in owned windows of main window
+                                    if (monitoringPage == null)
+                                    {
+                                        Console.WriteLine($"[WebSocket] 🔍 Checking owned windows of main window");
+                                        var mainWindow = System.Windows.Application.Current.MainWindow;
+                                        if (mainWindow != null)
+                                        {
+                                            Console.WriteLine($"[WebSocket] 📋 Main window type: {mainWindow.GetType().Name}");
+                                            foreach (Window window in mainWindow.OwnedWindows)
+                                            {
+                                                Console.WriteLine($"[WebSocket] 🔍 Checking owned window: {window.GetType().Name}");
+                                                if (window is DroneSurveillanceSystem.Views.MonitoringAlertsPage alertsPage)
+                                                {
+                                                    monitoringPage = alertsPage;
+                                                    Console.WriteLine($"[WebSocket] ✅ Found MonitoringAlertsPage in owned windows");
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                        else
+                                        {
+                                            Console.WriteLine($"[WebSocket] ❌ Main window is null");
+                                        }
+                                    }
+                                    
+                                    if (monitoringPage != null)
+                                    {
+                                        Console.WriteLine($"[WebSocket] ✅ Found MonitoringAlertsPage, calling HandleLostFindingResponse");
+                                        monitoringPage.HandleLostFindingResponse(
+                                            actualImage ?? "", 
+                                            matchedFrame ?? "", 
+                                            location ?? "0, 0, 0", 
+                                            score ?? "0", 
+                                            found, 
+                                            name ?? ""
+                                        );
+                                    }
+                                    else
+                                    {
+                                        Console.WriteLine($"[WebSocket] ❌ MonitoringAlertsPage not found! Total windows: {System.Windows.Application.Current.Windows.Count}");
+                                        foreach (Window window in System.Windows.Application.Current.Windows)
+                                        {
+                                            Console.WriteLine($"[WebSocket] Window type: {window.GetType().Name}");
+                                        }
+                                    }
+                                }
+                                else
+                                {
+                                    Console.WriteLine($"[WebSocket] ❌ Failed to parse alert_image JSON");
+                                }
+                            }
+                            else
+                            {
+                                Console.WriteLine($"[WebSocket] ❌ alert_image field is null or empty");
+                            }
+                        }
+                        else
+                        {
+                            Console.WriteLine($"[WebSocket] ❌ alert_image field not found in message");
+                        }
+                    }
+                    // Legacy support for image_received messages (keeping for backward compatibility)
+                    else if (type == "image_received")
+                    {
+                        Console.WriteLine($"[WebSocket] 🔍 IMAGE RECEIVED MESSAGE DETECTED!");
+                        Console.WriteLine($"[WebSocket] Full image_received message: {message}");
+                        
+                        if (msgObj.ContainsKey("data"))
+                        {
+                            Console.WriteLine($"[WebSocket] ✅ data field found in message");
+                            var dataJson = msgObj["data"]?.ToString();
+                            Console.WriteLine($"[WebSocket] data JSON: {dataJson}");
+                            
+                            if (!string.IsNullOrEmpty(dataJson))
+                            {
+                                var dataObj = JsonConvert.DeserializeObject<Dictionary<string, object>>(dataJson);
+                                if (dataObj != null)
+                                {
+                                    Console.WriteLine($"[WebSocket] data object keys: {string.Join(", ", dataObj.Keys)}");
+                                    
+                                    string actualImage = dataObj.ContainsKey("actual_image") ? dataObj["actual_image"]?.ToString() ?? "" : "";
+                                    string matchedFrame = dataObj.ContainsKey("matched_frame") ? dataObj["matched_frame"]?.ToString() ?? "" : "";
+                                    string location = dataObj.ContainsKey("location") ? dataObj["location"]?.ToString() ?? "0, 0, 0" : "0, 0, 0";
+                                    string score = dataObj.ContainsKey("score") ? dataObj["score"]?.ToString() ?? "0" : "0";
+                                    int found = dataObj.ContainsKey("found") ? Convert.ToInt32(dataObj["found"]) : 0;
+                                    string name = dataObj.ContainsKey("name") ? dataObj["name"]?.ToString() ?? "" : "";
+                                    
+                                    Console.WriteLine($"[WebSocket] 📊 Parsed image_received data:");
+                                    Console.WriteLine($"[WebSocket]   - Name: '{name}'");
+                                    Console.WriteLine($"[WebSocket]   - Found: {found}");
+                                    Console.WriteLine($"[WebSocket]   - Location: {location}");
+                                    Console.WriteLine($"[WebSocket]   - Score: {score}");
+                                    Console.WriteLine($"[WebSocket]   - Actual image length: {actualImage?.Length ?? 0}");
+                                    Console.WriteLine($"[WebSocket]   - Matched frame length: {matchedFrame?.Length ?? 0}");
+                                    
+                                    // Find the MonitoringAlertsPage and call HandleLostFindingResponse
+                                    DroneSurveillanceSystem.Views.MonitoringAlertsPage? monitoringPage = null;
+                                    
+                                    // Check if MonitoringAlertsPage is open
+                                    bool isPageOpen = DroneSurveillanceSystem.Views.MonitoringAlertsPage.IsMonitoringAlertsPageOpen();
+                                    Console.WriteLine($"[WebSocket] 📋 MonitoringAlertsPage open status: {isPageOpen}");
+                                    
+                                    // First try: Look in all windows
+                                    foreach (Window window in System.Windows.Application.Current.Windows)
+                                    {
+                                        Console.WriteLine($"[WebSocket] 🔍 Checking window: {window.GetType().Name}");
+                                        if (window is DroneSurveillanceSystem.Views.MonitoringAlertsPage alertsPage)
+                                        {
+                                            monitoringPage = alertsPage;
+                                            Console.WriteLine($"[WebSocket] ✅ Found MonitoringAlertsPage in main windows list");
+                                            break;
+                                        }
+                                    }
+                                    
+                                    // Second try: Look in owned windows of main window
+                                    if (monitoringPage == null)
+                                    {
+                                        Console.WriteLine($"[WebSocket] 🔍 Checking owned windows of main window");
+                                        var mainWindow = System.Windows.Application.Current.MainWindow;
+                                        if (mainWindow != null)
+                                        {
+                                            Console.WriteLine($"[WebSocket] 📋 Main window type: {mainWindow.GetType().Name}");
+                                            foreach (Window window in mainWindow.OwnedWindows)
+                                            {
+                                                Console.WriteLine($"[WebSocket] 🔍 Checking owned window: {window.GetType().Name}");
+                                                if (window is DroneSurveillanceSystem.Views.MonitoringAlertsPage alertsPage)
+                                                {
+                                                    monitoringPage = alertsPage;
+                                                    Console.WriteLine($"[WebSocket] ✅ Found MonitoringAlertsPage in owned windows");
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                        else
+                                        {
+                                            Console.WriteLine($"[WebSocket] ❌ Main window is null");
+                                        }
+                                    }
+                                    
+                                    if (monitoringPage != null)
+                                    {
+                                        Console.WriteLine($"[WebSocket] ✅ Found MonitoringAlertsPage, calling HandleLostFindingResponse");
+                                        monitoringPage.HandleLostFindingResponse(
+                                            actualImage ?? "", 
+                                            matchedFrame ?? "", 
+                                            location ?? "0, 0, 0", 
+                                            score ?? "0", 
+                                            found, 
+                                            name ?? ""
+                                        );
+                                    }
+                                    else
+                                    {
+                                        Console.WriteLine($"[WebSocket] ❌ MonitoringAlertsPage not found! Total windows: {System.Windows.Application.Current.Windows.Count}");
+                                        foreach (Window window in System.Windows.Application.Current.Windows)
+                                        {
+                                            Console.WriteLine($"[WebSocket] Window type: {window.GetType().Name}");
+                                        }
+                                    }
+                                }
+                                else
+                                {
+                                    Console.WriteLine($"[WebSocket] ❌ Failed to parse data JSON");
+                                }
+                            }
+                            else
+                            {
+                                Console.WriteLine($"[WebSocket] ❌ data field is null or empty");
+                            }
+                        }
+                        else
+                        {
+                            Console.WriteLine($"[WebSocket] ❌ data field not found in message");
+                        }
+                    }
+                    else if (type == "new_alert" && msgObj.ContainsKey("alert"))
                     {
                         // Handle the server's broadcast format to applications
                         var alertJson = msgObj["alert"]?.ToString();
@@ -245,13 +487,13 @@ namespace DroneSurveillanceSystem.Services
                                 
                                 var alert = new AlertData
                                 {
-                                    Alert = alertData.ContainsKey("alert") ? alertData["alert"]?.ToString() : "Unknown Alert",
-                                    DroneId = alertData.ContainsKey("drone_id") ? alertData["drone_id"]?.ToString() : "Unknown",
+                                    Alert = alertData.ContainsKey("alert") ? alertData["alert"]?.ToString() ?? "Unknown Alert" : "Unknown Alert",
+                                    DroneId = alertData.ContainsKey("drone_id") ? alertData["drone_id"]?.ToString() ?? "Unknown" : "Unknown",
                                     Score = alertData.ContainsKey("score") ? Convert.ToDouble(alertData["score"]) : 0.0,
                                     RLResponsed = alertData.ContainsKey("rl_responsed") ? Convert.ToInt32(alertData["rl_responsed"]) : 0,
                                     ImageReceived = alertData.ContainsKey("image_received") ? Convert.ToInt32(alertData["image_received"]) : 0,
                                     Image = alertData.ContainsKey("image") ? alertData["image"]?.ToString() : null,
-                                    Timestamp = alertData.ContainsKey("timestamp") ? alertData["timestamp"]?.ToString() : DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss.fff")
+                                    Timestamp = alertData.ContainsKey("timestamp") ? alertData["timestamp"]?.ToString() ?? DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss.fff") : DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss.fff")
                                 };
                                 
                                 // Parse alert_location - could be array or string
