@@ -56,6 +56,8 @@ def compare_faces(frame1, frame2 , name ,capture_timestamp):
 
             frame1_blob = encode_frame(frame1)
             frame2_blob = encode_frame(frame2)
+            
+            # Create payload for saving to machine
             payload = {
                 "found":1,
                 "name":name,
@@ -64,6 +66,18 @@ def compare_faces(frame1, frame2 , name ,capture_timestamp):
                 "matched_frame" : frame1_blob,
                 "location" : [0,0,0],
                 "timestamp":capture_timestamp.isoformat()
+            }
+
+            # Create WebSocket response payload for application
+            ws_response_payload = {
+                "found": 1,
+                "name": name,
+                "drone_id": "drone_001",
+                "actual_image": frame2_blob,
+                "matched_image": frame1_blob,
+                "location": [0,0,0],
+                "score": str(cosine_sim),
+                "timestamp": capture_timestamp.isoformat()
             }
 
             timestamp = None
@@ -85,11 +99,47 @@ def compare_faces(frame1, frame2 , name ,capture_timestamp):
                 if time_difference > TIME_THRESHOLD:
                     save_to_machine(payload)
                     asyncio.run(send_alert(payload,type="alert_image"))
+                    # Send response back to application via WebSocket
+                    asyncio.run(send_alert(ws_response_payload, "image_received"))
             else :
                 print(f"🔒 Saving {name} for first time!")
                 save_to_machine(payload)
                 asyncio.run(send_alert(payload,type="alert_image"))
         else:
             print("Faces do not match. Similarity:", cosine_sim)
+            # Send response even when no match found
+            frame1_blob = encode_frame(frame1)
+            frame2_blob = encode_frame(frame2)
+            
+            ws_response_payload = {
+                "found": 0,
+                "name": name,
+                "drone_id": "drone_001",
+                "actual_image": frame2_blob,
+                "matched_image": "",
+                "location": [0,0,0],
+                "score": str(cosine_sim),
+                "timestamp": capture_timestamp.isoformat()
+            }
+            
+            # Send response back to application via WebSocket
+            asyncio.run(send_alert(ws_response_payload, "image_received"))
     else:
         print("Face not detected in one of the frames.")
+        # Send response even when face not detected
+        frame1_blob = encode_frame(frame1)
+        frame2_blob = encode_frame(frame2)
+        
+        ws_response_payload = {
+            "found": 0,
+            "name": name,
+            "drone_id": "drone_001",
+            "actual_image": frame2_blob,
+            "matched_image": "",
+            "location": [0,0,0],
+            "score": "0.0",
+            "timestamp": capture_timestamp.isoformat()
+        }
+        
+        # Send response back to application via WebSocket
+        asyncio.run(send_alert(ws_response_payload, "image_received"))
