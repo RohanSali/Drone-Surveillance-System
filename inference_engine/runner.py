@@ -34,7 +34,7 @@ def create_required_files_and_folders():
 
 create_required_files_and_folders()
 
-LOST_FINDING_IMG_PATH = Path(os.path.join(base_dir, 'lost_person\image1.jpg'))
+LOST_FINDING_IMG_FOLDER = Path(os.path.join(base_dir, 'lost_person'))
 
 # Define 1-slot queues for real-time inference (latest frame only)
 casulty_queue = queue.Queue(maxsize=1)
@@ -68,15 +68,30 @@ def anamoly_worker():
 # Async inference thread for face recognition
 def match_face_worker():
     while True:
-        frame2 = cv2.imread(str(LOST_FINDING_IMG_PATH))
-        
-        if frame2 is None:
-            match_face_queue.task_done()
-            return
-        
-        frame, timestamp = match_face_queue.get()
-        compare_faces(frame, frame2, LOST_FINDING_IMG_PATH.stem , timestamp)
-        match_face_queue.task_done()
+        image_extensions = ('.jpg', '.jpeg', '.png', '.bmp', '.tiff')
+        image_files = [f for f in os.listdir(LOST_FINDING_IMG_FOLDER) if f.lower().endswith(image_extensions)]
+
+        count = 0
+        # Sort (optional) and loop
+        for image_file in sorted(image_files):
+            LOST_FINDING_IMG_PATH = os.path.join(LOST_FINDING_IMG_FOLDER, image_file)
+            image = cv2.imread(LOST_FINDING_IMG_PATH)
+            image_name, _ = os.path.splitext(image_file)
+
+            if image is not None:
+                print(f"Loaded: {image_file}, shape: {image.shape}")
+                frame2 = image.copy()
+                frame, timestamp = match_face_queue.get()
+                count+=1
+                compare_faces(frame, frame2, image_name, timestamp)
+            else:
+                print(f"Failed to load: {image_file}")
+
+            for i in range(count):
+                try:
+                    match_face_queue.task_done()
+                except queue.Empty:
+                    break
 
 # Async inference thread for crowd density
 def crowd_density_worker():

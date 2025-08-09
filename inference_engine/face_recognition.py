@@ -14,7 +14,7 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 project_dir = os.path.abspath(os.path.join(current_dir, '..'))
 
 TEMP_TEXT_FILE = os.path.join(current_dir,"person_found.txt")
-TIME_THRESHOLD = 60 #sec
+TIME_THRESHOLD = 120 #sec
 
 # Load pretrained FaceNet model
 model = InceptionResnetV1(pretrained='vggface2').eval()
@@ -50,7 +50,7 @@ def compare_faces(frame1, frame2 , name ,capture_timestamp):
 
     if emb1 is not None and emb2 is not None:
         cosine_sim = torch.nn.functional.cosine_similarity(emb1, emb2).item()
-        threshold = 0.6
+        threshold = 0.5
         if cosine_sim > threshold:
             print("Faces match! Similarity:", cosine_sim , "Person found at timestamp : ",capture_timestamp)
 
@@ -59,9 +59,9 @@ def compare_faces(frame1, frame2 , name ,capture_timestamp):
             payload = {
                 "found":1,
                 "name":name,
-                "drone_id": "No Drone",
-                "actual image": frame2_blob,
-                "matched frame" : frame1_blob,
+                "drone_id": "drone_001",
+                "actual_image": frame2_blob,
+                "matched_frame" : frame1_blob,
                 "location" : [0,0,0],
                 "timestamp":capture_timestamp.isoformat()
             }
@@ -84,11 +84,11 @@ def compare_faces(frame1, frame2 , name ,capture_timestamp):
                 print(f"Time difference between last found for  is : {time_difference} ⏳")
                 if time_difference > TIME_THRESHOLD:
                     save_to_machine(payload)
-                    # asyncio.run(send_alert(payload))
+                    asyncio.run(send_alert(payload,type="alert_image"))
             else :
                 print(f"🔒 Saving {name} for first time!")
                 save_to_machine(payload)
-                # asyncio.run(send_alert(payload))
+                asyncio.run(send_alert(payload,type="alert_image"))
         else:
             print("Faces do not match. Similarity:", cosine_sim)
     else:
