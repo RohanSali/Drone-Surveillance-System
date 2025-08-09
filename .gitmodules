@@ -1,0 +1,3 @@
+[submodule "server"]
+	path = server
+	url = https://github.com/aadim112/DroneServer.git
