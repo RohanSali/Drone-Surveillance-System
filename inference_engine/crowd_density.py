@@ -1,5 +1,8 @@
 import ast
 import os
+import numpy as np
+import torch
+import cv2
 from collections import deque
 from datetime import datetime
 from ultralytics import YOLO
@@ -8,12 +11,20 @@ import asyncio
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 project_dir = os.path.abspath(os.path.join(current_dir, '..'))
+
 MODEL_PATH = os.path.join(project_dir,'models','crowd_density_colab.pt')
+
 TEMP_TEXT_FILE = os.path.join(current_dir,'alerts.txt')
+
 CONFIDENCE = 0.209 #confidence threshold
 TIME_THRESHOLD = 60*3 #sec
 
 model = YOLO(MODEL_PATH) 
+device = 'cuda' if torch.cuda.is_available() else 'cpu'
+midas_model = torch.hub.load("intel-isl/MiDaS", "MiDaS_small")
+midas_model.to(device)
+midas_model.eval()
+midas_transform = torch.hub.load("intel-isl/MiDaS", "transforms").small_transform
 
 COUNT_CHART = {
     0 :'No Person',
@@ -66,12 +77,69 @@ def get_idx(number_of_people):
         idx = 10
     return idx
 
+def get_avg_centers(boxes):
+    if len(boxes) > 0:
+        centers = []
+        for box in boxes.xyxy:  # each box in [x1, y1, x2, y2] format
+            x1, y1, x2, y2 = box
+            cx = (x1 + x2) / 2
+            cy = (y1 + y2) / 2
+            centers.append((cx.item(), cy.item()))  # convert to Python floats
+
+        if len(centers) == 1:
+            avg_x, avg_y = centers[0]  # single face → center of that box
+        else:
+            avg_x = sum(c[0] for c in centers) / len(centers)
+            avg_y = sum(c[1] for c in centers) / len(centers)
+
+        print(f"Average center: ({avg_x:.2f}, {avg_y:.2f})")
+    else:
+        print("No faces detected")
+
+    return int(avg_x), int(avg_y)
+
+def get_depth(image ,x_img, y_img):
+    img_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    input_batch = midas_transform(img_rgb).to(device)
+
+    with torch.no_grad():
+        prediction = midas_model(input_batch)
+        prediction = torch.nn.functional.interpolate(
+            prediction.unsqueeze(1),
+            size=img_rgb.shape[:2],
+            mode="bicubic",
+            align_corners=False
+        ).squeeze()
+
+    depth_map = prediction.cpu().numpy()
+    z_img = depth_map[y_img, x_img]
+
+    return float(z_img)
+
+def pixel_to_camera_coordinates(x_img, y_img, z_img, intrinsic_matrix):
+    fx = intrinsic_matrix[0, 0]
+    fy = intrinsic_matrix[1, 1]
+    cx = intrinsic_matrix[0, 2]
+    cy = intrinsic_matrix[1, 2]
+
+    # Convert pixel to normalized coordinates
+    X_cam = (x_img - cx) * z_img / fx
+    Y_cam = (y_img - cy) * z_img / fy
+    Z_cam = z_img
+
+    return np.array([X_cam, Y_cam, Z_cam])
+
+def get_alert_pos_coordinates(camera_coords, drone_position, drone_rotation_matrix):
+    world_coords = drone_rotation_matrix @ camera_coords + drone_position
+    return world_coords
+
 def save_to_machine(payload):
     with open(TEMP_TEXT_FILE, 'a') as f:
         f.write(str(payload) + '\n')
     print(f"✅ Saved to machine as {payload['alert']}")
 
-def inference_crowd_density(frame,capture_timestamp):
+
+def inference_crowd_density(frame,capture_timestamp, intrinsic_matrix , drone_rotation_matrix, drone_pos= [0,0.2,5]):
     result = model(frame, conf=CONFIDENCE ,verbose=False)
     number_of_people = len(result[0].boxes)
 
@@ -116,13 +184,35 @@ def inference_crowd_density(frame,capture_timestamp):
             time_difference = (capture_timestamp - timestamp).total_seconds()
             print(f"Time difference between last {new_label} prediction is : {time_difference} ⏳")
             if time_difference > TIME_THRESHOLD:
+                x_img , y_img = get_avg_centers(result[0].boxes)
+
+                if x_img is not None and y_img is not None :
+                    z_img = get_depth(frame, x_img, y_img)
+                    camera_coordinates = pixel_to_camera_coordinates(x_img, y_img, z_img, intrinsic_matrix)
+                    if camera_coordinates is not None:
+                        drone_pos = np.array(drone_pos)
+                        x2, y2, z2 = get_alert_pos_coordinates(camera_coordinates, drone_pos ,drone_rotation_matrix)
+
+                        payload["alert_location"] = [x2, y2, z2]
+                    
                 save_to_machine(payload)
                 asyncio.run(send_alert(payload))
-                # send_to_server(payload)
+                
         else :
             print(f"🔒 Saving {new_label} for first time!")
+
+            x_img , y_img = get_avg_centers(result[0].boxes)
+
+            if x_img is not None and y_img is not None :
+                z_img = get_depth(frame, x_img, y_img)
+                camera_coordinates = pixel_to_camera_coordinates(x_img, y_img, z_img, intrinsic_matrix)
+                if camera_coordinates is not None:
+                    drone_pos = np.array(drone_pos)
+                    x2, y2, z2 = get_alert_pos_coordinates(camera_coordinates, drone_pos ,drone_rotation_matrix)
+
+                    payload["alert_location"] = [x2, y2, z2]
+
             save_to_machine(payload)
             asyncio.run(send_alert(payload))
-            # send_to_server(payload)
 
     print(f"Found {number_of_people} peoples in the frame!")
