@@ -10,6 +10,8 @@ from tensorflow.keras.models import Model
 from datetime import datetime
 import ast
 from collections import deque
+import sys
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from websocket_call import send_alert
 import asyncio
 from ultralytics import YOLO

@@ -5,6 +5,8 @@ import queue
 from datetime import datetime
 from pathlib import Path
 import numpy as np
+import sys
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from casulty_inference import inference_casulty
 from anamoly_inference import inference_anamoly
 from face_recognition import compare_faces

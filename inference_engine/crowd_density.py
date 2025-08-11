@@ -6,6 +6,8 @@ import cv2
 from collections import deque
 from datetime import datetime
 from ultralytics import YOLO
+import sys
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from websocket_call import send_alert
 import asyncio
 
