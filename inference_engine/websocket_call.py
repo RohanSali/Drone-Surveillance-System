@@ -21,14 +21,14 @@ async def send_alert(payload,type="alert"):
                 "data": payload
             }
             await websocket.send(json.dumps(alert))
-            print("✅ Alert sent to server! : FACE")
+            print(f"✅ {payload['alert']} Alert sent to server!")
         elif type == "alert_image":
             face_found = {
                 "type": "alert_image",
                 "data": payload
             }
             await websocket.send(json.dumps(face_found))
-            print("✅ Face found alert sent to server! : FACE")
+            print(f"✅ Face found for {payload['name']} alert sent to server!")
 
         else:
             return

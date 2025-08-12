@@ -2,12 +2,12 @@
 *.log
 
 # Ignore a specific file
-targets.txt
+drone_targets.txt
+validated_alerts.txt
 
 # Ignore a folder and its contents
 __pycache__/
 models/checkpoint/
-lost_person/
 temp_my/
 
 # Ignore all .pyc files

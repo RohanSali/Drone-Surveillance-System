@@ -23,12 +23,14 @@ except ImportError:
 
 import numpy as np
 import math
-import json
+import threading
+import queue
 import time
 import threading
 import sys
 import os
 import zipfile
+from datetime import datetime
 import ast
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
@@ -36,8 +38,9 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from gym_pybullet_drones.envs.CtrlAviary import CtrlAviary
 from gym_pybullet_drones.utils.enums import DroneModel, Physics
 from gym_pybullet_drones.control.DSLPIDControl import DSLPIDControl
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+# sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from inference_engine import runner
+from capture_engine import validate_error
 from stable_baselines3 import PPO
 import pybullet as p
 from train_hover_spin3 import make_enhanced_env,make_vec_env
@@ -153,6 +156,8 @@ class ZipModelDroneWrapper(Wrapper):
             'z': [1.5, 80.0]
         }
         
+        self.last_frame = None # Last Captured Image
+
         self._setup_action_space()
         print(f"🎯 ZipModelDroneWrapper initialized with {control_mode} control")
     
@@ -433,6 +438,8 @@ class ZipModelDroneWrapper(Wrapper):
             rotation_matrix = get_drone_rotation_matrix(drone_ori)
 
             runner.runner_sim(rgb_array, intrinsic_matrix, rotation_matrix,drone_pos)
+            
+            self.last_frame = rgb_array
         except:
             pass
 
@@ -503,6 +510,7 @@ class ZipModelDroneController:
         self.running = False
         self.step_count = 0
         self.position_history = []
+        self.last_frame = None
         
         # Verify model file
         if not os.path.exists(zip_model_path):
@@ -610,6 +618,8 @@ class ZipModelDroneController:
             
             # Execute step
             step_result = self.env.step(action)
+
+            self.last_frame = self.env.last_frame
             
             if len(step_result) == 5:
                 self.obs, reward, terminated, truncated, info = step_result
@@ -742,7 +752,7 @@ def interactive_demo_zip():
         def execute_coordinate_queue(coords):
             """Execute a list of coordinates"""
             for i, coord in enumerate(coords):
-                name, x, y, z, yaw = coord
+                name, x, y, z, yaw, alert_name, alert_id = coord
                 print(f"🎯 Going to position {i+1}/{len(coords)}: {name}")
                 controller.go_to_position(x, y, z, yaw)
                 
@@ -750,6 +760,10 @@ def interactive_demo_zip():
                 while not controller.env.is_target_reached():
                     time.sleep(0.1)
                 
+                frame = controller.last_frame
+                timestamp = datetime.now()
+                validate_error.validate_alert(alert_name,alert_id,frame,timestamp)
+
                 print(f"✅ Reached {name}")
                 time.sleep(1)  # Brief pause between waypoints
         
@@ -762,9 +776,6 @@ def interactive_demo_zip():
         print("🔄 Starting continuous monitoring for new coordinates...")
         print("💡 Add new coordinates to drone_targets.txt and they'll be processed automatically")
         print("💡 Press 'q' and Enter to quit")
-        
-        import threading
-        import queue
         
         # Create a queue for communication between threads
         command_queue = queue.Queue()
@@ -834,26 +845,31 @@ def load_coordinates_from_file(file_path=DRONE_CORDS_PATH):
                 continue
             
             try:
-                # Parse your format: {"targetId":1;"location":[0, 0, 8, 0]}
+                # Parse your format: {"target_id":1;"location":[0, 0, 8, 0]}
                 # location = json.loads(line)
                 
-                if isinstance(line, dict) and 'targetId' in line and 'location' in line:
-                    target_id = line.get('targetId')
+                # if "target_id" in line and "location" in line:
+                #     target_id = line["target_id"]
+                #     coords = line["location"]
+
+                if isinstance(line, dict) and 'target_id' in line and 'location' in line:
+                    target_id = line.get('target_id')
                     coords = line.get('location')
-                    
                     if len(coords) >= 4:
                         x, y, z, yaw = coords[0], coords[1], coords[2], coords[3]
-                        position.append([f"target_{target_id}", x, y, z, yaw])
-                        print(f"Loaded: target_{target_id} -> [{x}, {y}, {z}, {yaw}°]")
+                        alert_name = line.get('alert_name', '')
+                        alert_id = line.get('alert_id', '')
+                        position.append([f"target_{target_id}", x, y, z, yaw, alert_name, alert_id])
+
+                        print(f"Loaded: target_{target_id} -> [{x}, {y}, {z}, {yaw}°] for {alert_name} : {alert_id}")
                         # Line gets deleted by NOT adding to lines_to_keep
                     else:
-                        lines_to_keep.append(line + '\n')
+                        lines_to_keep.append(str(line) + '\n')
                 else:
-                    lines_to_keep.append(line + '\n')
-                    
+                    lines_to_keep.append(str(line) + '\n')
             except Exception as e:
                 print(f"Invalid JSON on line {line_num}: {line} , error: {e}")
-                lines_to_keep.append(line + '\n')
+                lines_to_keep.append(str(line) + '\n')
         
         # Rewrite file with only unprocessed lines
         with open(file_path, 'w') as file:
