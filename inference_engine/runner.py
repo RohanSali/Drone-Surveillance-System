@@ -4,6 +4,9 @@ import threading
 import queue
 from datetime import datetime
 from pathlib import Path
+import numpy as np
+import sys
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from casulty_inference import inference_casulty
 from anamoly_inference import inference_anamoly
 from face_recognition import compare_faces
@@ -54,15 +57,15 @@ def safe_put(q, item):
 # Async inference thread for casulty
 def casulty_worker():
     while True:
-        frame, timestamp = casulty_queue.get()
-        inference_casulty(frame, timestamp)
+        frame, timestamp, intrinsic_matrix, drone_rotation_matrix, drone_pos = casulty_queue.get()
+        inference_casulty(frame, timestamp , intrinsic_matrix, drone_rotation_matrix, drone_pos)
         casulty_queue.task_done()
 
 # Async inference thread for anomaly
 def anamoly_worker():
     while True:
-        frame, timestamp = anamoly_queue.get()
-        inference_anamoly(frame, timestamp)
+        frame, timestamp ,intrinsic_matrix, drone_rotation_matrix, drone_pos = anamoly_queue.get()
+        inference_anamoly(frame, timestamp, intrinsic_matrix, drone_rotation_matrix, drone_pos)
         anamoly_queue.task_done()
 
 # Async inference thread for face recognition
@@ -76,14 +79,13 @@ def match_face_worker():
         for image_file in sorted(image_files):
             LOST_FINDING_IMG_PATH = os.path.join(LOST_FINDING_IMG_FOLDER, image_file)
             image = cv2.imread(LOST_FINDING_IMG_PATH)
-            image_name, _ = os.path.splitext(image_file)
 
             if image is not None:
                 print(f"Loaded: {image_file}, shape: {image.shape}")
                 frame2 = image.copy()
-                frame, timestamp = match_face_queue.get()
+                frame, timestamp, intrinsic_matrix, drone_rotation_matrix, drone_pos= match_face_queue.get()
                 count+=1
-                compare_faces(frame, frame2, image_name, timestamp)
+                compare_faces(frame, frame2, image_file, timestamp, intrinsic_matrix, drone_rotation_matrix, drone_pos)
             else:
                 print(f"Failed to load: {image_file}")
 
@@ -96,18 +98,18 @@ def match_face_worker():
 # Async inference thread for crowd density
 def crowd_density_worker():
     while True:
-        frame, timestamp = crowd_queue.get()
-        inference_crowd_density(frame, timestamp)
+        frame, timestamp ,intrinsic_matrix, drone_rotation_matrix, drone_pos = crowd_queue.get()
+        inference_crowd_density(frame, timestamp ,intrinsic_matrix, drone_rotation_matrix, drone_pos)
         crowd_queue.task_done()
 
-
-# Start all threads as daemons
+# Start both threads as daemons
 threading.Thread(target=casulty_worker, daemon=True).start()
 threading.Thread(target=anamoly_worker, daemon=True).start()
 threading.Thread(target=match_face_worker, daemon=True).start()
 threading.Thread(target=crowd_density_worker, daemon=True).start()
 
-def runner_app(device="lap",img=None):
+
+def runner_app(device="lap"):
     if device == "lap":
         cap = cv2.VideoCapture(0)
     elif device == "cam":
@@ -115,9 +117,16 @@ def runner_app(device="lap",img=None):
     else :
         cap = None
 
+    intrinsic_matrix = np.array([[554.256,   0,     320],
+                                 [   0,   554.256 , 240],
+                                 [   0,      0,      1]], dtype=np.float32)
+    drone_rotation_matrix = np.eye(3) 
+    drone_pos = [0, 0, 0] 
+
     while True:
         if cap:
             ret, frame = cap.read()
+            frame = cv2.flip(frame, 1)  # Flip the frame horizontally
         else:
             ret = False
             frame = None
@@ -126,12 +135,13 @@ def runner_app(device="lap",img=None):
 
         if not ret:
             break
+        
 
         # Send to inference queues (copy frame to avoid race condition)
-        safe_put(casulty_queue, (frame.copy(), timestamp))
-        safe_put(anamoly_queue, (frame.copy(), timestamp))
-        safe_put(match_face_queue, (frame.copy(), timestamp))
-        safe_put(crowd_queue, (frame.copy(), timestamp))
+        safe_put(casulty_queue, (frame.copy(), timestamp, intrinsic_matrix, drone_rotation_matrix, drone_pos))
+        safe_put(anamoly_queue, (frame.copy(), timestamp, intrinsic_matrix, drone_rotation_matrix, drone_pos))
+        safe_put(match_face_queue, (frame.copy(), timestamp, intrinsic_matrix, drone_rotation_matrix, drone_pos))
+        safe_put(crowd_queue, (frame.copy(), timestamp, intrinsic_matrix, drone_rotation_matrix, drone_pos))
 
         # Display live feed
         cv2.imshow("Live Feed", frame)
@@ -141,24 +151,20 @@ def runner_app(device="lap",img=None):
     cap.release()
     cv2.destroyAllWindows()
 
-def runner_sim(img_array=None):
-    frame = None
-    if img_array is not None:
-        frame = cv2.cvtColor(img_array,cv2.COLOR_RGB2BGR)
-
-    if frame is None:
-        return
+def runner_sim(rgb_array,intrinsic_matrix,drone_rotation_matrix,drone_pos):
+    frame = cv2.cvtColor(rgb_array, cv2.COLOR_RGB2BGR)
     
     timestamp = datetime.now()
 
     # Send to inference queues (copy frame to avoid race condition)
-    safe_put(casulty_queue, (frame.copy(), timestamp))
-    safe_put(anamoly_queue, (frame.copy(), timestamp))
-    safe_put(match_face_queue, (frame.copy(), timestamp))
-    safe_put(crowd_queue, (frame.copy(), timestamp))
+    safe_put(casulty_queue, (frame.copy(), timestamp, intrinsic_matrix, drone_rotation_matrix, drone_pos))
+    safe_put(anamoly_queue, (frame.copy(), timestamp, intrinsic_matrix, drone_rotation_matrix, drone_pos))
+    safe_put(match_face_queue, (frame.copy(), timestamp, intrinsic_matrix, drone_rotation_matrix, drone_pos))
+    safe_put(crowd_queue, (frame.copy(), timestamp, intrinsic_matrix, drone_rotation_matrix, drone_pos))
 
     # Display live feed
     cv2.imshow("Live Feed", frame)
+
     if cv2.waitKey(1) == ord('q'):
         cv2.destroyAllWindows()
 

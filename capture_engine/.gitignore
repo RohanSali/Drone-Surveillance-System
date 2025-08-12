@@ -1,0 +1,18 @@
+# Ignore all .log files
+*.log
+
+# Ignore a specific file
+drone_targets.txt
+validated_alerts.txt
+
+# Ignore a folder and its contents
+__pycache__/
+models/checkpoint/
+temp_my/
+
+# Ignore all .pyc files
+*.pyc
+
+# Ignore all files in temp folder but not the folder itself
+temp/*
+!temp/.gitkeep  # Keep the folder structure if needed
