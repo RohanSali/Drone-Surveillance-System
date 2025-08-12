@@ -21,8 +21,7 @@ namespace DroneSurveillanceSystem.Views
     public partial class MonitoringAlertsPage : Window, INotifyPropertyChanged
     {
         public ObservableCollection<AlertData> ActiveAlerts => AlertManager.Instance.ActiveAlerts;
-        private List<string> pendingRequests = new List<string>();
-        private List<LostFindingData> lostFindingData = new List<LostFindingData>();
+        private readonly LostFindingManager _lostFindingManager;
 
         public event PropertyChangedEventHandler? PropertyChanged;
         protected void OnPropertyChanged(string propertyName)
@@ -30,22 +29,18 @@ namespace DroneSurveillanceSystem.Views
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
-        // Class to store Lost Finding data
-        public class LostFindingData
-        {
-            public string RequestId { get; set; } = "";
-            public string ActualImageBase64 { get; set; } = "";
-            public string MatchedImageBase64 { get; set; } = "";
-            public string Location { get; set; } = "";
-            public string Score { get; set; } = "";
-            public DateTime Timestamp { get; set; }
-            public string Name { get; set; } = ""; // Initialize with empty string
-        }
+        // Properties that bind to the persistent manager
+        public List<string> PendingRequests => _lostFindingManager.PendingRequests;
+        public List<Services.LostFindingData> LostFindingData => _lostFindingManager.LostFindingData;
+        public int PendingCount => _lostFindingManager.PendingCount;
 
         public MonitoringAlertsPage()
         {
             InitializeComponent();
             Console.WriteLine($"[MonitoringAlertsPage] 🏗️ MonitoringAlertsPage constructor called - Window created");
+            
+            // Initialize the persistent lost finding manager
+            _lostFindingManager = LostFindingManager.Instance;
             
             // Set up data context
             DataContext = this;
@@ -59,10 +54,22 @@ namespace DroneSurveillanceSystem.Views
                 });
             };
             
+            // Subscribe to lost finding manager updates
+            _lostFindingManager.PropertyChanged += (sender, e) =>
+            {
+                Dispatcher.Invoke(() =>
+                {
+                    OnPropertyChanged(e.PropertyName);
+                    if (e.PropertyName == nameof(PendingCount))
+                    {
+                        UpdatePendingStatusButton();
+                    }
+                });
+            };
+            
             Console.WriteLine($"[MonitoringAlertsPage] ✅ MonitoringAlertsPage initialization completed");
-            // Initialize pending status button as always visible
-            PendingStatusButton.Visibility = Visibility.Visible;
-            PendingStatusButton.Content = "⏳0";
+            // Initialize pending status button with current count
+            UpdatePendingStatusButton();
         }
 
         protected override void OnSourceInitialized(EventArgs e)
@@ -202,11 +209,10 @@ namespace DroneSurveillanceSystem.Views
                     Console.WriteLine($"[MonitoringAlertsPage] Sent alert_image request with name: {uniqueName}");
                     MessageBox.Show("Lost Finding alert image sent via WebSocket!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
                     
-                    // Add to pending requests and store data
+                    // Add to pending requests and store data using persistent manager
                     string requestId = DateTime.UtcNow.ToString("yyyyMMddHHmmss");
-                    pendingRequests.Add(uniqueName); // Store uniqueName instead of requestId
                     
-                    var lostFindingItem = new LostFindingData
+                    var lostFindingItem = new Services.LostFindingData
                     {
                         RequestId = requestId,
                         ActualImageBase64 = base64Image,
@@ -216,9 +222,10 @@ namespace DroneSurveillanceSystem.Views
                         Timestamp = DateTime.Now,
                         Name = uniqueName // Use the unique name
                     };
-                    lostFindingData.Add(lostFindingItem);
                     
-                    ShowPendingStatus();
+                    _lostFindingManager.AddPendingRequest(uniqueName, lostFindingItem);
+                    
+                    UpdatePendingStatusButton();
                     
                     // Show the Lost Finding section with only the actual image
                     ShowAllLostFindingSections();
@@ -234,21 +241,28 @@ namespace DroneSurveillanceSystem.Views
             }
         }
 
+        private void UpdatePendingStatusButton()
+        {
+            // Update the button with current count from the persistent manager
+            PendingStatusButton.Visibility = Visibility.Visible;
+            PendingStatusButton.Content = $"⏳{_lostFindingManager.PendingCount}";
+        }
+
         private void ShowPendingStatus()
         {
             // Always show the button, just update the count
             PendingStatusButton.Visibility = Visibility.Visible;
-            PendingStatusButton.Content = $"⏳{pendingRequests.Count}";
+            PendingStatusButton.Content = $"⏳{_lostFindingManager.PendingCount}";
         }
 
         private void PendingStatusButton_Click(object sender, RoutedEventArgs e)
         {
-            if (lostFindingData.Count > 0)
+            if (_lostFindingManager.LostFindingData.Count > 0)
             {
                 // Show all Lost Finding analysis sections
                 ShowAllLostFindingSections();
                 
-                MessageBox.Show($"You have {pendingRequests.Count} pending Lost Finding request(s) waiting for drone response.", 
+                MessageBox.Show($"You have {_lostFindingManager.PendingCount} pending Lost Finding request(s) waiting for drone response.", 
                               "Pending Requests", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             else
@@ -260,7 +274,7 @@ namespace DroneSurveillanceSystem.Views
         private void ShowAllLostFindingSections()
         {
             Console.WriteLine($"[MonitoringAlertsPage] 🔄 ShowAllLostFindingSections called");
-            Console.WriteLine($"[MonitoringAlertsPage]   - Total data items: {lostFindingData.Count}");
+            Console.WriteLine($"[MonitoringAlertsPage]   - Total data items: {_lostFindingManager.LostFindingData.Count}");
             Console.WriteLine($"[MonitoringAlertsPage]   - LostFindingSection visibility: {LostFindingSection.Visibility}");
             
             // Show the main Lost Finding section
@@ -272,7 +286,7 @@ namespace DroneSurveillanceSystem.Views
             Console.WriteLine($"[MonitoringAlertsPage] ✅ Cleared existing content");
             
             // Add each Lost Finding analysis to the scrollable content
-            foreach (var data in lostFindingData)
+            foreach (var data in _lostFindingManager.LostFindingData)
             {
                 Console.WriteLine($"[MonitoringAlertsPage] 📋 Adding analysis for request: {data.Name}");
                 Console.WriteLine($"[MonitoringAlertsPage]   - Has matched image: {!string.IsNullOrEmpty(data.MatchedImageBase64)}");
@@ -651,86 +665,39 @@ namespace DroneSurveillanceSystem.Views
                 Console.WriteLine($"[MonitoringAlertsPage]   - Name: '{name}'");
                 Console.WriteLine($"[MonitoringAlertsPage]   - Found: {found}");
                 Console.WriteLine($"[MonitoringAlertsPage]   - Matched image length: {matchedImageBase64?.Length ?? 0}");
-                Console.WriteLine($"[MonitoringAlertsPage]   - Total lost finding data items: {lostFindingData.Count}");
+                Console.WriteLine($"[MonitoringAlertsPage]   - Actual image length: {actualImageBase64?.Length ?? 0}");
+                Console.WriteLine($"[MonitoringAlertsPage]   - Total lost finding data items: {_lostFindingManager.LostFindingData.Count}");
+                Console.WriteLine($"[MonitoringAlertsPage]   - LostFindingSection current visibility: {LostFindingSection.Visibility}");
                 
-                // If we have a name, try to find the matching request
-                if (!string.IsNullOrEmpty(name))
+                // Use the persistent manager to handle the response
+                _lostFindingManager.HandleResponse(name, matchedImageBase64 ?? "", location ?? "0, 0, 0", score ?? "0", found);
+                
+                // Always show the LostFindingSection when we receive a response
+                Console.WriteLine($"[MonitoringAlertsPage] 📺 Making LostFindingSection visible");
+                LostFindingSection.Visibility = Visibility.Visible;
+                
+                // Force refresh the display to show updated data
+                Console.WriteLine($"[MonitoringAlertsPage] 🔄 Force refreshing display...");
+                ShowAllLostFindingSections();
+                
+                // Show a notification to the user
+                if (found == 1)
                 {
-                    var matchingData = lostFindingData.FirstOrDefault(data => data.Name == name);
-                    if (matchingData != null)
-                    {
-                        Console.WriteLine($"[MonitoringAlertsPage] ✅ Found matching request for name: {name}");
-                        Console.WriteLine($"[MonitoringAlertsPage]   - Before update - MatchedImageBase64 length: {matchingData.MatchedImageBase64?.Length ?? 0}");
-                        
-                        // Update the matching data
-                        matchingData.MatchedImageBase64 = found == 1 ? matchedImageBase64 : "";
-                        matchingData.Location = location;
-                        matchingData.Score = score;
-                        
-                        Console.WriteLine($"[MonitoringAlertsPage]   - After update - MatchedImageBase64 length: {matchingData.MatchedImageBase64?.Length ?? 0}");
-                        
-                        // Remove from pending requests if it was there
-                        if (pendingRequests.Contains(name))
-                        {
-                            pendingRequests.Remove(name);
-                            Console.WriteLine($"[MonitoringAlertsPage] ✅ Removed from pending requests");
-                        }
-                    }
-                    else
-                    {
-                        Console.WriteLine($"[MonitoringAlertsPage] ❌ No matching request found for name: {name}");
-                        Console.WriteLine($"[MonitoringAlertsPage] Available names: {string.Join(", ", lostFindingData.Select(d => $"'{d.Name}'"))}");
-                        
-                        // Fall back to the old behavior
-                        if (pendingRequests.Count > 0)
-                        {
-                            pendingRequests.RemoveAt(0);
-                            
-                            // Update the corresponding Lost Finding data
-                            if (lostFindingData.Count > 0)
-                            {
-                                var latestData = lostFindingData[lostFindingData.Count - 1];
-                                Console.WriteLine($"[MonitoringAlertsPage] 📝 Updating latest data (fallback)");
-                                // Only set matched image if found equals 1
-                                latestData.MatchedImageBase64 = found == 1 ? matchedImageBase64 : "";
-                                latestData.Location = location;
-                                latestData.Score = score;
-                            }
-                        }
-                    }
+                    MessageBox.Show(
+                        $"Lost person found!\n\nName: {name}\nLocation: {location}\nScore: {score}%\n\nCheck the Lost Finding section for details.",
+                        "Person Found!",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Information
+                    );
                 }
                 else
                 {
-                    Console.WriteLine($"[MonitoringAlertsPage] ⚠️ No name provided, using fallback behavior");
-                    // Fall back to the old behavior when no name is provided
-                    if (pendingRequests.Count > 0)
-                    {
-                        pendingRequests.RemoveAt(0);
-                        
-                        // Update the corresponding Lost Finding data
-                        if (lostFindingData.Count > 0)
-                        {
-                            var latestData = lostFindingData[lostFindingData.Count - 1];
-                            Console.WriteLine($"[MonitoringAlertsPage] 📝 Updating latest data (no name fallback)");
-                            // Only set matched image if found equals 1
-                            latestData.MatchedImageBase64 = found == 1 ? matchedImageBase64 : "";
-                            latestData.Location = location;
-                            latestData.Score = score;
-                        }
-                    }
-                }
-                
-                ShowPendingStatus();
-                
-                // Refresh the display to show updated data
-                if (LostFindingSection.Visibility == Visibility.Visible)
-                {
-                    Console.WriteLine($"[MonitoringAlertsPage] 🔄 Refreshing display...");
-                    ShowAllLostFindingSections();
-                }
-                else
-                {
-                    Console.WriteLine($"[MonitoringAlertsPage] ⚠️ LostFindingSection is not visible, not refreshing display");
+                    MessageBox.Show(
+                        $"Search completed for: {name}\n\nNo match found in the current scan area.\nThe drone will continue searching.",
+                        "Search Update",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Information
+                    );
                 }
             });
         }
@@ -740,9 +707,9 @@ namespace DroneSurveillanceSystem.Views
         {
             Console.WriteLine($"[MonitoringAlertsPage] 🧪 Manual test triggered");
             
-            if (lostFindingData.Count > 0)
+            if (_lostFindingManager.LostFindingData.Count > 0)
             {
-                var latestData = lostFindingData[lostFindingData.Count - 1];
+                var latestData = _lostFindingManager.LostFindingData[_lostFindingManager.LostFindingData.Count - 1];
                 Console.WriteLine($"[MonitoringAlertsPage] 🧪 Testing with latest data: {latestData.Name}");
                 
                 // Create a simple test image (1x1 pixel)
@@ -783,9 +750,9 @@ namespace DroneSurveillanceSystem.Views
         {
             Console.WriteLine($"[MonitoringAlertsPage] 🔧 Debug image display called");
             
-            if (lostFindingData.Count > 0)
+            if (_lostFindingManager.LostFindingData.Count > 0)
             {
-                var latestData = lostFindingData[lostFindingData.Count - 1];
+                var latestData = _lostFindingManager.LostFindingData[_lostFindingManager.LostFindingData.Count - 1];
                 Console.WriteLine($"[MonitoringAlertsPage] 🔧 Testing with data: {latestData.Name}");
                 Console.WriteLine($"[MonitoringAlertsPage] 🔧 MatchedImageBase64 length: {latestData.MatchedImageBase64?.Length ?? 0}");
                 
@@ -796,6 +763,104 @@ namespace DroneSurveillanceSystem.Views
             {
                 Console.WriteLine($"[MonitoringAlertsPage] 🔧 No data available for debugging");
             }
+        }
+
+        // Test method to simulate a drone finding a person (for testing)
+        private void TestDroneResponse_Click(object sender, RoutedEventArgs e)
+        {
+            Console.WriteLine($"[MonitoringAlertsPage] 🧪 TEST: Simulating drone response");
+            
+            if (_lostFindingManager.LostFindingData.Count > 0)
+            {
+                var latestData = _lostFindingManager.LostFindingData[_lostFindingManager.LostFindingData.Count - 1];
+                Console.WriteLine($"[MonitoringAlertsPage] 🧪 TEST: Using latest data: {latestData.Name}");
+                
+                // Create a larger, more visible test image (50x50 pixel red square in PNG format)
+                var testImageBytes = CreateTestImage();
+                string testImage = Convert.ToBase64String(testImageBytes);
+                
+                Console.WriteLine($"[MonitoringAlertsPage] 🧪 TEST: Generated test image, length: {testImage.Length}");
+                Console.WriteLine($"[MonitoringAlertsPage] 🧪 TEST: First 100 chars: {testImage.Substring(0, Math.Min(100, testImage.Length))}");
+                
+                // Call HandleLostFindingResponse directly
+                HandleLostFindingResponse(
+                    latestData.ActualImageBase64,
+                    testImage,
+                    "Test Location: 12.345, 67.890",
+                    "89.5",
+                    1, // found = 1 (person found)
+                    latestData.Name
+                );
+                
+                Console.WriteLine($"[MonitoringAlertsPage] 🧪 TEST: Simulated response completed");
+                
+                // Force a UI refresh after a short delay to ensure data is updated
+                Dispatcher.BeginInvoke(new Action(() => {
+                    Console.WriteLine($"[MonitoringAlertsPage] 🧪 TEST: Delayed UI refresh triggered");
+                    ShowAllLostFindingSections();
+                }), DispatcherPriority.Background);
+            }
+            else
+            {
+                MessageBox.Show("No pending Lost Finding requests to test with.\n\nPlease submit a Lost Finding request first.", 
+                              "Test Info", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+        }
+        
+        private byte[] CreateTestImage()
+        {
+            // Create a simple 50x50 red square PNG image
+            return new byte[] {
+                0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, // PNG signature
+                0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52, // IHDR chunk header
+                0x00, 0x00, 0x00, 0x32, 0x00, 0x00, 0x00, 0x32, // Width: 50, Height: 50
+                0x08, 0x02, 0x00, 0x00, 0x00, 0x91, 0x5D, 0x1F, // 8-bit RGB, no compression
+                0x96, 0x00, 0x00, 0x01, 0x65, 0x49, 0x44, 0x41, // CRC, IDAT chunk start
+                0x54, 0x78, 0x9C, 0xED, 0xC1, 0x01, 0x01, 0x00, // Compressed data start
+                0x00, 0x00, 0x80, 0x90, 0xFE, 0xAF, 0x6E, 0xE4,
+                0x40, 0x05, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x7E, 0x1B,
+                0xC2, 0x07, 0x3D, 0x00, 0x00, 0x00, 0x00, 0x49,
+                0x45, 0x4E, 0x44, 0xAE, 0x42, 0x60, 0x82        // IEND chunk
+            };
         }
 
     }

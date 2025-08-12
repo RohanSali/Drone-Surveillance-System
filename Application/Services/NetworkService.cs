@@ -25,6 +25,7 @@ namespace DroneSurveillanceSystem.Services
         private bool _autoActivate;
         private bool _alertNotifications;
         private List<DronePosition> _assignedDrones;
+        private List<SurveillanceDevice> _assignedCctvs;
         private DateTime _createdDate;
         private DateTime _lastModified;
 
@@ -106,6 +107,12 @@ namespace DroneSurveillanceSystem.Services
             set => SetProperty(ref _assignedDrones, value);
         }
         
+        public List<SurveillanceDevice> Cctvs
+        {
+            get => _assignedCctvs ?? new List<SurveillanceDevice>();
+            set => SetProperty(ref _assignedCctvs, value);
+        }
+        
         public DateTime CreatedDate
         {
             get => _createdDate;
@@ -126,6 +133,7 @@ namespace DroneSurveillanceSystem.Services
             _statusColor = "#4CAF50";
             _iconColor = "#4CAF50";
             _assignedDrones = new List<DronePosition>();
+            _assignedCctvs = new List<SurveillanceDevice>();
             _createdDate = DateTime.Now;
             _lastModified = DateTime.Now;
             _coverageRegion = "Urban Zone";

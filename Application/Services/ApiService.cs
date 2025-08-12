@@ -245,23 +245,27 @@ namespace DroneSurveillanceSystem.Services
                     Console.WriteLine($"[WebSocket] Available keys: {string.Join(", ", msgObj.Keys)}");
                     
                     // Special handling for alert_image_received messages (drone responses)
-                    if (type == "alert_image_received")
+                    // Also handle direct alert_image messages from drone
+                    if (type == "alert_image_received" || type == "alert_image")
                     {
                         Console.WriteLine($"[WebSocket] 🔍 ALERT IMAGE RECEIVED MESSAGE DETECTED!");
                         Console.WriteLine($"[WebSocket] Full alert_image_received message: {message}");
                         
-                        if (msgObj.ContainsKey("alert_image"))
+                        // For direct alert_image messages, check both "alert_image" and "data" fields
+                        string dataFieldName = msgObj.ContainsKey("alert_image") ? "alert_image" : "data";
+                        
+                        if (msgObj.ContainsKey(dataFieldName))
                         {
-                            Console.WriteLine($"[WebSocket] ✅ alert_image field found in message");
-                            var alertImageJson = msgObj["alert_image"]?.ToString();
-                            Console.WriteLine($"[WebSocket] alert_image JSON: {alertImageJson}");
+                            Console.WriteLine($"[WebSocket] ✅ {dataFieldName} field found in message");
+                            var alertImageJson = msgObj[dataFieldName]?.ToString();
+                            Console.WriteLine($"[WebSocket] {dataFieldName} JSON: {alertImageJson}");
                             
                             if (!string.IsNullOrEmpty(alertImageJson))
                             {
                                 var alertImageObj = JsonConvert.DeserializeObject<Dictionary<string, object>>(alertImageJson);
                                 if (alertImageObj != null)
                                 {
-                                    Console.WriteLine($"[WebSocket] alert_image object keys: {string.Join(", ", alertImageObj.Keys)}");
+                                    Console.WriteLine($"[WebSocket] {dataFieldName} object keys: {string.Join(", ", alertImageObj.Keys)}");
                                     
                                     string actualImage = alertImageObj.ContainsKey("actual_image") ? alertImageObj["actual_image"]?.ToString() ?? "" : "";
                                     string matchedFrame = alertImageObj.ContainsKey("matched_frame") ? alertImageObj["matched_frame"]?.ToString() ?? "" : "";

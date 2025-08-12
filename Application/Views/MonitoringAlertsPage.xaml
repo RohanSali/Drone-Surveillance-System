@@ -245,7 +245,7 @@
                     </TextBlock.Foreground>
                 </TextBlock>
                 
-                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                <ScrollViewer Grid.Row="1" Style="{StaticResource HiddenSmoothScrollViewer}">
                     <ItemsControl ItemsSource="{Binding ActiveAlerts}">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
@@ -313,7 +313,7 @@
                 </Border>
 
                 <!-- Scrollable Content Area -->
-                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" 
+                <ScrollViewer Style="{StaticResource HiddenSmoothScrollViewer}" 
                               MaxHeight="600" CanContentScroll="True">
                     <StackPanel x:Name="LostFindingContentPanel">
                         <!-- Dynamic content will be added here -->
@@ -327,6 +327,9 @@
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
                 <Button Content="✅ Acknowledge All Alerts" Style="{StaticResource SuccessButtonStyle}" Click="AcknowledgeAlerts_Click"/>
                 <Button x:Name="LostFindingButton" Content="Lost Finding" Style="{StaticResource ButtonStyle}" Click="LostFindingButton_Click"/>
+                <Button x:Name="TestDroneResponseButton" Content="🧪 Test Response" Style="{StaticResource ButtonStyle}" Click="TestDroneResponse_Click" 
+                        Background="#6f42c1" Foreground="White"
+                        ToolTip="Test drone response with fake matched image (for debugging)"/>
                 <Button x:Name="PendingStatusButton" Content="⏳0" Style="{StaticResource ButtonStyle}" Click="PendingStatusButton_Click" 
                         Width="45" Height="45" Margin="10,0,0,0" 
                         ToolTip="Click to view pending Lost Finding requests"

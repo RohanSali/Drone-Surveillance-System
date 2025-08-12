@@ -1,7 +1,7 @@
 <Window x:Class="DroneSurveillanceSystem.Views.ModuleSelectionPopup"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Module Selection" Width="500" Height="400" Background="#0a0a0a" WindowStartupLocation="CenterScreen">
+        Title="Module Selection" Width="720" Height="520" Background="#0a0a0a" WindowStartupLocation="CenterScreen">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -9,27 +9,34 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!-- Header -->
-        <TextBlock Text="Select Modules to Add to Drone" 
-                   Foreground="#FF5252" FontWeight="Bold" FontSize="20" 
-                   HorizontalAlignment="Center" Margin="0,16,0,12" Grid.Row="0"/>
+        <!-- Header with Back on top-right -->
+        <Grid Grid.Row="0" Margin="10,10,10,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock Text="Select Modules to Add to Drone" 
+                       Foreground="#FF5252" FontWeight="Bold" FontSize="24" 
+                       VerticalAlignment="Center"/>
+            <Button Grid.Column="1" Content="Back" Click="BackButton_Click" 
+                    Background="#FF5252" Foreground="White" FontWeight="Bold"
+                    Padding="16,8" Margin="10,0,0,0"/>
+        </Grid>
 
         <!-- Main Card -->
-        <Border Grid.Row="1" Background="#1a1a1a" CornerRadius="12" Padding="20" Margin="10">
+        <Border Grid.Row="1" Background="#1a1a1a" CornerRadius="12" Padding="24" Margin="12">
             <StackPanel>
-                <TextBlock Text="Available Modules for Installation" FontWeight="Bold" FontSize="16" Foreground="White" Margin="0,0,0,20"/>
-                <CheckBox Content="Casuality inference Module" x:Name="CasualityModuleCheckBox" Margin="0,0,0,10" Foreground="White" FontWeight="Bold" FontSize="15"/>
-                <CheckBox Content="Anamoly inference Module" x:Name="AnamolyModuleCheckBox" Margin="0,0,0,10" Foreground="White" FontWeight="Bold" FontSize="15"/>
-                <CheckBox Content="Crowd Detection Module" x:Name="CrowdDetectionModuleCheckBox" Margin="0,0,0,10" Foreground="White" FontWeight="Bold" FontSize="15"/>
-                <CheckBox Content="Lost Finding Module" x:Name="LostFindingModuleCheckBox" Margin="0,0,0,10" Foreground="White" FontWeight="Bold" FontSize="15"/>
+                <TextBlock Text="Available Modules for Installation" FontWeight="Bold" FontSize="18" Foreground="White" Margin="0,0,0,20"/>
+                <CheckBox Content="Casuality inference Module" x:Name="CasualityModuleCheckBox" Margin="0,0,0,12" Foreground="White" FontWeight="Bold" FontSize="16"/>
+                <CheckBox Content="Anamoly inference Module" x:Name="AnamolyModuleCheckBox" Margin="0,0,0,12" Foreground="White" FontWeight="Bold" FontSize="16"/>
+                <CheckBox Content="Crowd Detection Module" x:Name="CrowdDetectionModuleCheckBox" Margin="0,0,0,12" Foreground="White" FontWeight="Bold" FontSize="16"/>
+                <CheckBox Content="Lost Finding Module" x:Name="LostFindingModuleCheckBox" Margin="0,0,0,12" Foreground="White" FontWeight="Bold" FontSize="16"/>
             </StackPanel>
         </Border>
 
         <!-- Footer Buttons -->
-        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Left" Margin="10,10,0,10">
-            <Button Content="Back" Click="BackButton_Click" Width="80" Margin="0,0,10,0" Background="#FF5252" Foreground="White" FontWeight="Bold"/>
-            <Button Content="Add Selected Modules" x:Name="AddModulesButton" Width="170" Margin="0,0,10,0" Background="#FF5252" Foreground="White" FontWeight="Bold"/>
-            <Button Content="Cancel" x:Name="CancelButton" Width="80" Background="#444" Foreground="White" FontWeight="Bold"/>
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,12,12">
+            <Button Content="Add Selected Modules" x:Name="AddModulesButton" Width="220" Background="#FF5252" Foreground="White" FontWeight="Bold"/>
         </StackPanel>
     </Grid>
 </Window>

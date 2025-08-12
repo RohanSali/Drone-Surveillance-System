@@ -57,10 +57,7 @@ namespace DroneSurveillanceSystem.Views
             }
         }
 
-        private void CancelButton_Click(object sender, RoutedEventArgs e)
-        {
-            this.Close();
-        }
+        // Cancel button removed from UI per design update
 
         private void BackButton_Click(object sender, RoutedEventArgs e)
         {
