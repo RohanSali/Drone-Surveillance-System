@@ -188,82 +188,12 @@ namespace DroneSurveillanceSystem.Views
 
         private void DrawMapGrid()
         {
-            // Clear existing grid lines
-            foreach (var line in _gridLines.ToList())
-            {
-                MapCanvas.Children.Remove(line);
-            }
-            _gridLines.Clear();
-
-            var canvasWidth = MapCanvas.ActualWidth > 0 ? MapCanvas.ActualWidth : 600;
-            var canvasHeight = MapCanvas.ActualHeight > 0 ? MapCanvas.ActualHeight : 300;
-
-            // Vertical grid lines
-            for (int x = 0; x < canvasWidth; x += 40)
-            {
-                var line = new Line
-                {
-                    X1 = x,
-                    Y1 = 0,
-                    X2 = x,
-                    Y2 = canvasHeight,
-                    Stroke = new SolidColorBrush(Color.FromRgb(51, 51, 51)),
-                    StrokeThickness = 1
-                };
-                MapCanvas.Children.Add(line);
-                _gridLines.Add(line);
-            }
-
-            // Horizontal grid lines
-            for (int y = 0; y < canvasHeight; y += 40)
-            {
-                var line = new Line
-                {
-                    X1 = 0,
-                    Y1 = y,
-                    X2 = canvasWidth,
-                    Y2 = y,
-                    Stroke = new SolidColorBrush(Color.FromRgb(51, 51, 51)),
-                    StrokeThickness = 1
-                };
-                MapCanvas.Children.Add(line);
-                _gridLines.Add(line);
-            }
+            UnifiedGridService.DrawUnifiedGrid(MapCanvas, _gridLines);
         }
 
         private void AddCoordinateMarkers()
         {
-            var canvasWidth = MapCanvas.ActualWidth > 0 ? MapCanvas.ActualWidth : 600;
-            var canvasHeight = MapCanvas.ActualHeight > 0 ? MapCanvas.ActualHeight : 300;
-            var centerX = canvasWidth / 2;
-            var centerY = canvasHeight / 2;
-
-            // Center marker
-            var centerMarker = new Ellipse
-            {
-                Width = 6,
-                Height = 6,
-                Fill = new SolidColorBrush(Colors.Red),
-                Stroke = new SolidColorBrush(Colors.White),
-                StrokeThickness = 1
-            };
-            Canvas.SetLeft(centerMarker, centerX - 3);
-            Canvas.SetTop(centerMarker, centerY - 3);
-            MapCanvas.Children.Add(centerMarker);
-            _gridLines.Add(centerMarker);
-
-            // Center coordinates label
-            var coordLabel = new TextBlock
-            {
-                Text = "37.7749, -122.4194",
-                Foreground = new SolidColorBrush(Colors.White),
-                FontSize = 8,
-                Background = new SolidColorBrush(Color.FromArgb(128, 0, 0, 0))
-            };
-            Canvas.SetLeft(coordLabel, centerX + 8);
-            Canvas.SetTop(coordLabel, centerY - 8);
-            MapCanvas.Children.Add(coordLabel);
-            _gridLines.Add(coordLabel);
+            UnifiedGridService.AddCoordinateMarkers(MapCanvas, _gridLines);
         }
 
         private void UpdateMapDrones()
@@ -283,76 +213,14 @@ namespace DroneSurveillanceSystem.Views
                 // Add current drone positions
                 foreach (var drone in _trackingService.ActiveDronePositions)
                 {
-                    // Convert GPS coordinates to canvas coordinates (improved mapping)
-                    // Center coordinates around San Francisco (37.7749, -122.4194)
-                    var centerLat = 37.7749;
-                    var centerLon = -122.4194;
+                    // Convert GPS coordinates to canvas coordinates using unified service
+                    var point = UnifiedGridService.ConvertGpsToCanvas(drone.Latitude, drone.Longitude, canvasWidth, canvasHeight);
                     
-                    // Scale factor for better distribution across canvas
-                    var scaleX = canvasWidth / 0.02;  // 0.02 degrees longitude range
-                    var scaleY = canvasHeight / 0.02; // 0.02 degrees latitude range
-                    
-                    var x = canvasWidth / 2 + (drone.Longitude - centerLon) * scaleX;
-                    var y = canvasHeight / 2 - (drone.Latitude - centerLat) * scaleY;
-
-                    // Ensure within canvas bounds with proper margin
-                    x = Math.Max(24, Math.Min(canvasWidth - 24, x));
-                    y = Math.Max(24, Math.Min(canvasHeight - 24, y));
-
-                    var droneIndicator = new Border
-                    {
-                        Background = GetStatusColor(drone.Status),
-                        CornerRadius = new CornerRadius(12),
-                        Width = 24,
-                        Height = 24,
-                        BorderBrush = new SolidColorBrush(Colors.White),
-                        BorderThickness = new Thickness(2),
-                        Child = new TextBlock
-                        {
-                            Text = "🚁",
-                            FontSize = 12,
-                            HorizontalAlignment = HorizontalAlignment.Center,
-                            VerticalAlignment = VerticalAlignment.Center,
-                            Foreground = new SolidColorBrush(Colors.White)
-                        }
-                    };
-
-                    Canvas.SetLeft(droneIndicator, x - 12);
-                    Canvas.SetTop(droneIndicator, y - 12);
+                    // Create unified drone indicator
+                    var droneIndicator = UnifiedGridService.CreateUnifiedDroneIndicator(drone, point.X, point.Y);
                     
                     MapCanvas.Children.Add(droneIndicator);
                     _droneIndicators.Add(droneIndicator);
-
-                    // Add drone label
-                    var droneLabel = new TextBlock
-                    {
-                        Text = drone.Id,
-                        Foreground = new SolidColorBrush(Colors.White),
-                        FontSize = 8,
-                        Background = new SolidColorBrush(Color.FromArgb(128, 0, 0, 0))
-                    };
-                    Canvas.SetLeft(droneLabel, x + 15);
-                    Canvas.SetTop(droneLabel, y - 15);
-                    
-                    MapCanvas.Children.Add(droneLabel);
-                    _droneIndicators.Add(droneLabel);
-
-                    // Add movement trail
-                    if (_random.NextDouble() < 0.3) // 30% chance to show trail
-                    {
-                        var trail = new Ellipse
-                        {
-                            Width = 4,
-                            Height = 4,
-                            Fill = new SolidColorBrush(Color.FromArgb(100, 0, 120, 212)),
-                            Margin = new Thickness(2)
-                        };
-                        Canvas.SetLeft(trail, x - _random.Next(-20, 20) - 2);
-                        Canvas.SetTop(trail, y - _random.Next(-20, 20) - 2);
-                        
-                        MapCanvas.Children.Add(trail);
-                        _droneIndicators.Add(trail);
-                    }
                 }
 
                 // Update metrics

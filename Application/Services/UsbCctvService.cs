@@ -15,6 +15,10 @@ namespace DroneSurveillanceSystem.Services
         public string FirmwareVersion { get; set; } = "v1.0.0";
         public string Resolution { get; set; } = "1080p";
         public int FrameRate { get; set; } = 30;
+        public string BluetoothMacAddress { get; set; } = "";
+        public string IpAddress { get; set; } = "";
+        public string SimType { get; set; } = "";
+        public string Location { get; set; } = "";
     }
 
     public class UsbCctvService

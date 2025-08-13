@@ -1,6 +1,7 @@
 <Application x:Class="DroneSurveillanceSystem.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:behaviors="clr-namespace:DroneSurveillanceSystem.Services">
     <Application.Resources>
         <ResourceDictionary>
             <!-- Include Modern Styles -->
@@ -14,6 +15,11 @@
                 <Setter Property="FontFamily" Value="Segoe UI"/>
                 <Setter Property="FontSize" Value="14"/>
                 <Setter Property="Background" Value="{StaticResource DarkBackgroundBrush}"/>
+                <Setter Property="behaviors:ResponsiveBehavior.EnableAutoScale" Value="True"/>
+                <Setter Property="behaviors:ResponsiveBehavior.DesignWidth" Value="1400"/>
+                <Setter Property="behaviors:ResponsiveBehavior.DesignHeight" Value="900"/>
+                <Setter Property="behaviors:ResponsiveBehavior.MinScale" Value="0.6"/>
+                <Setter Property="behaviors:ResponsiveBehavior.MaxScale" Value="1.6"/>
             </Style>
         </ResourceDictionary>
     </Application.Resources>
