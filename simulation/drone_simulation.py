@@ -1,12 +1,3 @@
-#!/usr/bin/env python3
-
-"""
-DRONE CONTROLLER FOR .ZIP MODEL FILES
-
-This controller can load and use .zip model files from Stable Baselines3 training
-to control the drone and navigate to user-specified positions.
-"""
-
 import warnings
 warnings.filterwarnings("ignore", message=".*Gym version v0.21.0.*")
 
@@ -38,7 +29,6 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from gym_pybullet_drones.envs.CtrlAviary import CtrlAviary
 from gym_pybullet_drones.utils.enums import DroneModel, Physics
 from gym_pybullet_drones.control.DSLPIDControl import DSLPIDControl
-# sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from inference_engine import runner
 from capture_engine import validate_error
 from stable_baselines3 import PPO
@@ -46,35 +36,75 @@ import pybullet as p
 from train_hover_spin3 import make_enhanced_env,make_vec_env
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
+project_dir = os.path.abspath(os.path.join(current_dir, '..'))
 
 models_path = os.path.join(current_dir, "rl_models")
 MODEL_FILE_PATH = os.path.join(models_path, "ppo_emergency_takeoff_recovery_working_position_yaw_interrupted.zip")
 FOV = 90  # Field of View in degrees
 DRONE_CORDS_PATH = os.path.join(current_dir,".." ,"capture_engine","drone_targets.txt")
 
-assets_path = os.path.join(current_dir,"..","environment_assets")
+assets_dir = os.path.join(project_dir, "environment_assets")
 
-fire_obj_path = os.path.join(assets_path, "city", "city.obj")
-building_obj_path = os.path.join(assets_path, "building3", "building.obj")
+mesh_obj_path = os.path.join(assets_dir, "mesh", "mesh.obj")
+grass_land_obj_path = os.path.join(assets_dir, "grass_land" , "grass_land.obj")
+fire_block_obj_path = os.path.join(assets_dir, "fire_block", "fire_block.obj")
+wall1_obj_path = os.path.join(assets_dir, "wall1", "wall1.obj")
+wall2_obj_path = os.path.join(assets_dir, "wall2", "wall2.obj")
+wall3_obj_path = os.path.join(assets_dir, "wall3", "wall3.obj")
+wall4_obj_path = os.path.join(assets_dir, "wall4", "wall4.obj")
+car_accident_obj_path = os.path.join(assets_dir, "car_accident", "car_accident.obj")
+accidental_fire_obj_path = os.path.join(assets_dir,"accidental_fire", "accidental_fire.obj" )
+building_obj_path = os.path.join(assets_dir, "building", "building.obj")
+flood_obj_path = os.path.join(assets_dir, "flood", "flood.obj")
+riot_obj_path = os.path.join(assets_dir, "riot", "riot.obj")
+knife_obj_path = os.path.join(assets_dir,"person_knife", "person_knife.obj")
+person_with_mask_obj_path = os.path.join(assets_dir, "person_with_mask", "person_with_mask.obj")
+
 # Verify files exist
-for obj_path in [fire_obj_path, building_obj_path]:
+for obj_path in [mesh_obj_path, grass_land_obj_path, fire_block_obj_path,
+                 wall1_obj_path, wall2_obj_path, wall3_obj_path, wall4_obj_path,
+                 car_accident_obj_path, accidental_fire_obj_path, building_obj_path,
+                 flood_obj_path, riot_obj_path, knife_obj_path, person_with_mask_obj_path]:
     assert os.path.exists(obj_path), f"OBJ file not found: {obj_path}"
 
-def env_object(object_path,obj_position=[0, 0, 0], obj_orientation=[0, 0, 0],obj_color=[1, 1, 1, 1],obj_base_mass=0,collision_shape=True):
+# Final filled list of environment assets (matching environment_setup)
+env_assets = [
+    {'name': 'mesh',            'obj_path': mesh_obj_path,            'obj_position': [0, 0, 0],      'obj_orientation': [0, np.pi/2, 0]},
+    {'name': 'grass_land',      'obj_path': grass_land_obj_path,      'obj_position': [0, 0, 0.05],   'obj_orientation': [0, np.pi/2, 0],          'obj_color': [1, 1, 1, 1]},
+    {'name': 'fire_block',      'obj_path': fire_block_obj_path,      'obj_position': [50, 0, 0.01],  'obj_orientation': [np.pi/2, 0, 0]},
+    {'name': 'wall_1',          'obj_path': wall1_obj_path,           'obj_position': [100, 0, -0.5],  'obj_orientation': [np.pi/2, 0, 0]},
+    {'name': 'wall_2',          'obj_path': wall2_obj_path,           'obj_position': [0, -100, 0], 'obj_orientation': [np.pi/2,0, np.pi/2]},
+    {'name': 'wall_3',          'obj_path': wall3_obj_path,           'obj_position': [-100, 0, 0],  'obj_orientation': [np.pi/2, 0, 0]},
+    {'name': 'wall_4',          'obj_path': wall4_obj_path,           'obj_position': [0, 100, 0], 'obj_orientation': [np.pi/2, 0, -np.pi/2]},
+    {'name': 'car_accident',    'obj_path': car_accident_obj_path,    'obj_position': [20, 20, 0],    'obj_orientation': [np.pi/2, 0, 5*np.pi/4]},
+    {'name': 'accidental_fire', 'obj_path': accidental_fire_obj_path, 'obj_position': [20, -20, 0],   'obj_orientation': [np.pi/2, 0, -5*np.pi/4]},
+    {'name': 'building',        'obj_path': building_obj_path,        'obj_position': [0, -50, 0],    'obj_orientation': [np.pi/2, 0, np.pi/2],      'obj_scale': [1, 0.5, 0.5]},
+    {'name': 'flood',           'obj_path': flood_obj_path,           'obj_position': [-75, 0, 0],    'obj_orientation': [np.pi/2, 0, 0],            'obj_scale': [1, 1.5, 2]},
+    {'name': 'riot',            'obj_path': riot_obj_path,            'obj_position': [0, 15, 0],     'obj_orientation': [np.pi/2, 0, -np.pi/2]},
+    {'name': 'person_knife',    'obj_path': knife_obj_path,           'obj_position': [0, 0, 1],      'obj_orientation': [np.pi/2, 0, 0]},
+    {'name': 'person_with_mask','obj_path': person_with_mask_obj_path,'obj_position': [15, 0, 0],     'obj_orientation': [np.pi/2, 0, 0]}
+]
+
+def env_object(object_path,obj_position = [0, 0, 0],
+               obj_orientation = [0, 0, 0],
+               obj_color = [1, 1, 1, 1],
+               obj_base_mass = 0,
+               obj_scale = [1,1,1],
+               collision_shape=True):
     object = p.createVisualShape(
         shapeType = p.GEOM_MESH,
         fileName = object_path,
         rgbaColor = obj_color,
         specularColor = [0.4, 0.4, 0.4],
         visualFramePosition = [0, 0, 0],
-        meshScale = [1, 1, 1]
+        meshScale = obj_scale
     )
 
     if collision_shape:
         object_collisionShapeId = p.createCollisionShape(
             shapeType = p.GEOM_MESH,
             fileName = object_path,
-            meshScale = [1, 1, 1]
+            meshScale = obj_scale
         )
         p.createMultiBody(
             baseMass = obj_base_mass,
@@ -90,6 +120,23 @@ def env_object(object_path,obj_position=[0, 0, 0], obj_orientation=[0, 0, 0],obj
             basePosition = obj_position,
             baseOrientation = p.getQuaternionFromEuler(obj_orientation)
         )
+
+def environment_setup():
+    """Load environment objects from env_assets using default values where missing."""
+    added_objects = []
+    for asset in env_assets:
+        env_object(
+            object_path=asset.get('obj_path'),
+            obj_position=asset.get('obj_position', [0, 0, 0]),
+            obj_orientation=asset.get('obj_orientation', [0, 0, 0]),
+            obj_color=asset.get('obj_color', [1, 1, 1, 1]),
+            obj_base_mass=asset.get('obj_base_mass', 0),
+            obj_scale=asset.get('obj_scale', [1, 1, 1]),
+            collision_shape=asset.get('collision_shape', True)
+        )
+        added_objects.append(asset.get('name', 'unnamed'))
+    
+    print("Added objects to scene:", ", ".join(added_objects))
 
 def get_intrinsic_matrix(width, height, fov_deg):
     fov_rad = math.radians(fov_deg)
@@ -248,9 +295,10 @@ class ZipModelDroneWrapper(Wrapper):
             obs = result
             info = {}
         
-        env_object(fire_obj_path, obj_position=[0, 0, 0.01], obj_orientation= [np.pi/2, 0, 0], collision_shape=False )  # Fire at origin
-        env_object(building_obj_path, obj_position=[7, 0, 0.01], obj_orientation=[np.pi/2, 0, 0], collision_shape=True)  # Building at (7, 0)
-        env_object(building_obj_path, obj_position=[8, 10, 0.01], obj_orientation=[np.pi/2, 0, 0], collision_shape=True)  # Building at (8, 10)
+        # env_object(fire_obj_path, obj_position=[0, 0, 0.01], obj_orientation= [np.pi/2, 0, 0], collision_shape=False )  # Fire at origin
+        # env_object(building_obj_path, obj_position=[7, 0, 0.01], obj_orientation=[np.pi/2, 0, 0], collision_shape=True)  # Building at (7, 0)
+        # env_object(building_obj_path, obj_position=[8, 10, 0.01], obj_orientation=[np.pi/2, 0, 0], collision_shape=True)  # Building at (8, 10)
+        environment_setup()
 
         # Reset internal state
         self.initialization_phase = True
