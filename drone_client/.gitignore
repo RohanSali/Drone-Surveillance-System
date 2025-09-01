@@ -2,15 +2,12 @@
 *.log
 
 # Ignore a specific file
-sim4.py
-sim2.py
+alert_queue.txt
+drone_info.json
 
 # Ignore a folder and its contents
 __pycache__/
 /.vscode
-/gym_pybullet_drones
-/temp_my
-/results
 
 # Ignore all .pyc files
 *.pyc

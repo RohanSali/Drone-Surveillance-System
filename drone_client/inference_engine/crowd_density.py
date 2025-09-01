@@ -2,6 +2,7 @@ import os
 import sys
 import ast
 import asyncio
+import json
 import cv2
 import numpy as np
 import torch
@@ -18,6 +19,10 @@ MODEL_PATH = os.path.join(project_dir,'models','crowd_density_colab.pt')
 TEMP_TEXT_FILE = os.path.join(current_dir,'alerts.txt')
 CONFIDENCE = 0.209 #confidence threshold
 TIME_THRESHOLD = 60*3 #sec
+DRONE_INFO_FILE_PATH = os.path.join(project_dir, 'drone_info.json')
+drone_info = {}
+with open(DRONE_INFO_FILE_PATH,'r') as f:
+    drone_info=json.load(f)
 
 model = YOLO(MODEL_PATH) 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -166,7 +171,7 @@ def inference_crowd_density(frame,capture_timestamp, intrinsic_matrix , drone_ro
     else : 
         payload = {
             "alert" : new_label,
-            "drone_id" : "NO DRONE",
+            "drone_id" : drone_info.get('drone_id','NO DRONE'),
             "alert_location" : [0,0,0],
             "image" : None,
             "image_received" : 0,

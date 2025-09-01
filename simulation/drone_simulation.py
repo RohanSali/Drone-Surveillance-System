@@ -29,8 +29,8 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from gym_pybullet_drones.envs.CtrlAviary import CtrlAviary
 from gym_pybullet_drones.utils.enums import DroneModel, Physics
 from gym_pybullet_drones.control.DSLPIDControl import DSLPIDControl
-from inference_engine import runner
-from capture_engine import validate_error
+from drone_client.inference_engine import runner
+from drone_client.capture_engine import validate_error
 from stable_baselines3 import PPO
 import pybullet as p
 from train_hover_spin3 import make_enhanced_env,make_vec_env
@@ -41,7 +41,7 @@ project_dir = os.path.abspath(os.path.join(current_dir, '..'))
 models_path = os.path.join(current_dir, "rl_models")
 MODEL_FILE_PATH = os.path.join(models_path, "ppo_emergency_takeoff_recovery_working_position_yaw_interrupted.zip")
 FOV = 90  # Field of View in degrees
-DRONE_CORDS_PATH = os.path.join(current_dir,".." ,"capture_engine","drone_targets.txt")
+DRONE_CORDS_PATH = os.path.join(project_dir,"drone_client","capture_engine","drone_targets.txt")
 
 assets_dir = os.path.join(project_dir, "environment_assets")
 
@@ -81,7 +81,7 @@ env_assets = [
     {'name': 'building',        'obj_path': building_obj_path,        'obj_position': [0, -50, 0],    'obj_orientation': [np.pi/2, 0, np.pi/2],      'obj_scale': [1, 0.5, 0.5]},
     {'name': 'flood',           'obj_path': flood_obj_path,           'obj_position': [-75, 0, 0],    'obj_orientation': [np.pi/2, 0, 0],            'obj_scale': [1, 1.5, 2]},
     {'name': 'riot',            'obj_path': riot_obj_path,            'obj_position': [0, 15, 0],     'obj_orientation': [np.pi/2, 0, -np.pi/2]},
-    {'name': 'person_knife',    'obj_path': knife_obj_path,           'obj_position': [0, 0, 1],      'obj_orientation': [np.pi/2, 0, 0]},
+    {'name': 'person_knife',    'obj_path': knife_obj_path,           'obj_position': [10, 0, 1],      'obj_orientation': [np.pi/2, 0, 0]},
     {'name': 'person_with_mask','obj_path': person_with_mask_obj_path,'obj_position': [15, 0, 0],     'obj_orientation': [np.pi/2, 0, 0]}
 ]
 

@@ -2,6 +2,7 @@ import cv2
 from ultralytics import YOLO
 import os
 import sys
+import json
 from datetime import datetime
 import base64
 import asyncio
@@ -20,14 +21,24 @@ ANAMOLIES = ['Blood Detected', 'Face Mask Detected', 'Gun Detected','Knife Detec
 CROWD_DENSITY = ['Low Density', 'Medium Density', 'High Density']
 CONFIDENCE_THRESHOLD = 0.25
 
+DRONE_INFO_FILE_PATH = os.path.join(project_dir, 'drone_info.json')
+drone_info = {}
+with open(DRONE_INFO_FILE_PATH,'r') as f:
+    drone_info=json.load(f)
+
 def create_required_files_and_folders():
     validated_alerts_file = os.path.join(current_dir,'validated_alerts.txt')
+    drone_targets_file = os.path.join(current_dir,'drone_targets.txt')
 
     # Create the file if it doesn't exist
     if not os.path.exists(validated_alerts_file):
         with open(validated_alerts_file, 'w') as f:
             f.write('')  # Or write default content
         print(f"Created file: {validated_alerts_file}")
+    if not os.path.exists(drone_targets_file):
+        with open(drone_targets_file, 'w') as f:
+            f.write('')  # Or write default content
+        print(f"Created file: {drone_targets_file}")
 
 create_required_files_and_folders()
 
@@ -117,7 +128,7 @@ def validate_alert(alert_name,alert_id,frame,capture_timestamp = datetime.now())
         frame_blob = encode_frame(frame)
         payload = {
             "alert" : type + " - " + alert_name,
-            "drone_id" : "NO DRONE",
+            "drone_id" : drone_info.get('drone_id','NO DRONE'),
             "alert_location" : [0,0,0],
             "image" : frame_blob,
             "image_received" : 1,

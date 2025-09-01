@@ -1,8 +1,0 @@
-{
-    "drone_id" : "drone_001",
-    "drone_name" : "AI_Synapse Drone",
-    "bluetooth MAC address" : "00:24:08:00:3C:F9",
-    "ip address" : "192.168.0.107:8888",
-    "sim type" : "Airtel",
-    "location" : [12,23,12]
-}

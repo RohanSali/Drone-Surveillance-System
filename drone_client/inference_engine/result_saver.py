@@ -7,10 +7,16 @@ project_dir = os.path.abspath(os.path.join(current_dir, '..'))
 ALERT_QUEUE_FILE = os.path.join(project_dir, "alert_queue.txt")
 ALERT_LOGGER = os.path.join(current_dir, 'alerts.txt')
 PERSON_FOUND_LOGGER = os.path.join(current_dir, 'person_found.txt')
+DRONE_INFO_FILE_PATH = os.path.join(project_dir, 'drone_info.json')
+
+drone_info = {}
+with open(DRONE_INFO_FILE_PATH,'r') as f:
+    drone_info=json.load(f)
 
 async def save_to_machine(payload,type="alert"):
     """Append alert data to alerts.txt or person_found.txt for local logging"""
     try:
+        payload['drone_id'] = drone_info.get('drone_id', 'NO DRONE')
         if type == "alert":
             with open(ALERT_LOGGER, 'a') as f:
                 f.write(str(payload) + '\n')
@@ -29,6 +35,7 @@ async def save_to_machine(payload,type="alert"):
 async def send_alert(payload,type="alert"):
     """Append alert data to alert_queue.txt for later sending"""
     try:
+        payload['drone_id'] = drone_info.get('drone_id', 'NO DRONE')
         with open(ALERT_QUEUE_FILE, "a") as f:
             alert_entry = {
                 "type": type,

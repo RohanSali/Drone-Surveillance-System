@@ -3,6 +3,7 @@ import sys
 import ast
 import base64
 import asyncio
+import json
 import cv2
 import numpy as np
 import torch
@@ -18,6 +19,10 @@ project_dir = os.path.abspath(os.path.join(current_dir, '..'))
 
 TEMP_TEXT_FILE = os.path.join(current_dir,"person_found.txt")
 TIME_THRESHOLD = 60*2 #sec
+DRONE_INFO_FILE_PATH = os.path.join(project_dir, 'drone_info.json')
+drone_info = {}
+with open(DRONE_INFO_FILE_PATH,'r') as f:
+    drone_info=json.load(f)
 
 # Load pretrained FaceNet model
 model = InceptionResnetV1(pretrained='vggface2').eval()
@@ -129,7 +134,7 @@ def compare_faces(frame1, frame2, name, capture_timestamp, intrinsic_matrix, dro
             payload = {
                 "found": 1,
                 "name": name,
-                "drone_id": "drone_001",
+                "drone_id": drone_info.get('drone_id','NO DRONE'),
                 "actual_image": frame2_blob,
                 "matched_frame" : frame1_blob,
                 "location" : [0,0,0],
