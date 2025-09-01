@@ -6,19 +6,17 @@ from datetime import datetime
 import base64
 import asyncio
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from inference_engine.websocket_call import send_alert
+from inference_engine.result_saver import send_alert
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 project_dir = os.path.abspath(os.path.join(current_dir, '..'))
-CASULTY_MODEL_PATH = os.path.join(project_dir,'models','yolo_casualty_detection.pt')
-det_model_casualty = YOLO(CASULTY_MODEL_PATH)
-ANAMOLY_MODEL_PATH = os.path.join(project_dir,'models','yolo_anamoly_detection.pt')
-det_model_anamoly = YOLO(ANAMOLY_MODEL_PATH)
+ALERT_MODEL_PATH = os.path.join(project_dir,'models','yolo_alert_detection.pt')
+det_model_alert = YOLO(ALERT_MODEL_PATH)
 CROWD_MODEL_PATH = os.path.join(project_dir,'models','crowd_density_colab.pt')
 det_model_crowd = YOLO(CROWD_MODEL_PATH)
 
-CASULTIES = ['Accident Detected', 'Fire Detected', 'Flood Detected']
-ANAMOLIES = ['Blood Detected', 'Face Mask Detected', 'Gun Detected','Knife Detected', 'No Anamoly']
+CASULTIES = ['Accident Detected', 'Fire Detected', 'Flood Detected', 'Structural Damage Detected']
+ANAMOLIES = ['Blood Detected', 'Face Mask Detected', 'Gun Detected','Knife Detected']
 CROWD_DENSITY = ['Low Density', 'Medium Density', 'High Density']
 CONFIDENCE_THRESHOLD = 0.25
 
@@ -47,7 +45,8 @@ def detect_object(frame, det_model, alert_name):
         'Blood Detected': 'blood',
         'Face Mask Detected': 'face_mask',
         'Gun Detected': 'gun',
-        'Knife Detected': 'knife'
+        'Knife Detected': 'knife',
+        'Structural Damage Detected': 'collapse',
     }
     alert_name = name_map.get(alert_name, 'no_alert')
 
@@ -95,15 +94,15 @@ def encode_frame(frame):
 def save_to_machine(payload):
     with open(TEMP_TEXT_FILE, 'a') as f:
         f.write(str(payload) + '\n')
-    print(f"✅ Saved to machine as {payload['alert']}")
+    print(f"✅ Saved Validated Alert to Machine : {payload['alert']}")
 
 def validate_alert(alert_name,alert_id,frame,capture_timestamp = datetime.now()):
     type = None
-    if alert_name in CASULTIES:
-        det_model = det_model_casualty
+    if alert_name in CASULTIES or alert_name in ANAMOLIES:
+        det_model = det_model_alert
         type = 'Casualty'
     elif alert_name in ANAMOLIES:
-        det_model = det_model_anamoly
+        det_model = det_model_alert
         type = 'Anamoly'
     elif any(alert_name.startswith(prefix) for prefix in CROWD_DENSITY):
         det_model = det_model_crowd
