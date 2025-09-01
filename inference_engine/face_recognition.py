@@ -1,24 +1,23 @@
-import torch
 import os
-from facenet_pytorch import InceptionResnetV1, MTCNN
-from PIL import Image
-import cv2
+import sys
 import ast
 import base64
+import asyncio
+import cv2
 import numpy as np
+import torch
+from facenet_pytorch import InceptionResnetV1, MTCNN
+from PIL import Image
 from collections import deque
 from datetime import datetime
-import sys
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-from websocket_call import send_alert
-import asyncio
-import torch
+from result_saver import send_alert , save_to_machine
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 project_dir = os.path.abspath(os.path.join(current_dir, '..'))
 
 TEMP_TEXT_FILE = os.path.join(current_dir,"person_found.txt")
-TIME_THRESHOLD = 120 #sec
+TIME_THRESHOLD = 60*2 #sec
 
 # Load pretrained FaceNet model
 model = InceptionResnetV1(pretrained='vggface2').eval()
@@ -99,10 +98,19 @@ def get_alert_pos_coordinates(camera_coords, drone_position, drone_rotation_matr
     world_coords = drone_rotation_matrix @ camera_coords + drone_position
     return world_coords
 
-def save_to_machine(payload):
-    with open(TEMP_TEXT_FILE, 'a') as f:
-        f.write(str(payload) + '\n')
-    print(f"✅ Saved to machine as {payload['name']}")
+def get_alert_location(frame,box,name,intrinsic_matrix,drone_rotation_matrix,drone_pos):
+    x_img , y_img = get_middle_point(box,name)
+
+    if x_img is not None and y_img is not None :
+        z_img = get_depth(frame, x_img, y_img)
+        camera_coordinates = pixel_to_camera_coordinates(x_img, y_img, z_img, intrinsic_matrix)
+        if camera_coordinates is not None:
+            drone_pos = np.array(drone_pos)
+            x2, y2, z2 = get_alert_pos_coordinates(camera_coordinates, drone_pos ,drone_rotation_matrix)
+
+            return x2, y2, z2
+
+    return None,None,None
 
 def compare_faces(frame1, frame2, name, capture_timestamp, intrinsic_matrix, drone_rotation_matrix, drone_pos= [0,0.2,5]):
     emb1 , box = get_embedding_from_frame(frame1)
@@ -119,13 +127,13 @@ def compare_faces(frame1, frame2, name, capture_timestamp, intrinsic_matrix, dro
             
             # Create payload for saving to machine
             payload = {
-                "found":1,
-                "name":name,
+                "found": 1,
+                "name": name,
                 "drone_id": "drone_001",
                 "actual_image": frame2_blob,
                 "matched_frame" : frame1_blob,
                 "location" : [0,0,0],
-                "timestamp":capture_timestamp.isoformat()
+                "timestamp": capture_timestamp.isoformat()
             }
 
             timestamp = None
@@ -145,33 +153,19 @@ def compare_faces(frame1, frame2, name, capture_timestamp, intrinsic_matrix, dro
                 time_difference = (capture_timestamp - timestamp).total_seconds()
                 print(f"Time difference between last found for  is : {time_difference} ⏳")
                 if time_difference > TIME_THRESHOLD:
-                    x_img , y_img = get_middle_point(box,name)
+                    x,y,z = get_alert_location(frame1,box,name,intrinsic_matrix,drone_rotation_matrix,drone_pos)
+                    if x is not None and y is not None and z is not None :
+                        payload["location"] = [x, y, z]
 
-                    if x_img is not None and y_img is not None :
-                        z_img = get_depth(frame1, x_img, y_img)
-                        camera_coordinates = pixel_to_camera_coordinates(x_img, y_img, z_img, intrinsic_matrix)
-                        if camera_coordinates is not None:
-                            drone_pos = np.array(drone_pos)
-                            x2, y2, z2 = get_alert_pos_coordinates(camera_coordinates, drone_pos ,drone_rotation_matrix)
-
-                            payload["location"] = [x2, y2, z2]
-
-                    save_to_machine(payload)
+                    asyncio.run(save_to_machine(payload,type="alert_image"))
                     asyncio.run(send_alert(payload,type="alert_image"))
             else :
                 print(f"🔒 Saving {name} for first time!")
-                x_img , y_img = get_middle_point(box,name)
+                x,y,z = get_alert_location(frame1,box,name,intrinsic_matrix,drone_rotation_matrix,drone_pos)
+                if x is not None and y is not None and z is not None :
+                    payload["location"] = [x, y, z]
 
-                if x_img is not None and y_img is not None :
-                    z_img = get_depth(frame1, x_img, y_img)
-                    camera_coordinates = pixel_to_camera_coordinates(x_img, y_img, z_img, intrinsic_matrix)
-                    if camera_coordinates is not None:
-                        drone_pos = np.array(drone_pos)
-                        x2, y2, z2 = get_alert_pos_coordinates(camera_coordinates, drone_pos ,drone_rotation_matrix)
-
-                        payload["location"] = [x2, y2, z2]
-
-                save_to_machine(payload)
+                asyncio.run(save_to_machine(payload,type="alert_image"))
                 asyncio.run(send_alert(payload,type="alert_image"))
         else:
             print("Faces do not match. Similarity:", cosine_sim)

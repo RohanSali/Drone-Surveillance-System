@@ -1,23 +1,21 @@
-import ast
 import os
+import sys
+import ast
+import asyncio
+import cv2
 import numpy as np
 import torch
-import cv2
+from ultralytics import YOLO
 from collections import deque
 from datetime import datetime
-from ultralytics import YOLO
-import sys
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-from websocket_call import send_alert
-import asyncio
+from result_saver import send_alert , save_to_machine
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 project_dir = os.path.abspath(os.path.join(current_dir, '..'))
 
 MODEL_PATH = os.path.join(project_dir,'models','crowd_density_colab.pt')
-
 TEMP_TEXT_FILE = os.path.join(current_dir,'alerts.txt')
-
 CONFIDENCE = 0.209 #confidence threshold
 TIME_THRESHOLD = 60*3 #sec
 
@@ -135,10 +133,19 @@ def get_alert_pos_coordinates(camera_coords, drone_position, drone_rotation_matr
     world_coords = drone_rotation_matrix @ camera_coords + drone_position
     return world_coords
 
-def save_to_machine(payload):
-    with open(TEMP_TEXT_FILE, 'a') as f:
-        f.write(str(payload) + '\n')
-    print(f"✅ Saved to machine as {payload['alert']}")
+def get_crowd_location(frame,result,intrinsic_matrix,drone_rotation_matrix,drone_pos):
+    x_img , y_img = get_avg_centers(result[0].boxes)
+
+    if x_img is not None and y_img is not None :
+        z_img = get_depth(frame, x_img, y_img)
+        camera_coordinates = pixel_to_camera_coordinates(x_img, y_img, z_img, intrinsic_matrix)
+        if camera_coordinates is not None:
+            drone_pos = np.array(drone_pos)
+            x2, y2, z2 = get_alert_pos_coordinates(camera_coordinates, drone_pos ,drone_rotation_matrix)
+
+            return x2, y2, z2
+        
+    return None, None, None
 
 
 def inference_crowd_density(frame,capture_timestamp, intrinsic_matrix , drone_rotation_matrix, drone_pos= [0,0.2,5]):
@@ -186,35 +193,21 @@ def inference_crowd_density(frame,capture_timestamp, intrinsic_matrix , drone_ro
             time_difference = (capture_timestamp - timestamp).total_seconds()
             print(f"Time difference between last {new_label} prediction is : {time_difference} ⏳")
             if time_difference > TIME_THRESHOLD:
-                x_img , y_img = get_avg_centers(result[0].boxes)
-
-                if x_img is not None and y_img is not None :
-                    z_img = get_depth(frame, x_img, y_img)
-                    camera_coordinates = pixel_to_camera_coordinates(x_img, y_img, z_img, intrinsic_matrix)
-                    if camera_coordinates is not None:
-                        drone_pos = np.array(drone_pos)
-                        x2, y2, z2 = get_alert_pos_coordinates(camera_coordinates, drone_pos ,drone_rotation_matrix)
-
-                        payload["alert_location"] = [x2, y2, z2]
+                x,y,z = get_crowd_location(frame,result,intrinsic_matrix,drone_rotation_matrix,drone_pos)
+                if x is not None and y is not None and z is not None :
+                    payload["alert_location"] = [x, y, z]
                     
-                save_to_machine(payload)
+                asyncio.run(save_to_machine(payload))
                 asyncio.run(send_alert(payload))
                 
         else :
             print(f"🔒 Saving {new_label} for first time!")
 
-            x_img , y_img = get_avg_centers(result[0].boxes)
+            x,y,z = get_crowd_location(frame,result,intrinsic_matrix,drone_rotation_matrix,drone_pos)
+            if x is not None and y is not None and z is not None :
+                payload["alert_location"] = [x, y, z]
 
-            if x_img is not None and y_img is not None :
-                z_img = get_depth(frame, x_img, y_img)
-                camera_coordinates = pixel_to_camera_coordinates(x_img, y_img, z_img, intrinsic_matrix)
-                if camera_coordinates is not None:
-                    drone_pos = np.array(drone_pos)
-                    x2, y2, z2 = get_alert_pos_coordinates(camera_coordinates, drone_pos ,drone_rotation_matrix)
-
-                    payload["alert_location"] = [x2, y2, z2]
-
-            save_to_machine(payload)
+            asyncio.run(save_to_machine(payload))
             asyncio.run(send_alert(payload))
 
     print(f"Found {number_of_people} peoples in the frame!")

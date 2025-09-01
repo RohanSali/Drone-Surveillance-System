@@ -7,8 +7,7 @@ from pathlib import Path
 import numpy as np
 import sys
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-from casulty_inference import inference_casulty
-from anamoly_inference import inference_anamoly
+from alert_inference import inference_for_alert
 from face_recognition import compare_faces
 from crowd_density import inference_crowd_density
 
@@ -40,8 +39,7 @@ create_required_files_and_folders()
 LOST_FINDING_IMG_FOLDER = Path(os.path.join(base_dir, 'lost_person'))
 
 # Define 1-slot queues for real-time inference (latest frame only)
-casulty_queue = queue.Queue(maxsize=1)
-anamoly_queue = queue.Queue(maxsize=1)
+alert_queue = queue.Queue(maxsize=1)
 match_face_queue = queue.Queue(maxsize=1)
 crowd_queue = queue.Queue(maxsize=1)
 
@@ -54,19 +52,12 @@ def safe_put(q, item):
             pass
     q.put(item)
 
-# Async inference thread for casulty
-def casulty_worker():
+# Async inference thread for alert
+def alert_worker():
     while True:
-        frame, timestamp, intrinsic_matrix, drone_rotation_matrix, drone_pos = casulty_queue.get()
-        inference_casulty(frame, timestamp , intrinsic_matrix, drone_rotation_matrix, drone_pos)
-        casulty_queue.task_done()
-
-# Async inference thread for anomaly
-def anamoly_worker():
-    while True:
-        frame, timestamp ,intrinsic_matrix, drone_rotation_matrix, drone_pos = anamoly_queue.get()
-        inference_anamoly(frame, timestamp, intrinsic_matrix, drone_rotation_matrix, drone_pos)
-        anamoly_queue.task_done()
+        frame, timestamp, intrinsic_matrix, drone_rotation_matrix, drone_pos = alert_queue.get()
+        inference_for_alert(frame, timestamp , intrinsic_matrix, drone_rotation_matrix, drone_pos)
+        alert_queue.task_done()
 
 # Async inference thread for face recognition
 def match_face_worker():
@@ -103,8 +94,7 @@ def crowd_density_worker():
         crowd_queue.task_done()
 
 # Start both threads as daemons
-threading.Thread(target=casulty_worker, daemon=True).start()
-threading.Thread(target=anamoly_worker, daemon=True).start()
+threading.Thread(target=alert_worker, daemon=True).start()
 threading.Thread(target=match_face_worker, daemon=True).start()
 threading.Thread(target=crowd_density_worker, daemon=True).start()
 
@@ -135,11 +125,9 @@ def runner_app(device="lap"):
 
         if not ret:
             break
-        
 
         # Send to inference queues (copy frame to avoid race condition)
-        safe_put(casulty_queue, (frame.copy(), timestamp, intrinsic_matrix, drone_rotation_matrix, drone_pos))
-        safe_put(anamoly_queue, (frame.copy(), timestamp, intrinsic_matrix, drone_rotation_matrix, drone_pos))
+        safe_put(alert_queue, (frame.copy(), timestamp, intrinsic_matrix, drone_rotation_matrix, drone_pos))
         safe_put(match_face_queue, (frame.copy(), timestamp, intrinsic_matrix, drone_rotation_matrix, drone_pos))
         safe_put(crowd_queue, (frame.copy(), timestamp, intrinsic_matrix, drone_rotation_matrix, drone_pos))
 
@@ -157,8 +145,7 @@ def runner_sim(rgb_array,intrinsic_matrix,drone_rotation_matrix,drone_pos):
     timestamp = datetime.now()
 
     # Send to inference queues (copy frame to avoid race condition)
-    safe_put(casulty_queue, (frame.copy(), timestamp, intrinsic_matrix, drone_rotation_matrix, drone_pos))
-    safe_put(anamoly_queue, (frame.copy(), timestamp, intrinsic_matrix, drone_rotation_matrix, drone_pos))
+    safe_put(alert_queue, (frame.copy(), timestamp, intrinsic_matrix, drone_rotation_matrix, drone_pos))
     safe_put(match_face_queue, (frame.copy(), timestamp, intrinsic_matrix, drone_rotation_matrix, drone_pos))
     safe_put(crowd_queue, (frame.copy(), timestamp, intrinsic_matrix, drone_rotation_matrix, drone_pos))
 
