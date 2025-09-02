@@ -106,8 +106,8 @@
                 </Grid.ColumnDefinitions>
                 
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="20,0">
-                    <Ellipse Width="35" Height="35" Fill="#2563EB" Margin="0,0,12,0"/>
-                    <TextBlock Text="🚁" FontSize="24" VerticalAlignment="Center" Margin="-28,0,15,0" Foreground="White"/>
+                    <Ellipse Width="45" Height="45" Fill="#2563EB" Margin="0,0,12,0"/>
+                    <TextBlock Text="🚁" FontSize="24" VerticalAlignment="Center" Margin="-50,0,15,0" Foreground="White"/>
                     <TextBlock Text="Drone Surveillance System" 
                               Foreground="White" 
                               FontWeight="Bold" 
@@ -180,20 +180,21 @@
                                       Margin="0,0,0,15"/>
                             
                             <StackPanel Grid.Row="1" VerticalAlignment="Center">
-                                <Ellipse Width="60" Height="60" Fill="#4CAF50" HorizontalAlignment="Center" Margin="0,0,0,10"/>
-                                <TextBlock Text="🚁" FontSize="32" HorizontalAlignment="Center" Margin="0,-48,0,15" Foreground="White"/>
+                                <Ellipse Width="80" Height="80" Fill="#4CAF50" HorizontalAlignment="Center" Margin="0,0,0,10"/>
+                                <TextBlock Text="🚁" FontSize="32" HorizontalAlignment="Center" Margin="0,-71,0,15" Foreground="White"/>
                             </StackPanel>
                             
-                            <StackPanel Grid.Row="2" Orientation="Vertical">
+                            <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center">
                                 <Button x:Name="ConnectDroneButton" 
                                        Content="Connect Devices" 
                                        Style="{StaticResource DarkButton}" 
                                        Click="ConnectDroneButton_Click" 
-                                       Margin="0,0,0,8"/>
+                                       Margin="0,0,5,0"/>
                                 <Button x:Name="AddNetworkButton" 
                                        Content="Add Network" 
                                        Style="{StaticResource DarkButton}" 
-                                       Click="AddNetworkButton_Click"/>
+                                       Click="AddNetworkButton_Click"
+                                       Margin="5,0,0,0"/>
                             </StackPanel>
                         </Grid>
                     </Border>
@@ -215,8 +216,8 @@
                                       Margin="0,0,0,15"/>
                             
                             <StackPanel Grid.Row="1" VerticalAlignment="Center">
-                                <Ellipse Width="60" Height="60" Fill="#2563EB" HorizontalAlignment="Center" Margin="0,0,0,10"/>
-                                <TextBlock Text="📈" FontSize="32" HorizontalAlignment="Center" Margin="0,-48,0,15" Foreground="White"/>
+                                <Ellipse Width="80" Height="80" Fill="#2563EB" HorizontalAlignment="Center" Margin="0,0,0,10"/>
+                                <TextBlock Text="📈" FontSize="32" HorizontalAlignment="Center" Margin="0,-71,0,15" Foreground="White"/>
                             </StackPanel>
                             
                             <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center">

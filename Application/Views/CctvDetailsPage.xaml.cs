@@ -59,7 +59,7 @@ namespace DroneSurveillanceSystem.Views
                 var configForm = new CctvDetailsForm(_cctv);
                 configForm.ShowDialog();
                 
-                if (configForm.DialogResult && configForm.Configuration != null)
+                if (configForm.DialogResult == true && configForm.Configuration != null)
                 {
                     // Update CCTV with the new configuration
                     var config = configForm.Configuration;
