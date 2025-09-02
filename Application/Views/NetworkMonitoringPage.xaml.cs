@@ -19,12 +19,20 @@ namespace DroneSurveillanceSystem.Views
         private readonly NetworkService _networkService;
 
         public int TotalDronesCount => _networkService.Networks.Sum(n => n.Drones?.Count ?? 0);
-        public int ActiveAlertsCount => AlertManager.Instance.ActiveAlerts.Count;
+        public int ActiveAlertsCount => AlertManager.Instance.GetAllDeviceAlerts().Count();
 
         public event PropertyChangedEventHandler? PropertyChanged;
         protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+
+        /// <summary>
+        /// Gets the count of alerts for a specific network (only from devices in that network)
+        /// </summary>
+        public int GetNetworkAlertCount(Network network)
+        {
+            return AlertManager.Instance.GetAlertsForNetwork(network).Count();
         }
 
         public NetworkMonitoringPage()

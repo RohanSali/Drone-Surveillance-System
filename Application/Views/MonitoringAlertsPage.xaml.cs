@@ -20,8 +20,14 @@ namespace DroneSurveillanceSystem.Views
 {
     public partial class MonitoringAlertsPage : Window, INotifyPropertyChanged
     {
-        public ObservableCollection<AlertData> ActiveAlerts => AlertManager.Instance.ActiveAlerts;
+        // Show only alerts from user-added devices (not hardcoded ones)
+        public ObservableCollection<AlertData> ActiveAlerts => new ObservableCollection<AlertData>(AlertManager.Instance.GetAllDeviceAlerts());
         private readonly LostFindingManager _lostFindingManager;
+        
+        // Filter properties
+        private DeviceFilterType _currentFilter = DeviceFilterType.All;
+        public ObservableCollection<DeviceDisplayItem> FilteredDevices { get; } = new ObservableCollection<DeviceDisplayItem>();
+        public ObservableCollection<AlertData> FilteredAlerts { get; } = new ObservableCollection<AlertData>();
 
         public event PropertyChangedEventHandler? PropertyChanged;
         protected void OnPropertyChanged(string propertyName)
@@ -45,12 +51,13 @@ namespace DroneSurveillanceSystem.Views
             // Set up data context
             DataContext = this;
             
-            // Subscribe to alert updates
+            // Subscribe to alert updates and refresh the filtered view
             AlertManager.Instance.ActiveAlerts.CollectionChanged += (sender, e) =>
             {
                 Dispatcher.Invoke(() =>
                 {
                     OnPropertyChanged(nameof(ActiveAlerts));
+                    ApplyFilter(); // Refresh filtered data when alerts change
                 });
             };
             
@@ -70,6 +77,10 @@ namespace DroneSurveillanceSystem.Views
             Console.WriteLine($"[MonitoringAlertsPage] ✅ MonitoringAlertsPage initialization completed");
             // Initialize pending status button with current count
             UpdatePendingStatusButton();
+            
+            // Initialize filter
+            UpdateFilterButtonText();
+            ApplyFilter();
         }
 
         protected override void OnSourceInitialized(EventArgs e)
@@ -124,6 +135,118 @@ namespace DroneSurveillanceSystem.Views
             this.Close();
         }
 
+        private void FilterButton_Click(object sender, RoutedEventArgs e)
+        {
+            // Cycle through filter types
+            _currentFilter = _currentFilter switch
+            {
+                DeviceFilterType.All => DeviceFilterType.DronesOnly,
+                DeviceFilterType.DronesOnly => DeviceFilterType.CctvOnly,
+                DeviceFilterType.CctvOnly => DeviceFilterType.All,
+                _ => DeviceFilterType.All
+            };
+
+            // Update button text and apply filter
+            UpdateFilterButtonText();
+            ApplyFilter();
+        }
+
+        private void UpdateFilterButtonText()
+        {
+            FilterButton.Content = _currentFilter switch
+            {
+                DeviceFilterType.All => "🔍 All Devices",
+                DeviceFilterType.DronesOnly => "🚁 Drones Only",
+                DeviceFilterType.CctvOnly => "📹 CCTV Only",
+                _ => "🔍 All Devices"
+            };
+        }
+
+        private void ApplyFilter()
+        {
+            // Update devices list
+            FilteredDevices.Clear();
+            
+            // Update title
+            DevicesTitle.Text = _currentFilter switch
+            {
+                DeviceFilterType.All => "🚁📹 All Devices",
+                DeviceFilterType.DronesOnly => "🚁 Active Drones",
+                DeviceFilterType.CctvOnly => "📹 CCTV Cameras",
+                _ => "🚁📹 All Devices"
+            };
+
+            // Add devices based on filter
+            if (_currentFilter == DeviceFilterType.All || _currentFilter == DeviceFilterType.DronesOnly)
+            {
+                foreach (var drone in DeviceDataManager.GetAllDrones())
+                {
+                    FilteredDevices.Add(new DeviceDisplayItem
+                    {
+                        Name = drone.Name,
+                        Details = $"Device ID: {drone.DeviceId}",
+                        AdditionalInfo = $"USB Port: {drone.UsbPort} | Firmware: {drone.FirmwareVersion}",
+                        Status = drone.IsConnected ? "CONNECTED" : "DISCONNECTED",
+                        StatusColor = drone.IsConnected ? "#88C999" : "#FF6B6B",
+                        DeviceId = drone.DeviceId,
+                        DeviceType = "Drone"
+                    });
+                }
+            }
+
+            if (_currentFilter == DeviceFilterType.All || _currentFilter == DeviceFilterType.CctvOnly)
+            {
+                foreach (var cctv in DeviceDataManager.GetAllCctvs())
+                {
+                    FilteredDevices.Add(new DeviceDisplayItem
+                    {
+                        Name = cctv.Name,
+                        Details = $"Device ID: {cctv.DeviceId}",
+                        AdditionalInfo = $"Resolution: {cctv.Resolution} | Frame Rate: {cctv.FrameRate}fps",
+                        Status = cctv.IsConnected ? "CONNECTED" : "DISCONNECTED",
+                        StatusColor = cctv.IsConnected ? "#88C999" : "#FF6B6B",
+                        DeviceId = cctv.DeviceId,
+                        DeviceType = "CCTV"
+                    });
+                }
+            }
+
+            // Update alerts list
+            FilteredAlerts.Clear();
+            var allAlerts = AlertManager.Instance.GetAllDeviceAlerts();
+            
+            foreach (var alert in allAlerts)
+            {
+                // Check if this alert should be shown based on current filter
+                bool shouldShow = _currentFilter switch
+                {
+                    DeviceFilterType.All => true,
+                    DeviceFilterType.DronesOnly => IsDroneDevice(alert.DroneId),
+                    DeviceFilterType.CctvOnly => IsCctvDevice(alert.DroneId),
+                    _ => true
+                };
+
+                if (shouldShow)
+                {
+                    FilteredAlerts.Add(alert);
+                }
+            }
+
+            // Notify UI of changes
+            OnPropertyChanged(nameof(FilteredDevices));
+            OnPropertyChanged(nameof(FilteredAlerts));
+        }
+
+        private bool IsDroneDevice(string deviceId)
+        {
+            return DeviceDataManager.GetAllDrones().Any(d => d.DeviceId == deviceId);
+        }
+
+        private bool IsCctvDevice(string deviceId)
+        {
+            return DeviceDataManager.GetAllCctvs().Any(c => c.DeviceId == deviceId);
+        }
+
         private void AcknowledgeAlerts_Click(object sender, RoutedEventArgs e)
         {
             try
@@ -139,6 +262,7 @@ namespace DroneSurveillanceSystem.Views
                 
                 // Update the UI
                 OnPropertyChanged(nameof(ActiveAlerts));
+                ApplyFilter(); // Refresh filtered alerts
             }
             catch (Exception ex)
             {
@@ -809,59 +933,51 @@ namespace DroneSurveillanceSystem.Views
         
         private byte[] CreateTestImage()
         {
-            // Create a simple 50x50 red square PNG image
-            return new byte[] {
-                0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, // PNG signature
-                0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52, // IHDR chunk header
-                0x00, 0x00, 0x00, 0x32, 0x00, 0x00, 0x00, 0x32, // Width: 50, Height: 50
-                0x08, 0x02, 0x00, 0x00, 0x00, 0x91, 0x5D, 0x1F, // 8-bit RGB, no compression
-                0x96, 0x00, 0x00, 0x01, 0x65, 0x49, 0x44, 0x41, // CRC, IDAT chunk start
-                0x54, 0x78, 0x9C, 0xED, 0xC1, 0x01, 0x01, 0x00, // Compressed data start
-                0x00, 0x00, 0x80, 0x90, 0xFE, 0xAF, 0x6E, 0xE4,
-                0x40, 0x05, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x7E, 0x1B,
-                0xC2, 0x07, 0x3D, 0x00, 0x00, 0x00, 0x00, 0x49,
-                0x45, 0x4E, 0x44, 0xAE, 0x42, 0x60, 0x82        // IEND chunk
-            };
-        }
+            // Create a simple 50x50 red square bitmap
+            int width = 50;
+            int height = 50;
+            int stride = width * 4;
+            byte[] pixels = new byte[height * stride];
 
+            // Fill with solid red
+            for (int i = 0; i < pixels.Length; i += 4)
+            {
+                pixels[i] = 0;       // Blue
+                pixels[i + 1] = 0;   // Green
+                pixels[i + 2] = 255; // Red
+                pixels[i + 3] = 255; // Alpha
+            }
+
+            var bitmap = BitmapSource.Create(
+                width, height, 96, 96,
+                PixelFormats.Bgra32, null,
+                pixels, stride);
+
+            using (var stream = new System.IO.MemoryStream())
+            {
+                var encoder = new PngBitmapEncoder();
+                encoder.Frames.Add(BitmapFrame.Create(bitmap));
+                encoder.Save(stream);
+                return stream.ToArray();
+            }
+        }
+    }
+
+    public enum DeviceFilterType
+    {
+        All,
+        DronesOnly,
+        CctvOnly
+    }
+
+    public class DeviceDisplayItem
+    {
+        public string Name { get; set; } = string.Empty;
+        public string Details { get; set; } = string.Empty;
+        public string AdditionalInfo { get; set; } = string.Empty;
+        public string Status { get; set; } = string.Empty;
+        public string StatusColor { get; set; } = "#88C999";
+        public string DeviceId { get; set; } = string.Empty;
+        public string DeviceType { get; set; } = string.Empty;
     }
 }

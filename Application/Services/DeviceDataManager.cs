@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.IO;
+using System.Text.Json;
 
 namespace DroneSurveillanceSystem.Services
 {
@@ -8,6 +10,90 @@ namespace DroneSurveillanceSystem.Services
     {
         private static readonly List<UsbDrone> _persistentDrones = new List<UsbDrone>();
         private static readonly List<UsbCctv> _persistentCctvs = new List<UsbCctv>();
+        private static string _currentUserKey = "guest";
+        private static readonly object _lockObject = new object();
+
+        private static string GetStorageDirectory()
+        {
+            var baseDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "DroneSurveillance", "Devices");
+            try
+            {
+                if (!Directory.Exists(baseDir)) Directory.CreateDirectory(baseDir);
+            }
+            catch { }
+            return baseDir;
+        }
+
+        private static string Sanitize(string input)
+        {
+            if (string.IsNullOrWhiteSpace(input)) return "guest";
+            var invalidChars = Path.GetInvalidFileNameChars();
+            var chars = input.Select(c => invalidChars.Contains(c) || !(char.IsLetterOrDigit(c) || c == '@' || c == '.') ? '_' : c).ToArray();
+            return new string(chars);
+        }
+
+        private static string GetUserDevicesPath()
+        {
+            var fileName = $"devices_{Sanitize(_currentUserKey)}.json";
+            return Path.Combine(GetStorageDirectory(), fileName);
+        }
+
+        public static void SetCurrentUser(string? userEmailOrId)
+        {
+            lock (_lockObject)
+            {
+                _currentUserKey = string.IsNullOrWhiteSpace(userEmailOrId) ? "guest" : userEmailOrId.Trim();
+                LoadForCurrentUser();
+            }
+        }
+
+        private static void LoadForCurrentUser()
+        {
+            try
+            {
+                var path = GetUserDevicesPath();
+                if (File.Exists(path))
+                {
+                    var json = File.ReadAllText(path);
+                    var payload = JsonSerializer.Deserialize<UserDevicesPayload>(json);
+                    _persistentDrones.Clear();
+                    _persistentCctvs.Clear();
+                    if (payload?.Drones != null) _persistentDrones.AddRange(payload.Drones);
+                    if (payload?.Cctvs != null) _persistentCctvs.AddRange(payload.Cctvs);
+                }
+                else
+                {
+                    _persistentDrones.Clear();
+                    _persistentCctvs.Clear();
+                }
+            }
+            catch
+            {
+                _persistentDrones.Clear();
+                _persistentCctvs.Clear();
+            }
+            finally
+            {
+                DronesChanged?.Invoke(_persistentDrones.ToList());
+                CctvsChanged?.Invoke(_persistentCctvs.ToList());
+            }
+        }
+
+        private static void SaveForCurrentUser()
+        {
+            try
+            {
+                var path = GetUserDevicesPath();
+                var payload = new UserDevicesPayload
+                {
+                    Drones = _persistentDrones.ToList(),
+                    Cctvs = _persistentCctvs.ToList()
+                };
+                var json = JsonSerializer.Serialize(payload, new JsonSerializerOptions { WriteIndented = true });
+                File.WriteAllText(path, json);
+            }
+            catch { }
+        }
 
         // Events to notify when data changes
         public static event Action<List<UsbDrone>> DronesChanged;
@@ -38,6 +124,7 @@ namespace DroneSurveillanceSystem.Services
 
             _persistentDrones.Add(drone);
             DronesChanged?.Invoke(_persistentDrones.ToList());
+            SaveForCurrentUser();
         }
 
         // Add a new CCTV
@@ -53,6 +140,7 @@ namespace DroneSurveillanceSystem.Services
 
             _persistentCctvs.Add(cctv);
             CctvsChanged?.Invoke(_persistentCctvs.ToList());
+            SaveForCurrentUser();
         }
 
         // Remove a drone
@@ -64,6 +152,7 @@ namespace DroneSurveillanceSystem.Services
             if (removed)
             {
                 DronesChanged?.Invoke(_persistentDrones.ToList());
+                SaveForCurrentUser();
             }
             return removed;
         }
@@ -77,6 +166,7 @@ namespace DroneSurveillanceSystem.Services
             if (removed)
             {
                 CctvsChanged?.Invoke(_persistentCctvs.ToList());
+                SaveForCurrentUser();
             }
             return removed;
         }
@@ -110,6 +200,7 @@ namespace DroneSurveillanceSystem.Services
             _persistentCctvs.Clear();
             DronesChanged?.Invoke(new List<UsbDrone>());
             CctvsChanged?.Invoke(new List<UsbCctv>());
+            SaveForCurrentUser();
         }
 
         // Get count of drones
@@ -117,5 +208,11 @@ namespace DroneSurveillanceSystem.Services
 
         // Get count of CCTVs
         public static int CctvCount => _persistentCctvs.Count;
+    }
+
+    internal class UserDevicesPayload
+    {
+        public List<UsbDrone>? Drones { get; set; }
+        public List<UsbCctv>? Cctvs { get; set; }
     }
 }

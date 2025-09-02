@@ -16,6 +16,7 @@ namespace DroneSurveillanceSystem.Views
     public partial class NetworkDetailsPage : Window
     {
         private readonly Network _network;
+        private readonly NetworkService _networkService;
         private readonly DispatcherTimer _updateTimer;
         private readonly Random _random = new Random();
         private readonly LostFindingManager _lostFindingManager;
@@ -27,7 +28,8 @@ namespace DroneSurveillanceSystem.Views
         {
             InitializeComponent();
             
-            _network = network;
+            _network = network ?? throw new ArgumentNullException(nameof(network));
+            _networkService = new NetworkService();
             
             // Initialize collections
             _connectedDrones = new List<NetworkDrone>();
@@ -58,6 +60,16 @@ namespace DroneSurveillanceSystem.Views
                 }
             };
             
+            // Subscribe to AlertManager changes for real-time updates
+            AlertManager.Instance.ActiveAlerts.CollectionChanged += (sender, e) =>
+            {
+                Dispatcher.Invoke(() =>
+                {
+                    PopulateAlerts();
+                    UpdateNetworkSummary();
+                });
+            };
+            
             // Setup timer for real-time updates
             _updateTimer = new DispatcherTimer();
             _updateTimer.Interval = TimeSpan.FromSeconds(2);
@@ -67,11 +79,11 @@ namespace DroneSurveillanceSystem.Views
 
         private void InitializeUI()
         {
-            NetworkNameText.Text = _network.Name;
-            NetworkDescriptionText.Text = _network.Description;
+            NetworkNameText.Text = _network.Name ?? "Unknown Network";
+            NetworkDescriptionText.Text = _network.Description ?? "No description available";
             
             // Set network status and icon color based on network name
-            switch (_network.Name)
+            switch (_network.Name ?? "Unknown")
             {
                 case "Network 1":
                     NetworkStatusIndicator.Fill = new SolidColorBrush(Colors.LimeGreen);
@@ -116,22 +128,25 @@ namespace DroneSurveillanceSystem.Views
         {
             // Generate drones based on actual network assignments
             int droneIndex = 1;
-            foreach (var assignedDrone in _network.Drones)
+            if (_network.Drones != null)
             {
-                var drone = new NetworkDrone
+                foreach (var assignedDrone in _network.Drones)
                 {
-                    Id = $"{_network.Name.Replace(" ", "")}-D{droneIndex:D3}",
-                    Name = assignedDrone.Name,
-                    Status = GetRandomDroneStatus(),
-                    Battery = 60 + _random.Next(35), // 60-95%
-                    Latitude = 37.7749 + (_random.NextDouble() - 0.5) * 0.02,
-                    Longitude = -122.4194 + (_random.NextDouble() - 0.5) * 0.02,
-                    Altitude = 30 + _random.Next(40), // 30-70m
-                    LastSeen = DateTime.Now.AddMinutes(-_random.Next(10))
-                };
-                
-                _connectedDrones.Add(drone);
-                droneIndex++;
+                    var drone = new NetworkDrone
+                    {
+                        Id = $"{(_network.Name ?? "Unknown").Replace(" ", "")}-D{droneIndex:D3}",
+                        Name = assignedDrone.Name ?? "Unknown Drone",
+                        Status = GetRandomDroneStatus(),
+                        Battery = 60 + _random.Next(35), // 60-95%
+                        Latitude = 37.7749 + (_random.NextDouble() - 0.5) * 0.02,
+                        Longitude = -122.4194 + (_random.NextDouble() - 0.5) * 0.02,
+                        Altitude = 30 + _random.Next(40), // 30-70m
+                        LastSeen = DateTime.Now.AddMinutes(-_random.Next(10))
+                    };
+                    
+                    _connectedDrones.Add(drone);
+                    droneIndex++;
+                }
             }
 
             // If no drones are assigned, show a message
@@ -154,23 +169,26 @@ namespace DroneSurveillanceSystem.Views
 
             // Generate CCTVs based on actual network assignments
             int camIndex = 1;
-            foreach (var cam in _network.Cctvs)
+            if (_network.Cctvs != null)
             {
-                var cctv = new NetworkCctv
+                foreach (var cam in _network.Cctvs)
                 {
-                    Id = $"{_network.Name.Replace(" ", "")}-C{camIndex:D3}",
-                    Name = cam.Name,
-                    IsOnline = true,
-                    Resolution = "1080p",
-                    Fps = 30,
-                    LastSeen = DateTime.Now.AddMinutes(-_random.Next(10))
-                };
-                _connectedCctvs.Add(cctv);
-                camIndex++;
+                    var cctv = new NetworkCctv
+                    {
+                        Id = $"{(_network.Name ?? "Unknown").Replace(" ", "")}-C{camIndex:D3}",
+                        Name = cam.Name ?? "Unknown CCTV",
+                        IsOnline = true,
+                        Resolution = "1080p",
+                        Fps = 30,
+                        LastSeen = DateTime.Now.AddMinutes(-_random.Next(10))
+                    };
+                    _connectedCctvs.Add(cctv);
+                    camIndex++;
+                }
             }
 
             // Generate sample alerts based on network
-            int alertCount = GetAlertCountForNetwork(_network.Name);
+            int alertCount = GetAlertCountForNetwork(_network.Name ?? "Unknown");
             string[] alertTypes = { "Intrusion Detected", "Low Battery Warning", "Communication Lost", "Anomaly Detected", "Crowd Detected" };
             string[] alertSeverities = { "High", "Medium", "Low" };
 
@@ -199,30 +217,21 @@ namespace DroneSurveillanceSystem.Views
 
         private int GetDroneCountForNetwork(string networkName)
         {
-            return networkName switch
-            {
-                "Network 1" => 4,
-                "Network 2" => 3,
-                "Network 3" => 2,
-                "Network 4" => 1,
-                "Network 5" => 3,
-                "Network 6" => 4,
-                _ => 3
-            };
+            // Get the actual network from the service
+            if (_networkService?.Networks == null) return 0;
+            var network = _networkService.Networks.FirstOrDefault(n => n.Name == networkName);
+            return network?.Drones?.Count ?? 0;
         }
 
         private int GetAlertCountForNetwork(string networkName)
         {
-            return networkName switch
-            {
-                "Network 1" => 2,
-                "Network 2" => 1,
-                "Network 3" => 3,
-                "Network 4" => 0,
-                "Network 5" => 1,
-                "Network 6" => 2,
-                _ => 1
-            };
+            // Get the actual network from the service
+            if (_networkService?.Networks == null) return 0;
+            var network = _networkService.Networks.FirstOrDefault(n => n.Name == networkName);
+            if (network == null) return 0;
+            
+            // Return filtered alerts count for this network
+            return AlertManager.Instance.GetAlertsForNetwork(network).Count();
         }
 
         private string GenerateAlertMessage()
@@ -287,7 +296,7 @@ namespace DroneSurveillanceSystem.Views
                     CornerRadius = new CornerRadius(8),
                     Padding = new Thickness(20),
                     Margin = new Thickness(0, 0, 0, 10),
-                    BorderThickness = new Thickness(1),
+                    BorderThickness = new Thickness(1, 1, 1, 1),
                     BorderBrush = new SolidColorBrush(Color.FromRgb(100, 100, 100))
                 };
 
@@ -324,7 +333,7 @@ namespace DroneSurveillanceSystem.Views
                 CornerRadius = new CornerRadius(8),
                 Padding = new Thickness(15),
                 Margin = new Thickness(0, 0, 0, 10),
-                BorderThickness = new Thickness(1),
+                BorderThickness = new Thickness(1, 1, 1, 1),
                 BorderBrush = new SolidColorBrush(Color.FromRgb(68, 68, 68))
             };
 
@@ -455,7 +464,7 @@ namespace DroneSurveillanceSystem.Views
                 CornerRadius = new CornerRadius(8),
                 Padding = new Thickness(15),
                 Margin = new Thickness(0, 0, 0, 10),
-                BorderThickness = new Thickness(1),
+                BorderThickness = new Thickness(1, 1, 1, 1),
                 BorderBrush = new SolidColorBrush(Color.FromRgb(68, 68, 68))
             };
 
@@ -539,7 +548,10 @@ namespace DroneSurveillanceSystem.Views
         {
             AlertsPanel.Children.Clear();
 
-            if (_activeAlerts.Count == 0)
+            // Get alerts from AlertManager filtered by this network
+            var networkAlerts = AlertManager.Instance.GetAlertsForNetwork(_network).ToList();
+
+            if (networkAlerts.Count == 0)
             {
                 var noAlertsText = new TextBlock
                 {
@@ -553,11 +565,91 @@ namespace DroneSurveillanceSystem.Views
                 return;
             }
 
-            foreach (var alert in _activeAlerts)
+            foreach (var alert in networkAlerts)
             {
-                var alertCard = CreateAlertCard(alert);
+                var alertCard = CreateAlertCardFromAlertData(alert);
                 AlertsPanel.Children.Add(alertCard);
             }
+        }
+
+        private Border CreateAlertCardFromAlertData(AlertData alert)
+        {
+            var card = new Border
+            {
+                Background = new SolidColorBrush(Color.FromRgb(60, 42, 42)),
+                CornerRadius = new CornerRadius(6),
+                Padding = new Thickness(12),
+                Margin = new Thickness(0, 5, 0, 5),
+                BorderBrush = new SolidColorBrush(Color.FromRgb(255, 68, 68)),
+                BorderThickness = new Thickness(1, 1, 1, 1)
+            };
+
+            var grid = new Grid();
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+            var leftPanel = new StackPanel();
+
+            var alertText = new TextBlock
+            {
+                Text = alert.Alert ?? "Unknown Alert",
+                Foreground = new SolidColorBrush(Color.FromRgb(255, 165, 165)),
+                FontWeight = FontWeights.Bold,
+                FontSize = 13,
+                TextWrapping = TextWrapping.Wrap
+            };
+            leftPanel.Children.Add(alertText);
+
+            var droneIdText = new TextBlock
+            {
+                Text = $"Device: {alert.DroneId ?? "Unknown"}",
+                Foreground = new SolidColorBrush(Color.FromRgb(204, 204, 204)),
+                FontSize = 11,
+                Margin = new Thickness(0, 2, 0, 0)
+            };
+            leftPanel.Children.Add(droneIdText);
+
+            var timestampText = new TextBlock
+            {
+                Text = $"Time: {alert.Timestamp ?? DateTime.Now.ToString("HH:mm:ss")}",
+                Foreground = new SolidColorBrush(Color.FromRgb(170, 170, 170)),
+                FontSize = 10,
+                Margin = new Thickness(0, 2, 0, 0)
+            };
+            leftPanel.Children.Add(timestampText);
+
+            var scoreText = new TextBlock
+            {
+                Text = $"Score: {alert.Score:F1}%",
+                Foreground = new SolidColorBrush(Color.FromRgb(136, 136, 136)),
+                FontSize = 10,
+                Margin = new Thickness(0, 2, 0, 0)
+            };
+            leftPanel.Children.Add(scoreText);
+
+            Grid.SetColumn(leftPanel, 0);
+            grid.Children.Add(leftPanel);
+
+            var rightPanel = new StackPanel
+            {
+                VerticalAlignment = VerticalAlignment.Center,
+                HorizontalAlignment = HorizontalAlignment.Right
+            };
+
+            var statusText = new TextBlock
+            {
+                Text = "ACTIVE",
+                Foreground = new SolidColorBrush(Color.FromRgb(255, 68, 68)),
+                FontSize = 10,
+                FontWeight = FontWeights.Bold
+            };
+            rightPanel.Children.Add(statusText);
+
+            Grid.SetColumn(rightPanel, 1);
+            grid.Children.Add(rightPanel);
+
+            card.Child = grid;
+            return card;
         }
 
         private Border CreateAlertCard(NetworkAlert alert)
@@ -568,7 +660,7 @@ namespace DroneSurveillanceSystem.Views
                 CornerRadius = new CornerRadius(8),
                 Padding = new Thickness(15),
                 Margin = new Thickness(0, 0, 0, 10),
-                BorderThickness = new Thickness(1),
+                BorderThickness = new Thickness(1, 1, 1, 1),
                 BorderBrush = GetSeverityColor(alert.Severity)
             };
 
@@ -688,7 +780,7 @@ namespace DroneSurveillanceSystem.Views
             // Count actual assigned drones (excluding placeholder)
             int activeDrones = _connectedDrones.Count(d => d.Id != "NO-DRONES");
             int activeCctvs = _connectedCctvs.Count;
-            int totalAlerts = _activeAlerts.Count;
+            int totalAlerts = AlertManager.Instance.GetAlertsForNetwork(_network).Count();
             double avgBattery = _connectedDrones.Count > 0 && _connectedDrones.Any(d => d.Id != "NO-DRONES") 
                 ? _connectedDrones.Where(d => d.Id != "NO-DRONES").Average(d => d.Battery) 
                 : 0;
@@ -704,7 +796,7 @@ namespace DroneSurveillanceSystem.Views
             UpdatePendingButton();
             
             // Update coverage area based on network
-            CoverageAreaText.Text = _network.Name switch
+            CoverageAreaText.Text = (_network.Name ?? "Unknown") switch
             {
                 "Network 1" => "15.2 km²",
                 "Network 2" => "12.8 km²",
@@ -752,30 +844,31 @@ namespace DroneSurveillanceSystem.Views
         {
             try
             {
-                if (_activeAlerts.Count == 0)
+                var networkAlerts = AlertManager.Instance.GetAlertsForNetwork(_network).ToList();
+                
+                if (networkAlerts.Count == 0)
                 {
                     MessageBox.Show("No active alerts to acknowledge.", "Information", 
                         MessageBoxButton.OK, MessageBoxImage.Information);
                     return;
                 }
                 
-                var result = MessageBox.Show($"Are you sure you want to acknowledge all {_activeAlerts.Count} active alerts for {_network.Name}?", 
+                var result = MessageBox.Show($"Are you sure you want to acknowledge all {networkAlerts.Count} active alerts for {_network.Name ?? "Unknown"}?", 
                     "Acknowledge Alerts", MessageBoxButton.YesNo, MessageBoxImage.Question);
                 
                 if (result == MessageBoxResult.Yes)
                 {
-                    // Mark all alerts as acknowledged
-                    foreach (var alert in _activeAlerts)
+                    // Remove alerts from AlertManager
+                    foreach (var alert in networkAlerts)
                     {
-                        alert.IsActive = false;
+                        AlertManager.Instance.ActiveAlerts.Remove(alert);
                     }
                     
-                    // Clear alerts and refresh display
-                    _activeAlerts.Clear();
+                    // Refresh display
                     PopulateAlerts();
                     UpdateNetworkSummary();
                     
-                    MessageBox.Show($"All alerts for {_network.Name} have been acknowledged.", "Success", 
+                    MessageBox.Show($"All alerts for {_network.Name ?? "Unknown"} have been acknowledged.", "Success", 
                         MessageBoxButton.OK, MessageBoxImage.Information);
                 }
             }
@@ -811,7 +904,7 @@ namespace DroneSurveillanceSystem.Views
             }
 
             // 3. Prepare WebSocket message (type 'alert_image' with required fields)
-            string uniqueName = $"LostFinding_{_network.Name.Replace(" ", "")}_{DateTime.UtcNow:yyyyMMddHHmmss}_{Guid.NewGuid().ToString().Substring(0, 8)}";
+            string uniqueName = $"LostFinding_{(_network.Name ?? "Unknown").Replace(" ", "")}_{DateTime.UtcNow:yyyyMMddHHmmss}_{Guid.NewGuid().ToString().Substring(0, 8)}";
             
             var wsMessage = new
             {
@@ -844,7 +937,7 @@ namespace DroneSurveillanceSystem.Views
                 {
                     await apiService._client.SendInstant(json);
                     Console.WriteLine($"[NetworkDetailsPage] Sent alert_image request with name: {uniqueName}");
-                    MessageBox.Show($"Lost Finding alert image sent for {_network.Name}!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                    MessageBox.Show($"Lost Finding alert image sent for {_network.Name ?? "Unknown"}!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
                     
                     // Add to pending requests and store data using persistent manager
                     string requestId = DateTime.UtcNow.ToString("yyyyMMddHHmmss");
@@ -883,7 +976,7 @@ namespace DroneSurveillanceSystem.Views
             try
             {
                 // Show Lost Finding pending requests information
-                var pendingInfo = $"Pending Items for {_network.Name}:\n\n" +
+                var pendingInfo = $"Pending Items for {_network.Name ?? "Unknown"}:\n\n" +
                                 $"• Drone Status Updates: 0\n" +
                                 $"• Lost Finding Requests: {_lostFindingManager.PendingCount}\n" +
                                 $"• Alert Confirmations: {_activeAlerts.Count}\n" +
@@ -899,7 +992,7 @@ namespace DroneSurveillanceSystem.Views
                     monitoringAlertsPage.Show();
                 }
                 
-                MessageBox.Show(pendingInfo, $"Pending Items - {_network.Name}", 
+                MessageBox.Show(pendingInfo, $"Pending Items - {_network.Name ?? "Unknown"}", 
                     MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (Exception ex)

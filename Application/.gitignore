@@ -21,6 +21,7 @@ google_credentials.json
 
 #Files Specified by me 
 networks.json
+networks_guest.json
 
 # Mono auto generated files
 mono_crash.*

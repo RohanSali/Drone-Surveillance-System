@@ -209,7 +209,26 @@ namespace DroneSurveillanceSystem.Services
     {
         private readonly ObservableCollection<Network> _networks;
         private readonly NetworkStatistics _statistics;
-        private const string StorageFile = "networks.json";
+        private static string _currentUserKey = "guest";
+        private static readonly object _lockObject = new object();
+
+        private string StorageFile => $"networks_{Sanitize(_currentUserKey)}.json";
+
+        private static string Sanitize(string input)
+        {
+            if (string.IsNullOrWhiteSpace(input)) return "guest";
+            var invalidChars = Path.GetInvalidFileNameChars();
+            var chars = input.Select(c => invalidChars.Contains(c) || !(char.IsLetterOrDigit(c) || c == '@' || c == '.') ? '_' : c).ToArray();
+            return new string(chars);
+        }
+
+        public static void SetCurrentUser(string? userEmailOrId)
+        {
+            lock (_lockObject)
+            {
+                _currentUserKey = string.IsNullOrWhiteSpace(userEmailOrId) ? "guest" : userEmailOrId.Trim();
+            }
+        }
 
         public ObservableCollection<Network> Networks => _networks;
         public NetworkStatistics Statistics => _statistics;
@@ -220,6 +239,12 @@ namespace DroneSurveillanceSystem.Services
         {
             _networks = new ObservableCollection<Network>();
             _statistics = new NetworkStatistics();
+            // Ensure storage directory exists
+            var storageDir = Path.GetDirectoryName(StorageFile);
+            if (!string.IsNullOrEmpty(storageDir) && !Directory.Exists(storageDir))
+            {
+                Directory.CreateDirectory(storageDir);
+            }
             LoadNetworks();
             UpdateStatistics();
         }
@@ -239,12 +264,6 @@ namespace DroneSurveillanceSystem.Services
                         net.PropertyChanged += OnNetworkPropertyChanged;
                     }
                 }
-            }
-            
-            // If no networks exist, create sample networks
-            if (_networks.Count == 0)
-            {
-                CreateSampleNetworks();
             }
         }
 
@@ -341,76 +360,6 @@ namespace DroneSurveillanceSystem.Services
                 SaveNetworks();
                 UpdateStatistics();
             }
-        }
-        
-        private void CreateSampleNetworks()
-        {
-            // Create sample networks with proper names and sample drones
-            var sampleNetworks = new[]
-            {
-                new Network 
-                { 
-                    Name = "Network 1", 
-                    Description = "Primary Surveillance Network",
-                    Status = "Active",
-                    Drones = new List<DronePosition>
-                    {
-                        new DronePosition { Id = "DRONE-001", Name = "Surveillance Alpha", Status = DroneFlightStatus.Flying },
-                        new DronePosition { Id = "DRONE-002", Name = "Surveillance Beta", Status = DroneFlightStatus.Hovering }
-                    }
-                },
-                new Network 
-                { 
-                    Name = "Network 2", 
-                    Description = "Secondary Patrol Network",
-                    Status = "Active",
-                    Drones = new List<DronePosition>
-                    {
-                        new DronePosition { Id = "DRONE-003", Name = "Patrol Gamma", Status = DroneFlightStatus.Flying },
-                        new DronePosition { Id = "DRONE-004", Name = "Patrol Delta", Status = DroneFlightStatus.Grounded }
-                    }
-                },
-                new Network 
-                { 
-                    Name = "Network 3", 
-                    Description = "Emergency Response Network",
-                    Status = "Standby",
-                    Drones = new List<DronePosition>
-                    {
-                        new DronePosition { Id = "DRONE-005", Name = "Emergency Echo", Status = DroneFlightStatus.Grounded }
-                    }
-                },
-                new Network 
-                { 
-                    Name = "Network 4", 
-                    Description = "Perimeter Security Network",
-                    Status = "Active",
-                    Drones = new List<DronePosition>
-                    {
-                        new DronePosition { Id = "DRONE-006", Name = "Security Foxtrot", Status = DroneFlightStatus.Flying },
-                        new DronePosition { Id = "DRONE-007", Name = "Security Golf", Status = DroneFlightStatus.Hovering },
-                        new DronePosition { Id = "DRONE-008", Name = "Security Hotel", Status = DroneFlightStatus.Flying }
-                    }
-                },
-                new Network 
-                { 
-                    Name = "Network 5", 
-                    Description = "Research and Development Network",
-                    Status = "Testing",
-                    Drones = new List<DronePosition>
-                    {
-                        new DronePosition { Id = "DRONE-009", Name = "Research India", Status = DroneFlightStatus.Grounded }
-                    }
-                }
-            };
-            
-            foreach (var network in sampleNetworks)
-            {
-                _networks.Add(network);
-                network.PropertyChanged += OnNetworkPropertyChanged;
-            }
-            
-            SaveNetworks();
         }
     }
 }

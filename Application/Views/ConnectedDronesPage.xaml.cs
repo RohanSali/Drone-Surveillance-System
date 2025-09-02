@@ -49,29 +49,12 @@ namespace DroneSurveillanceSystem.Views
             this.Close();
         }
 
-        private async void LoadConnectedDrones()
+        private void LoadConnectedDrones()
         {
             try
             {
-                // Get detected drones from USB service
-                var detectedDrones = await _usbDroneService.DetectUsbDronesAsync();
-                
-                // Merge with persistent drones (avoid duplicates by DeviceId)
-                var allDrones = new List<UsbDrone>();
-                
-                // Add persistent drones first
-                allDrones.AddRange(DeviceDataManager.GetAllDrones());
-                
-                // Add detected drones that aren't already in persistent list
-                foreach (var detected in detectedDrones)
-                {
-                    if (!allDrones.Any(d => d.DeviceId == detected.DeviceId))
-                    {
-                        allDrones.Add(detected);
-                    }
-                }
-                
-                _connectedDrones = allDrones;
+                // For a clean interface per user/session on this page, load only persistent (manually added) drones
+                _connectedDrones = DeviceDataManager.GetAllDrones();
                 UpdateDronesList();
             }
             catch (Exception ex)
@@ -80,29 +63,12 @@ namespace DroneSurveillanceSystem.Views
             }
         }
 
-        private async void LoadConnectedCctvs()
+        private void LoadConnectedCctvs()
         {
             try
             {
-                // Get detected CCTVs from USB service
-                var detectedCctvs = await _usbCctvService.DetectUsbCctvsAsync();
-                
-                // Merge with persistent CCTVs (avoid duplicates by DeviceId)
-                var allCctvs = new List<UsbCctv>();
-                
-                // Add persistent CCTVs first
-                allCctvs.AddRange(DeviceDataManager.GetAllCctvs());
-                
-                // Add detected CCTVs that aren't already in persistent list
-                foreach (var detected in detectedCctvs)
-                {
-                    if (!allCctvs.Any(c => c.DeviceId == detected.DeviceId))
-                    {
-                        allCctvs.Add(detected);
-                    }
-                }
-                
-                _connectedCctvs = allCctvs;
+                // For a clean interface per user/session on this page, load only persistent (manually added) CCTVs
+                _connectedCctvs = DeviceDataManager.GetAllCctvs();
                 UpdateCctvList();
             }
             catch (Exception ex)

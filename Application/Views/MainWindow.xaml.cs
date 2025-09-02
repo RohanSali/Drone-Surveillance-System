@@ -199,7 +199,7 @@ namespace DroneSurveillanceSystem.Views
         
         public string AnomaliesText => $"Anomalies Detected: {_totalAnomalies}";
         
-        public int ActiveAlertsCount => AlertManager.Instance.ActiveAlerts.Count;
+        public int ActiveAlertsCount => AlertManager.Instance.GetAllDeviceAlerts().Count();
         
         public int NetworkActiveDronesCount => _networkService?.Networks
             ?.Where(n => n.Status == "Active" && n.Drones != null)
@@ -277,7 +277,10 @@ namespace DroneSurveillanceSystem.Views
                 // Subscribe to AlertManager's ActiveAlerts collection changes
                 AlertManager.Instance.ActiveAlerts.CollectionChanged += (s, e) =>
                 {
-                    OnPropertyChanged(nameof(ActiveAlertsCount));
+                    Dispatcher.Invoke(() =>
+                    {
+                        OnPropertyChanged(nameof(ActiveAlertsCount));
+                    });
                 };
                 
                 // Subscribe to NetworkService's Networks collection changes
@@ -573,10 +576,18 @@ namespace DroneSurveillanceSystem.Views
 
         private void ActiveDronesCard_Click(object sender, MouseButtonEventArgs e)
         {
-            var networkMonitoringWindow = new NetworkMonitoringPage(_networkService);
-            networkMonitoringWindow.Owner = this;
-            networkMonitoringWindow.WindowState = WindowState.Maximized;
-            networkMonitoringWindow.Show();
+            var monitoringWindow = new MonitoringAlertsPage();
+            monitoringWindow.Owner = this;
+            monitoringWindow.WindowState = WindowState.Maximized;
+            monitoringWindow.Show();
+        }
+
+        private void ActiveCctvsCard_Click(object sender, MouseButtonEventArgs e)
+        {
+            var monitoringWindow = new MonitoringAlertsPage();
+            monitoringWindow.Owner = this;
+            monitoringWindow.WindowState = WindowState.Maximized;
+            monitoringWindow.Show();
         }
 
         private void AdvancedControlButton_Click(object sender, RoutedEventArgs e)

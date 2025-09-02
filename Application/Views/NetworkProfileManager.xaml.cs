@@ -24,33 +24,17 @@ namespace DroneSurveillanceSystem.Views
             _droneTrackingService = droneTrackingService;
             _deviceRegistryService = new DeviceRegistryService();
 
-            // Bind drones to combo box (with temporary defaults if registry empty)
-            var availableDrones = _deviceRegistryService.GetDevices(DeviceType.Drone)
-                .Select(d => new DronePosition { Id = d.Id, Name = d.Name, Status = DroneFlightStatus.Grounded })
+            // Bind drones to combo box (only user-added drones from DeviceDataManager)
+            var availableDrones = DeviceDataManager.GetAllDrones()
+                .Select(d => new DronePosition { Id = d.DeviceId, Name = d.Name, Status = DroneFlightStatus.Grounded })
                 .ToList();
-            if (availableDrones.Count == 0)
-            {
-                availableDrones = new List<DronePosition>
-                {
-                    new DronePosition { Id = "TMP-DRN-001", Name = "Temp Drone Alpha", Status = DroneFlightStatus.Grounded },
-                    new DronePosition { Id = "TMP-DRN-002", Name = "Temp Drone Beta", Status = DroneFlightStatus.Grounded },
-                    new DronePosition { Id = "TMP-DRN-003", Name = "Temp Drone Gamma", Status = DroneFlightStatus.Grounded }
-                };
-            }
             AvailableDronesComboBox.ItemsSource = availableDrones;
             AvailableDronesComboBox.DisplayMemberPath = "Name";
 
-            // Bind CCTVs to combo box (with temporary defaults if registry empty)
-            var availableCctvs = _deviceRegistryService.GetDevices(DeviceType.CCTV);
-            if (availableCctvs.Count == 0)
-            {
-                availableCctvs = new List<SurveillanceDevice>
-                {
-                    new SurveillanceDevice { Id = "TMP-CCTV-001", Name = "Temp CCTV A", Type = DeviceType.CCTV },
-                    new SurveillanceDevice { Id = "TMP-CCTV-002", Name = "Temp CCTV B", Type = DeviceType.CCTV },
-                    new SurveillanceDevice { Id = "TMP-CCTV-003", Name = "Temp CCTV C", Type = DeviceType.CCTV }
-                };
-            }
+            // Bind CCTVs to combo box (only user-added CCTVs from DeviceDataManager)
+            var availableCctvs = DeviceDataManager.GetAllCctvs()
+                .Select(c => new SurveillanceDevice { Id = c.DeviceId, Name = c.Name, Type = DeviceType.CCTV })
+                .ToList();
             AvailableCctvsComboBox.ItemsSource = availableCctvs;
             AvailableCctvsComboBox.DisplayMemberPath = "Name";
 
@@ -182,7 +166,7 @@ namespace DroneSurveillanceSystem.Views
             
             // Reset panel border
             NetworkEditorBorder.BorderBrush = System.Windows.Media.Brushes.Gray;
-            NetworkEditorBorder.BorderThickness = new Thickness(1);
+            NetworkEditorBorder.BorderThickness = new Thickness(1, 1, 1, 1);
             
             // Hide the network editor panel with animation
             HideNetworkEditor();
@@ -220,7 +204,7 @@ namespace DroneSurveillanceSystem.Views
 
             // Highlight the right panel to draw attention
             NetworkEditorBorder.BorderBrush = System.Windows.Media.Brushes.LightGreen;
-            NetworkEditorBorder.BorderThickness = new Thickness(2);
+            NetworkEditorBorder.BorderThickness = new Thickness(2, 2, 2, 2);
             
             // Reset border after 3 seconds
             var timer = new System.Windows.Threading.DispatcherTimer
@@ -230,7 +214,7 @@ namespace DroneSurveillanceSystem.Views
             timer.Tick += (s, args) =>
             {
                 NetworkEditorBorder.BorderBrush = System.Windows.Media.Brushes.Gray;
-                NetworkEditorBorder.BorderThickness = new Thickness(1);
+                NetworkEditorBorder.BorderThickness = new Thickness(1, 1, 1, 1);
                 timer.Stop();
             };
             timer.Start();
@@ -409,15 +393,24 @@ namespace DroneSurveillanceSystem.Views
 
             // Reset panel border
             NetworkEditorBorder.BorderBrush = System.Windows.Media.Brushes.Gray;
-            NetworkEditorBorder.BorderThickness = new Thickness(1);
+            NetworkEditorBorder.BorderThickness = new Thickness(1, 1, 1, 1);
         }
 
         private void AddDroneButton_Click(object sender, RoutedEventArgs e)
         {
             var selectedDrone = AvailableDronesComboBox.SelectedItem as DronePosition;
-            if (selectedDrone != null && !AssignedDronesPanel.Children.OfType<Border>().Any(border => 
-                border.Child is Grid grid && grid.Children.OfType<TextBlock>().FirstOrDefault()?.Text == selectedDrone.Name))
+            if (selectedDrone != null)
             {
+                // Check if drone is already assigned to this network (prevent duplicates within same network)
+                var isAlreadyAssigned = AssignedDronesPanel.Children.OfType<Border>().Any(border => 
+                    border.Child is Grid grid && grid.Children.OfType<TextBlock>().FirstOrDefault()?.Text == selectedDrone.Name);
+                
+                if (isAlreadyAssigned)
+                {
+                    MessageBox.Show($"Drone '{selectedDrone.Name}' is already assigned to this network.", "Duplicate Assignment", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
                 // Create a styled drone item with remove button
                 var droneItem = new Border
                 {
@@ -474,9 +467,18 @@ namespace DroneSurveillanceSystem.Views
         private void AddCctvButton_Click(object sender, RoutedEventArgs e)
         {
             var selectedCctv = AvailableCctvsComboBox.SelectedItem as SurveillanceDevice;
-            if (selectedCctv != null && !AssignedCctvsPanel.Children.OfType<Border>().Any(border =>
-                border.Child is Grid grid && grid.Children.OfType<TextBlock>().FirstOrDefault()?.Text == selectedCctv.Name))
+            if (selectedCctv != null)
             {
+                // Check if CCTV is already assigned to this network (prevent duplicates within same network)
+                var isAlreadyAssigned = AssignedCctvsPanel.Children.OfType<Border>().Any(border =>
+                    border.Child is Grid grid && grid.Children.OfType<TextBlock>().FirstOrDefault()?.Text == selectedCctv.Name);
+                
+                if (isAlreadyAssigned)
+                {
+                    MessageBox.Show($"CCTV '{selectedCctv.Name}' is already assigned to this network.", "Duplicate Assignment", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
                 var item = new Border
                 {
                     Background = new SolidColorBrush(System.Windows.Media.Color.FromRgb(45, 45, 45)),

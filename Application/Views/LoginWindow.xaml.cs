@@ -31,6 +31,12 @@ namespace DroneSurveillanceSystem.Views
                 if (success)
                 {
                     IsAuthenticated = true;
+                    try
+                    {
+                        DeviceDataManager.SetCurrentUser(_authService.CurrentUserEmail ?? _authService.CurrentUserName ?? "guest");
+                        NetworkService.SetCurrentUser(_authService.CurrentUserEmail ?? _authService.CurrentUserName ?? "guest");
+                    }
+                    catch { }
                     
                     // Create and show the main window for silently authenticated users
                     try
@@ -71,6 +77,12 @@ namespace DroneSurveillanceSystem.Views
                 if (success)
                 {
                     IsAuthenticated = true;
+                    try
+                    {
+                        DeviceDataManager.SetCurrentUser(_authService.CurrentUserEmail ?? _authService.CurrentUserName ?? "guest");
+                        NetworkService.SetCurrentUser(_authService.CurrentUserEmail ?? _authService.CurrentUserName ?? "guest");
+                    }
+                    catch { }
                     
                     // Create and show the main window for authenticated users
                     try
@@ -113,6 +125,12 @@ namespace DroneSurveillanceSystem.Views
                 if (success)
                 {
                     IsAuthenticated = true;
+                    try
+                    {
+                        DeviceDataManager.SetCurrentUser(_authService.CurrentUserEmail ?? _authService.CurrentUserName ?? "guest");
+                        NetworkService.SetCurrentUser(_authService.CurrentUserEmail ?? _authService.CurrentUserName ?? "guest");
+                    }
+                    catch { }
                     
                     // Create and show the main window for authenticated users
                     try
@@ -145,6 +163,12 @@ namespace DroneSurveillanceSystem.Views
         private void GuestButton_Click(object sender, RoutedEventArgs e)
         {
             IsGuestMode = true;
+            try
+            {
+                DeviceDataManager.SetCurrentUser("guest");
+                NetworkService.SetCurrentUser("guest");
+            }
+            catch { }
             
             // Create and show the main window for guest mode
             try
