@@ -68,7 +68,10 @@ class DroneWebSocketHandler:
                         "type": alert_type,
                         "data": payload
                     }))
-                    print(f"✅ {alert_type} sent to server! : {payload}")
+                    if alert_type=="alert":
+                        print(f"✅ {alert_type} sent to server! : {payload['alert']}")
+                    elif alert_type=="alert_image":
+                        print(f"✅ {alert_type} sent to server! : {payload['name']}")
 
                 except Exception as e:
                     print(f"❌ Failed to send alert from queue: {e}")
