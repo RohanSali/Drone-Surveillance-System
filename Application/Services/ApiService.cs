@@ -26,10 +26,10 @@ namespace DroneSurveillanceSystem.Services
         private readonly string _baseUrl;
         private readonly string _authToken;
         internal WebsocketClient? _client;
-        private readonly string _wsUrl = "wss://web-production-190fc.up.railway.app/ws/application/app_001";
+        private readonly string _wsUrl = "wss://droneserver-5pfg.onrender.com/ws/application/app_001";
         public event EventHandler<AlertReceivedEventArgs>? AlertReceived;
 
-        public ApiService(string baseUrl = "http://web-production-190fc.up.railway.app", string authToken = "")
+        public ApiService(string baseUrl = "wss://droneserver-5pfg.onrender.com", string authToken = "")
         {
             _baseUrl = baseUrl;
             _authToken = authToken;

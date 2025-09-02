@@ -21,7 +21,7 @@
             <Border Background="#2d2d2d" CornerRadius="30" Padding="30" Margin="0,0,0,30">
                 <Grid>
                     <Ellipse Fill="#1a1a1a" Width="120" Height="120"/>
-                    <TextBlock Text="🚁" FontSize="80" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    <TextBlock Text="🚁" FontSize="80" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="White"/>
                 </Grid>
             </Border>
             <TextBlock Text="Drone Surveillance System" 

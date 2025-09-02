@@ -99,6 +99,14 @@ namespace DroneSurveillanceSystem.Services
                     await _msalClient.RemoveAsync(_currentAccount);
                 }
                 
+                // Clear Google credentials store
+                var tokenFolder = Path.Combine(Environment.GetFolderPath(
+                    Environment.SpecialFolder.ApplicationData), "DroneApp");
+                if (Directory.Exists(tokenFolder))
+                {
+                    Directory.Delete(tokenFolder, true);
+                }
+                
                 _currentAccount = null;
                 CurrentUserEmail = null;
                 CurrentUserName = null;
@@ -108,6 +116,7 @@ namespace DroneSurveillanceSystem.Services
             }
             catch (Exception ex)
             {
+                Debug.WriteLine($"Sign-out error: {ex.Message}");
                 MessageBox.Show($"Sign-out failed: {ex.Message}", "Authentication Error", 
                     MessageBoxButton.OK, MessageBoxImage.Error);
             }
@@ -142,16 +151,24 @@ namespace DroneSurveillanceSystem.Services
         {
             try
             {
+                // Add debug logging
+                Debug.WriteLine($"Current Directory: {AppDomain.CurrentDomain.BaseDirectory}");
+                
                 // Try to get credentials from appsettings.json first
                 var (clientId, clientSecret) = GetGoogleCredentialsFromConfig();
+                Debug.WriteLine($"Credentials from appsettings.json - ClientId exists: {!string.IsNullOrEmpty(clientId)}");
                 
                 // If not found in appsettings.json, try google_credentials.json
                 if (string.IsNullOrEmpty(clientId) || string.IsNullOrEmpty(clientSecret))
                 {
                     var credentialsPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "google_credentials.json");
+                    Debug.WriteLine($"Looking for credentials file at: {credentialsPath}");
+                    Debug.WriteLine($"File exists: {File.Exists(credentialsPath)}");
+                    
                     if (File.Exists(credentialsPath))
                     {
                         (clientId, clientSecret) = await GetGoogleCredentialsFromFileAsync(credentialsPath);
+                        Debug.WriteLine($"Credentials from file - ClientId exists: {!string.IsNullOrEmpty(clientId)}");
                     }
                 }
                 
@@ -170,77 +187,119 @@ namespace DroneSurveillanceSystem.Services
                     return false;
                 }
 
-                // Create Google OAuth2 flow with corrected settings for desktop application
-                var flow = new GoogleAuthorizationCodeFlow(new GoogleAuthorizationCodeFlow.Initializer
+                // Create a unique token directory for this session
+                var tokenStoragePath = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                    "DroneApp",
+                    $"Auth_{DateTime.Now:yyyyMMddHHmmss}"
+                );
+
+                try
                 {
-                    ClientSecrets = new ClientSecrets
+                    // Create fresh directory
+                    if (Directory.Exists(tokenStoragePath))
                     {
-                        ClientId = clientId,
-                        ClientSecret = clientSecret
-                    },
-                    Scopes = new[] { "openid", "email", "profile" },
-                    DataStore = new FileDataStore("DroneApp"),
-                });
+                        Directory.Delete(tokenStoragePath, true);
+                    }
+                    Directory.CreateDirectory(tokenStoragePath);
 
-                // Use LocalServerCodeReceiver with default settings that handles localhost redirect URIs
-                var codeReceiver = new LocalServerCodeReceiver();
-                
-                // Start OAuth2 authorization
-                var credential = await new AuthorizationCodeInstalledApp(flow, codeReceiver)
-                    .AuthorizeAsync("user", CancellationToken.None);
+                    // Create Google OAuth2 flow with unique session directory
+                    var flow = new GoogleAuthorizationCodeFlow(new GoogleAuthorizationCodeFlow.Initializer
+                    {
+                        ClientSecrets = new ClientSecrets
+                        {
+                            ClientId = clientId,
+                            ClientSecret = clientSecret
+                        },
+                        Scopes = new[] { "openid", "email", "profile" },
+                        DataStore = new FileDataStore(tokenStoragePath)
+                    });
 
-                if (credential != null)
+                    var codeReceiver = new LocalServerCodeReceiver();
+
+                    // Get new token
+                    var credential = await new AuthorizationCodeInstalledApp(flow, codeReceiver)
+                        .AuthorizeAsync("user", CancellationToken.None);
+
+                    if (credential != null)
+                    {
+                        try
+                        {
+                            // Get user info using OAuth2 v2 userinfo endpoint
+                            var userInfoService = new Google.Apis.Oauth2.v2.Oauth2Service(
+                                new Google.Apis.Services.BaseClientService.Initializer 
+                                { 
+                                    HttpClientInitializer = credential 
+                                });
+                            var userInfo = await userInfoService.Userinfo.Get().ExecuteAsync();
+                            
+                            CurrentUserEmail = userInfo.Email;
+                            CurrentUserName = userInfo.Name ?? userInfo.Email?.Split('@')[0];
+                        }
+                        catch (Exception ex)
+                        {
+                            Debug.WriteLine($"Error getting user info: {ex.Message}");
+                            CurrentUserEmail = credential.UserId;
+                            CurrentUserName = credential.UserId?.Split('@')[0] ?? "Unknown User";
+                        }
+
+                        SaveUserProfile();
+                        AuthenticationStateChanged?.Invoke(this, true);
+                        
+                        MessageBox.Show(
+                            $"Successfully signed in with Google!\n\nWelcome, {CurrentUserName}\nEmail: {CurrentUserEmail}",
+                            "Google Sign-in Successful",
+                            MessageBoxButton.OK,
+                            MessageBoxImage.Information
+                        );
+                        
+                        return true;
+                    }
+                }
+                finally
                 {
-                    // Get user info from Google
-                    string userEmail = "authenticated.user@gmail.com";
-                    string userName = "GoogleUser";
-                    
+                    // Cleanup old auth directories
                     try
                     {
-                        // Try to get actual user email from token if possible
-                        var token = await credential.GetAccessTokenForRequestAsync();
-                        if (!string.IsNullOrEmpty(token))
+                        var baseAuthPath = Path.Combine(
+                            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                            "DroneApp"
+                        );
+                        if (Directory.Exists(baseAuthPath))
                         {
-                            // In a real implementation, you would decode the ID token to get email
-                            // For now, we'll use the credential's UserId if available
-                            userName = credential.UserId ?? "GoogleUser";
-                            userEmail = credential.UserId?.Contains("@") == true ? credential.UserId : $"{userName}@gmail.com";
+                            var oldDirs = Directory.GetDirectories(baseAuthPath, "Auth_*")
+                                .Where(d => d != tokenStoragePath);
+                            foreach (var dir in oldDirs)
+                            {
+                                try
+                                {
+                                    Directory.Delete(dir, true);
+                                }
+                                catch
+                                {
+                                    // Ignore errors while cleaning up old directories
+                                }
+                            }
                         }
                     }
-                    catch (Exception)
+                    catch
                     {
-                        // Use default values if token parsing fails
+                        // Ignore cleanup errors
                     }
-                    
-                    CurrentUserEmail = userEmail;
-                    CurrentUserName = userName;
-                    
-                    // Save profile and notify of successful authentication
-                    SaveUserProfile();
-                    AuthenticationStateChanged?.Invoke(this, true);
-                    
-                    MessageBox.Show(
-                        $"Successfully signed in with Google!\n\nWelcome, {CurrentUserName}\nEmail: {CurrentUserEmail}",
-                        "Google Sign-in Successful",
-                        MessageBoxButton.OK,
-                        MessageBoxImage.Information
-                    );
-                    
-                    return true;
                 }
                 
                 return false;
             }
             catch (Exception ex)
             {
+                Debug.WriteLine($"Google authentication error: {ex}");
                 MessageBox.Show(
                     $"Google sign-in error: {ex.Message}\n\n" +
                     "Detailed error information:\n" +
                     $"Type: {ex.GetType().Name}\n" +
                     "\nPlease ensure:\n" +
                     "1. Your Google OAuth2 credentials are correct\n" +
-                    "2. http://localhost:8080 is added as redirect URI in Google Console\n" +
-                    "3. Google APIs are enabled for your project\n\n" +
+                    "2. Google APIs are enabled for your project\n\n" +
                     "For now, please use Microsoft sign-in or continue as Guest.", 
                     "Google Authentication Error", 
                     MessageBoxButton.OK, 
@@ -343,25 +402,38 @@ namespace DroneSurveillanceSystem.Services
         {
             try
             {
-                var credentialsJson = await File.ReadAllTextAsync(credentialsPath);
-                var credentialsData = JsonSerializer.Deserialize<JsonElement>(credentialsJson);
+                // Try multiple locations for the credentials file
+                var possiblePaths = new[]
+                {
+                    credentialsPath,
+                    Path.Combine(Directory.GetCurrentDirectory(), "google_credentials.json"),
+                    Path.Combine(AppContext.BaseDirectory, "google_credentials.json")
+                };
+
+                foreach (var path in possiblePaths)
+                {
+                    Debug.WriteLine($"Checking for credentials at: {path}");
+                    if (File.Exists(path))
+                    {
+                        Debug.WriteLine($"Found credentials file at: {path}");
+                        var credentialsJson = await File.ReadAllTextAsync(path);
+                        var credentialsData = JsonSerializer.Deserialize<JsonElement>(credentialsJson);
+
+                        if (credentialsData.TryGetProperty("installed", out var installed))
+                        {
+                            var clientId = installed.GetProperty("client_id").GetString() ?? "";
+                            var clientSecret = installed.GetProperty("client_secret").GetString() ?? "";
+                            Debug.WriteLine($"Successfully loaded credentials from: {path}");
+                            return (clientId, clientSecret);
+                        }
+                    }
+                }
                 
-                if (credentialsData.TryGetProperty("web", out var web))
-                {
-                    var clientId = web.GetProperty("client_id").GetString() ?? "";
-                    var clientSecret = web.GetProperty("client_secret").GetString() ?? "";
-                    return (clientId, clientSecret);
-                }
-                else if (credentialsData.TryGetProperty("installed", out var installed))
-                {
-                    var clientId = installed.GetProperty("client_id").GetString() ?? "";
-                    var clientSecret = installed.GetProperty("client_secret").GetString() ?? "";
-                    return (clientId, clientSecret);
-                }
+                Debug.WriteLine("No valid credentials file found in any location");
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                // Ignore file read errors
+                Debug.WriteLine($"Error reading credentials: {ex}");
             }
             
             return ("", "");
@@ -398,7 +470,6 @@ namespace DroneSurveillanceSystem.Services
                 "1. Go to Google Cloud Console → APIs & Services → Credentials\n" +
                 "2. DELETE current OAuth2 Client ID\n" +
                 "3. Create NEW OAuth2 Client ID as 'Desktop application'\n" +
-                "4. Add redirect URIs: http://localhost and http://localhost:8080\n" +
                 "5. Download new credentials and update your config files\n\n" +
                 "📋 Detailed instructions: See GOOGLE_OAUTH_FIX_GUIDE.md\n\n" +
                 "⏭️ MEANWHILE: Use Microsoft Sign-in or Continue as Guest\n\n" +

@@ -10,7 +10,8 @@ namespace DroneSurveillanceSystem.Views
     public partial class CctvDetailsForm : Window
     {
         private readonly UsbCctv _cctv;
-        public bool DialogResult { get; private set; }
+        // Add 'new' keyword to explicitly hide the base member
+        public new bool? DialogResult { get; set; }
         public CctvConfiguration? Configuration { get; private set; }
 
         public CctvDetailsForm(UsbCctv cctv)
