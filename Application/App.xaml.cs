@@ -1,21 +1,46 @@
 using System;
+using System.Threading.Tasks;
 using System.Windows;
 using System.IO;
 using DroneSurveillanceSystem.Services;
 using System.Linq;
+using DroneSurveillanceSystem.Views;
 
 namespace DroneSurveillanceSystem
 {
     public partial class App : Application
     {
         private ApiService? _apiService;
+        private AuthService? _authService;
 
         protected override void OnStartup(StartupEventArgs e)
         {
             base.OnStartup(e);
             
-            // Reset the AlertManager instance to ensure completely fresh start
-            AlertManager.ResetInstance();
+            // Initialize authentication service
+            _authService = new AuthService();
+            
+            // Show login window first
+            var loginWindow = new LoginWindow(_authService);
+            loginWindow.ShowDialog();
+            
+            // Check authentication result
+            if (!loginWindow.IsAuthenticated && !loginWindow.IsGuestMode)
+            {
+                // User cancelled login, exit application
+                Shutdown();
+                return;
+            }
+            
+            try
+            {
+                // Reset the AlertManager instance to ensure completely fresh start
+                AlertManager.ResetInstance();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Warning: Could not reset AlertManager: {ex.Message}");
+            }
             
             // Clear any existing WebSocket debug logs
             var websocketLogPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "websocket_debug.log");
@@ -32,26 +57,55 @@ namespace DroneSurveillanceSystem
                 }
             }
             
-            // Handle any unhandled exceptions
-            AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
-            DispatcherUnhandledException += App_DispatcherUnhandledException;
-            _apiService = new ApiService();
-            _apiService.AlertReceived += (sender, args) =>
+            try
             {
-                var alert = args.Alert;
-                if (alert != null)
+                // Handle any unhandled exceptions
+                AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
+                DispatcherUnhandledException += App_DispatcherUnhandledException;
+                
+                // Enable API service for WebSocket communication with drone (needed for Lost Finding feature)
+                _apiService = new ApiService();
+                _apiService.AlertReceived += (sender, args) =>
                 {
-                    Application.Current.Dispatcher.Invoke(() =>
+                    var alert = args.Alert;
+                    if (alert != null)
                     {
-                        var existing = AlertManager.Instance.ActiveAlerts.FirstOrDefault(a => a.Timestamp == alert.Timestamp);
-                        if (existing == null)
-                            AlertManager.Instance.ActiveAlerts.Insert(0, alert);
-                        else
-                            AlertManager.Instance.ActiveAlerts[AlertManager.Instance.ActiveAlerts.IndexOf(existing)] = alert;
-                    });
-                }
-            };
-            _ = _apiService.StartWebSocketAsync();
+                        Application.Current.Dispatcher.Invoke(() =>
+                        {
+                            var existing = AlertManager.Instance.ActiveAlerts.FirstOrDefault(a => a.Timestamp == alert.Timestamp);
+                            if (existing == null)
+                                AlertManager.Instance.ActiveAlerts.Insert(0, alert);
+                            else
+                                AlertManager.Instance.ActiveAlerts[AlertManager.Instance.ActiveAlerts.IndexOf(existing)] = alert;
+                        });
+                    }
+                };
+                
+                // Start WebSocket connection asynchronously without blocking startup
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        await _apiService.StartWebSocketAsync();
+                        Console.WriteLine("[App] WebSocket connection started successfully");
+                    }
+                    catch (Exception wsEx)
+                    {
+                        Console.WriteLine($"[App] WebSocket connection failed: {wsEx.Message}");
+                        // Don't show error to user as this is not critical for basic app functionality
+                    }
+                });
+                
+                // MainWindow will be created by LoginWindow after authentication
+                Console.WriteLine("Authentication flow completed, MainWindow will be created by LoginWindow");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error during startup: {ex.Message}\n\nStackTrace: {ex.StackTrace}", 
+                    "Startup Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                Console.WriteLine($"Startup error: {ex.Message}");
+                Console.WriteLine($"StackTrace: {ex.StackTrace}");
+            }
         }
 
         protected override void OnExit(ExitEventArgs e)

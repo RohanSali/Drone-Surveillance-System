@@ -16,6 +16,10 @@ namespace DroneSurveillanceSystem.Services
         public string DroneType { get; set; } = "Surveillance";
         public string FirmwareVersion { get; set; } = "v2.1.0";
         public int BatteryLevel { get; set; } = 85;
+        public string BluetoothMacAddress { get; set; } = "";
+        public string IpAddress { get; set; } = "";
+        public string SimType { get; set; } = "";
+        public string Location { get; set; } = "";
     }
 
     public class UsbDroneService

@@ -243,7 +243,7 @@
                     </Border>
 
                     <!-- Drone List -->
-                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Margin="10">
+                    <ScrollViewer Grid.Row="1" Style="{StaticResource HiddenSmoothScrollViewer}" Margin="10">
                         <StackPanel Name="DroneStatusPanel">
                             <!-- Drone status cards will be added programmatically -->
                             
@@ -402,7 +402,7 @@
                             </TextBlock.Foreground>
                         </TextBlock>
                         
-                        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                        <ScrollViewer Grid.Row="1" Style="{StaticResource HiddenSmoothScrollViewer}">
                             <StackPanel Name="AlertsPanel">
                                 <!-- Alerts will be added programmatically -->
                                 

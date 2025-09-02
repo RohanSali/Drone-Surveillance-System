@@ -14,6 +14,7 @@ namespace DroneSurveillanceSystem.Views
     {
         private readonly NetworkService _networkService;
         private readonly DroneTrackingService _droneTrackingService;
+        private readonly DeviceRegistryService _deviceRegistryService;
         private Network? _currentEditingNetwork;
 
         public NetworkProfileManager(NetworkService networkService, DroneTrackingService droneTrackingService)
@@ -21,10 +22,37 @@ namespace DroneSurveillanceSystem.Views
             InitializeComponent();
             _networkService = networkService;
             _droneTrackingService = droneTrackingService;
+            _deviceRegistryService = new DeviceRegistryService();
 
-            // Bind drones to combo box
-            AvailableDronesComboBox.ItemsSource = _droneTrackingService.ActiveDronePositions;
+            // Bind drones to combo box (with temporary defaults if registry empty)
+            var availableDrones = _deviceRegistryService.GetDevices(DeviceType.Drone)
+                .Select(d => new DronePosition { Id = d.Id, Name = d.Name, Status = DroneFlightStatus.Grounded })
+                .ToList();
+            if (availableDrones.Count == 0)
+            {
+                availableDrones = new List<DronePosition>
+                {
+                    new DronePosition { Id = "TMP-DRN-001", Name = "Temp Drone Alpha", Status = DroneFlightStatus.Grounded },
+                    new DronePosition { Id = "TMP-DRN-002", Name = "Temp Drone Beta", Status = DroneFlightStatus.Grounded },
+                    new DronePosition { Id = "TMP-DRN-003", Name = "Temp Drone Gamma", Status = DroneFlightStatus.Grounded }
+                };
+            }
+            AvailableDronesComboBox.ItemsSource = availableDrones;
             AvailableDronesComboBox.DisplayMemberPath = "Name";
+
+            // Bind CCTVs to combo box (with temporary defaults if registry empty)
+            var availableCctvs = _deviceRegistryService.GetDevices(DeviceType.CCTV);
+            if (availableCctvs.Count == 0)
+            {
+                availableCctvs = new List<SurveillanceDevice>
+                {
+                    new SurveillanceDevice { Id = "TMP-CCTV-001", Name = "Temp CCTV A", Type = DeviceType.CCTV },
+                    new SurveillanceDevice { Id = "TMP-CCTV-002", Name = "Temp CCTV B", Type = DeviceType.CCTV },
+                    new SurveillanceDevice { Id = "TMP-CCTV-003", Name = "Temp CCTV C", Type = DeviceType.CCTV }
+                };
+            }
+            AvailableCctvsComboBox.ItemsSource = availableCctvs;
+            AvailableCctvsComboBox.DisplayMemberPath = "Name";
 
             // Initialize UI
             LoadNetworkProfiles();
@@ -98,13 +126,13 @@ namespace DroneSurveillanceSystem.Views
             };
             infoPanel.Children.Add(descText);
 
-            var droneCountText = new TextBlock
+            var countsText = new TextBlock
             {
-                Text = $"Drones: {network.Drones.Count} | Region: {network.CoverageRegion}",
+                Text = $"Drones: {network.Drones.Count} | CCTVs: {network.Cctvs.Count} | Region: {network.CoverageRegion}",
                 Foreground = new SolidColorBrush(Color.FromRgb(170, 170, 170)),
                 FontSize = 11
             };
-            infoPanel.Children.Add(droneCountText);
+            infoPanel.Children.Add(countsText);
 
             Grid.SetColumn(infoPanel, 1);
             grid.Children.Add(infoPanel);
@@ -140,6 +168,7 @@ namespace DroneSurveillanceSystem.Views
             AutoActivateCheckBox.IsChecked = false;
             AlertNotificationCheckBox.IsChecked = true;
             AssignedDronesPanel.Children.Clear();
+            AssignedCctvsPanel.Children.Clear();
             EditorHeaderText.Text = "⚙️ Network Configuration";
             EditorHeaderText.Foreground = System.Windows.Media.Brushes.White;
             StatusText.Text = "Ready - Select a network to edit or create a new one";
@@ -173,6 +202,7 @@ namespace DroneSurveillanceSystem.Views
             AutoActivateCheckBox.IsChecked = false;
             AlertNotificationCheckBox.IsChecked = true;
             AssignedDronesPanel.Children.Clear();
+            AssignedCctvsPanel.Children.Clear();
 
             // Update editor header with more prominent styling
             EditorHeaderText.Text = "🆕 Create New Network";
@@ -311,6 +341,58 @@ namespace DroneSurveillanceSystem.Views
                 AssignedDronesPanel.Children.Add(droneItem);
             }
 
+            // Populate assigned CCTVs
+            AssignedCctvsPanel.Children.Clear();
+            foreach (var cam in network.Cctvs)
+            {
+                var item = new Border
+                {
+                    Background = new SolidColorBrush(System.Windows.Media.Color.FromRgb(45, 45, 45)),
+                    CornerRadius = new CornerRadius(6),
+                    Padding = new Thickness(10, 8, 10, 8),
+                    Margin = new Thickness(0, 2, 0, 2)
+                };
+
+                var grid = new Grid();
+                grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+                grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+                var nameText = new TextBlock
+                {
+                    Text = cam.Name,
+                    Foreground = System.Windows.Media.Brushes.White,
+                    FontSize = 14,
+                    FontWeight = FontWeights.Medium,
+                    VerticalAlignment = VerticalAlignment.Center
+                };
+                Grid.SetColumn(nameText, 0);
+                grid.Children.Add(nameText);
+
+                var removeButton = new Button
+                {
+                    Content = "✖",
+                    Background = new SolidColorBrush(System.Windows.Media.Color.FromRgb(220, 53, 69)),
+                    Foreground = System.Windows.Media.Brushes.White,
+                    BorderThickness = new Thickness(0),
+                    Width = 24,
+                    Height = 24,
+                    FontSize = 12,
+                    FontWeight = FontWeights.Bold,
+                    Margin = new Thickness(5, 0, 0, 0),
+                    Cursor = System.Windows.Input.Cursors.Hand
+                };
+                Grid.SetColumn(removeButton, 1);
+                grid.Children.Add(removeButton);
+
+                removeButton.Click += (s, args) =>
+                {
+                    AssignedCctvsPanel.Children.Remove(item);
+                };
+
+                item.Child = grid;
+                AssignedCctvsPanel.Children.Add(item);
+            }
+
             // Update editor header with editing styling
             EditorHeaderText.Text = "✏️ Editing Network: " + network.Name;
             EditorHeaderText.Foreground = System.Windows.Media.Brushes.White;
@@ -334,7 +416,7 @@ namespace DroneSurveillanceSystem.Views
         {
             var selectedDrone = AvailableDronesComboBox.SelectedItem as DronePosition;
             if (selectedDrone != null && !AssignedDronesPanel.Children.OfType<Border>().Any(border => 
-                border.Child is TextBlock tb && tb.Text == selectedDrone.Name))
+                border.Child is Grid grid && grid.Children.OfType<TextBlock>().FirstOrDefault()?.Text == selectedDrone.Name))
             {
                 // Create a styled drone item with remove button
                 var droneItem = new Border
@@ -389,6 +471,61 @@ namespace DroneSurveillanceSystem.Views
             }
         }
 
+        private void AddCctvButton_Click(object sender, RoutedEventArgs e)
+        {
+            var selectedCctv = AvailableCctvsComboBox.SelectedItem as SurveillanceDevice;
+            if (selectedCctv != null && !AssignedCctvsPanel.Children.OfType<Border>().Any(border =>
+                border.Child is Grid grid && grid.Children.OfType<TextBlock>().FirstOrDefault()?.Text == selectedCctv.Name))
+            {
+                var item = new Border
+                {
+                    Background = new SolidColorBrush(System.Windows.Media.Color.FromRgb(45, 45, 45)),
+                    CornerRadius = new CornerRadius(6),
+                    Padding = new Thickness(10, 8, 10, 8),
+                    Margin = new Thickness(0, 2, 0, 2)
+                };
+
+                var grid = new Grid();
+                grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+                grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+                var nameText = new TextBlock
+                {
+                    Text = selectedCctv.Name,
+                    Foreground = System.Windows.Media.Brushes.White,
+                    FontSize = 14,
+                    FontWeight = FontWeights.Medium,
+                    VerticalAlignment = VerticalAlignment.Center
+                };
+                Grid.SetColumn(nameText, 0);
+                grid.Children.Add(nameText);
+
+                var removeButton = new Button
+                {
+                    Content = "✖",
+                    Background = new SolidColorBrush(System.Windows.Media.Color.FromRgb(220, 53, 69)),
+                    Foreground = System.Windows.Media.Brushes.White,
+                    BorderThickness = new Thickness(0),
+                    Width = 24,
+                    Height = 24,
+                    FontSize = 12,
+                    FontWeight = FontWeights.Bold,
+                    Margin = new Thickness(5, 0, 0, 0),
+                    Cursor = System.Windows.Input.Cursors.Hand
+                };
+                Grid.SetColumn(removeButton, 1);
+                grid.Children.Add(removeButton);
+
+                removeButton.Click += (s, args) =>
+                {
+                    AssignedCctvsPanel.Children.Remove(item);
+                };
+
+                item.Child = grid;
+                AssignedCctvsPanel.Children.Add(item);
+            }
+        }
+
         private void SaveNetworkButton_Click(object sender, RoutedEventArgs e)
         {
             // Validate required fields
@@ -422,6 +559,18 @@ namespace DroneSurveillanceSystem.Views
                         return new DronePosition { Name = "" };
                     })
                     .Where(drone => !string.IsNullOrEmpty(drone.Name))
+                    .ToList(),
+                Cctvs = AssignedCctvsPanel.Children.OfType<Border>()
+                    .Select(border =>
+                    {
+                        if (border.Child is Grid grid)
+                        {
+                            var textBlock = grid.Children.OfType<TextBlock>().FirstOrDefault();
+                            return new SurveillanceDevice { Name = textBlock?.Text ?? string.Empty, Type = DeviceType.CCTV };
+                        }
+                        return new SurveillanceDevice { Name = string.Empty, Type = DeviceType.CCTV };
+                    })
+                    .Where(cam => !string.IsNullOrEmpty(cam.Name))
                     .ToList()
             };
 

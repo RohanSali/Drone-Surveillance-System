@@ -11,7 +11,7 @@ __pycache__/
 /gym_pybullet_drones
 /temp_my
 /results
-/environment_assets
+
 # Ignore all .pyc files
 *.pyc
 

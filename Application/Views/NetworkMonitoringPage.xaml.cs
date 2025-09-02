@@ -162,8 +162,11 @@ namespace DroneSurveillanceSystem.Views
 
         private void MonitorNetwork(Network network)
         {
-            var networkDetailsWindow = new NetworkDetailsPage(network);
-            networkDetailsWindow.Owner = this;
+            var networkDetailsWindow = new NetworkDetailsPage(network)
+            {
+                Owner = this,
+                WindowState = WindowState.Maximized
+            };
             networkDetailsWindow.Show();
         }
 
@@ -218,79 +221,26 @@ namespace DroneSurveillanceSystem.Views
             this.Close();
         }
 
-        private async void LostFindingButton_Click(object sender, RoutedEventArgs e)
+        private void LostFindingButton_Click(object sender, RoutedEventArgs e)
         {
-            // 1. Prompt user to select an image
-            var openFileDialog = new OpenFileDialog
-            {
-                Filter = "Image Files (*.png;*.jpg;*.jpeg)|*.png;*.jpg;*.jpeg"
-            };
-            if (openFileDialog.ShowDialog() != true)
-                return;
-
-            // 2. Read image as byte array
-            byte[] imageBytes;
-            try
-            {
-                imageBytes = System.IO.File.ReadAllBytes(openFileDialog.FileName);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Failed to read image: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                return;
-            }
-
-            // 3. Prepare multipart form data
-            try
-            {
-                using var httpClient = new System.Net.Http.HttpClient();
-                using var form = new MultipartFormDataContent();
-                form.Add(new StringContent("0"), "found");
-                form.Add(new StringContent("No Drone"), "drone_id");
-                form.Add(new StringContent(""), "matched_frame_path");
-                form.Add(new StringContent(""), "name");
-                form.Add(new StringContent("[0,0,0]"), "location");
-                form.Add(new ByteArrayContent(imageBytes), "actual_image", System.IO.Path.GetFileName(openFileDialog.FileName));
-                
-                var response = await httpClient.PostAsync("https://web-production-190fc.up.railway.app/api/alert-images", form);
-                var responseContent = await response.Content.ReadAsStringAsync();
-                
-                if (response.IsSuccessStatusCode)
-                {
-                    // Try to parse alert_image_id from response
-                    string msg = "Image uploaded successfully!";
-                    try
-                    {
-                        using var doc = JsonDocument.Parse(responseContent);
-                        if (doc.RootElement.TryGetProperty("alert_image_id", out var idElem))
-                        {
-                            msg = $"Image uploaded successfully!\nAlert Image ID: {idElem.GetString()}";
-                        }
-                        else
-                        {
-                            msg = $"Image uploaded successfully!\nResponse: {responseContent}";
-                        }
-                    }
-                    catch { 
-                        msg = $"Image uploaded successfully!\nResponse: {responseContent}";
-                    }
-
-                    MessageBox.Show(msg, "Upload Result", MessageBoxButton.OK, MessageBoxImage.Information);
-                }
-                else
-                {
-                    MessageBox.Show($"Failed to upload image. Status: {response.StatusCode}\nResponse: {responseContent}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Failed to upload image via API: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
+            // Open the MonitoringAlertsPage where the Lost Finding functionality is properly implemented
+            var monitoringAlertsPage = new MonitoringAlertsPage();
+            monitoringAlertsPage.Owner = this;
+            monitoringAlertsPage.Show();
+            
+            MessageBox.Show("Lost Finding page opened! Use the Lost Finding button in the monitoring page to upload images and view results.", 
+                          "Lost Finding", MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
         private void AcknowledgeAllAlertsButton_Click(object sender, RoutedEventArgs e)
         {
             MessageBox.Show("All alerts acknowledged.", "Acknowledge Alerts", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+
+        private void PendingButton_Click(object sender, RoutedEventArgs e)
+        {
+            // For now, show a simple status dialog. This can be wired to your real pending queue.
+            MessageBox.Show("No pending items.", "Pending", MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
         // Method to demonstrate dynamic updates

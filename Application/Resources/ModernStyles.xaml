@@ -85,6 +85,34 @@
         </Style.Triggers>
     </Style>
 
+    <!-- Blue Button (Primary Button Alternative) -->
+    <Style x:Key="BlueButton" TargetType="Button" BasedOn="{StaticResource ModernButton}">
+        <Setter Property="Background" Value="#0078d4"/>
+        <Setter Property="Foreground" Value="White"/>
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Background" Value="#106EBE"/>
+            </Trigger>
+            <Trigger Property="IsPressed" Value="True">
+                <Setter Property="Background" Value="#005A9E"/>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <!-- Gmail Button -->
+    <Style x:Key="GmailButton" TargetType="Button" BasedOn="{StaticResource ModernButton}">
+        <Setter Property="Background" Value="#DD4B39"/>
+        <Setter Property="Foreground" Value="White"/>
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Background" Value="#C23321"/>
+            </Trigger>
+            <Trigger Property="IsPressed" Value="True">
+                <Setter Property="Background" Value="#A02C1E"/>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
     <!-- Ghost Button -->
     <Style x:Key="GhostButton" TargetType="Button" BasedOn="{StaticResource ModernButton}">
         <Setter Property="Background" Value="Transparent"/>
@@ -313,5 +341,26 @@
         <Setter Property="VerticalAlignment" Value="Center"/>
         <Setter Property="Foreground" Value="{StaticResource PrimaryTextBrush}"/>
     </Style>
+
+  <!-- Hidden, smooth ScrollViewer used app-wide to hide scroll bars
+       while still allowing mouse wheel and touch panning. -->
+  <Style x:Key="HiddenSmoothScrollViewer" TargetType="ScrollViewer">
+      <Setter Property="Background" Value="Transparent"/>
+      <Setter Property="BorderThickness" Value="0"/>
+      <Setter Property="VerticalScrollBarVisibility" Value="Hidden"/>
+      <Setter Property="HorizontalScrollBarVisibility" Value="Hidden"/>
+      <Setter Property="PanningMode" Value="Both"/>
+      <Setter Property="CanContentScroll" Value="False"/>
+      <Setter Property="Template">
+          <Setter.Value>
+              <ControlTemplate TargetType="ScrollViewer">
+                  <ScrollContentPresenter CanContentScroll="False"/>
+              </ControlTemplate>
+          </Setter.Value>
+      </Setter>
+  </Style>
+
+  <!-- Apply hidden smooth scrolling by default to all ScrollViewers unless overridden -->
+  <Style TargetType="ScrollViewer" BasedOn="{StaticResource HiddenSmoothScrollViewer}"/>
 
 </ResourceDictionary>

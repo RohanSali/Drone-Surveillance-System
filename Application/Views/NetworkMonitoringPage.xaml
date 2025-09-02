@@ -207,7 +207,7 @@
             </StackPanel>
 
             <!-- Network Selection Grid with ScrollViewer -->
-            <ScrollViewer Grid.Row="1" Margin="0,20" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+            <ScrollViewer Grid.Row="1" Margin="0,20" Style="{StaticResource HiddenSmoothScrollViewer}">
                 <WrapPanel Name="NetworksWrapPanel" Orientation="Horizontal" HorizontalAlignment="Center">
                     <!-- Dynamic networks will be loaded here -->
                 </WrapPanel>
@@ -218,7 +218,10 @@
         <!-- Footer -->
         <Border Grid.Row="2" Background="#2d2d2d" Padding="20">
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                <!-- Removed AcknowledgeAllAlertsButton as requested -->
+                <TextBlock Text="Select a network above to monitor drones and access advanced features" 
+                          Foreground="#cccccc" 
+                          FontSize="14" 
+                          VerticalAlignment="Center"/>
             </StackPanel>
         </Border>
     </Grid>

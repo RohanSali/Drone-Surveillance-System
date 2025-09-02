@@ -59,7 +59,7 @@
     </Window.Resources>
 
     <Grid>
-        <Grid.RowDefinitions>
+            <Grid.RowDefinitions>
             <RowDefinition Height="110" />
             <RowDefinition Height="*" />
             <RowDefinition Height="60" />
@@ -75,7 +75,7 @@
                 
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="20,0">
                     <TextBlock Text="🔌" FontSize="24" VerticalAlignment="Center" Margin="0,0,15,0" Foreground="#FF00BCD4"/>
-                    <TextBlock Text="USB Connected Drones" 
+                    <TextBlock Text="USB Connected Devices" 
                               Foreground="White" 
                               FontWeight="Bold" 
                               FontSize="24" 
@@ -99,7 +99,7 @@
             <!-- Info Section -->
             <Border Grid.Row="0" Background="#2d2d2d" CornerRadius="8" Padding="15" Margin="0,0,0,15">
                 <StackPanel>
-                    <TextBlock Text="📋 Available USB Connected Drones" 
+                    <TextBlock Text="📋 Available USB Connected Devices" 
                               FontWeight="Bold" 
                               FontSize="16" 
                               Margin="0,0,0,10">
@@ -110,30 +110,50 @@
                             </LinearGradientBrush>
                         </TextBlock.Foreground>
                     </TextBlock>
-                    <TextBlock Text="Select a drone to install new modules via USB connection" 
+                    <TextBlock Text="Select a drone or CCTV to manage via USB connection" 
                               Foreground="#ccc" 
                               FontSize="12"/>
+
+                    <!-- Quick Actions -->
+                    <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                        <Button x:Name="AddDummyDroneButton"
+                                Content="➕ Add Dummy Drone"
+                                Style="{StaticResource DarkButton}"
+                                Click="AddDummyDroneButton_Click"
+                                MinWidth="170"
+                                Height="36"
+                                Margin="0,0,10,0"/>
+                        <Button x:Name="AddDummyCctvButton"
+                                Content="➕ Add Dummy CCTV"
+                                Style="{StaticResource DarkButton}"
+                                Click="AddDummyCctvButton_Click"
+                                MinWidth="170"
+                                Height="36"/>
+                    </StackPanel>
                 </StackPanel>
             </Border>
             
-            <!-- Drones List -->
+            <!-- Devices Lists -->
             <Border Grid.Row="1" Background="#1a1a1a" CornerRadius="8" Padding="15">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
-                    
+
                     <TextBlock Grid.Row="0" Text="Connected Drones:" 
                               Foreground="White" 
                               FontWeight="Bold" 
                               FontSize="14" 
                               Margin="0,0,0,15"/>
-                    
+
                     <ListBox Grid.Row="1" x:Name="DronesList" 
                             Background="Transparent" 
                             BorderThickness="0"
                             ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                            ScrollViewer.VerticalScrollBarVisibility="Hidden"
                             SelectionChanged="DronesList_SelectionChanged">
                         <ListBox.ItemContainerStyle>
                             <Style TargetType="ListBoxItem" BasedOn="{StaticResource DroneListBoxItem}">
@@ -176,11 +196,86 @@
                                                   Foreground="#4CAF50" 
                                                   FontSize="10" 
                                                   VerticalAlignment="Center"/>
+                                        <Button Content="✖"
+                                                Background="#DC3545"
+                                                Foreground="White"
+                                                BorderThickness="0"
+                                                Width="18" Height="18"
+                                                Padding="0"
+                                                Margin="8,0,0,0"
+                                                Click="DeleteDrone_Click"
+                                                Tag="{Binding}"/>
                                     </StackPanel>
                                 </Grid>
                             </DataTemplate>
                         </ListBox.ItemTemplate>
                         
+
+                    </ListBox>
+
+                    <TextBlock Grid.Row="2" Text="Connected CCTVs:" 
+                              Foreground="White" 
+                              FontWeight="Bold" 
+                              FontSize="14" 
+                              Margin="0,15,0,15"/>
+
+                    <ListBox Grid.Row="3" x:Name="CctvList"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                            ScrollViewer.VerticalScrollBarVisibility="Hidden"
+                            SelectionChanged="CctvList_SelectionChanged">
+                        <ListBox.ItemContainerStyle>
+                            <Style TargetType="ListBoxItem" BasedOn="{StaticResource DroneListBoxItem}">
+                                <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                            </Style>
+                        </ListBox.ItemContainerStyle>
+
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <Border Grid.Column="0" Background="#1a1a1a" CornerRadius="8" Padding="8" Margin="0,0,15,0">
+                                        <TextBlock Text="📷" FontSize="24" Foreground="#FF9800"/>
+                                    </Border>
+
+                                    <StackPanel Grid.Column="1">
+                                        <TextBlock Text="{Binding Name}"
+                                                  Foreground="White"
+                                                  FontWeight="Bold"
+                                                  FontSize="14"/>
+                                        <TextBlock Text="CCTV"
+                                                  Foreground="#4CAF50"
+                                                  FontSize="12"/>
+                                        <TextBlock Text="{Binding DeviceId}"
+                                                  Foreground="#ccc"
+                                                  FontSize="10"/>
+                                    </StackPanel>
+
+                                    <StackPanel Grid.Column="2" Orientation="Horizontal">
+                                        <Ellipse Width="12" Height="12" Fill="#4CAF50" Margin="0,0,5,0"/>
+                                        <TextBlock Text="USB Connected"
+                                                  Foreground="#4CAF50"
+                                                  FontSize="10"
+                                                  VerticalAlignment="Center"/>
+                                        <Button Content="✖"
+                                                Background="#DC3545"
+                                                Foreground="White"
+                                                BorderThickness="0"
+                                                Width="18" Height="18"
+                                                Padding="0"
+                                                Margin="8,0,0,0"
+                                                Click="DeleteCctv_Click"
+                                                Tag="{Binding}"/>
+                                    </StackPanel>
+                                </Grid>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
 
                     </ListBox>
                 </Grid>
@@ -190,7 +285,7 @@
         <!-- Footer -->
         <Border Grid.Row="2" Background="#2d2d2d">
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                <TextBlock Text="💡 Click on a drone to access module installation options" 
+                <TextBlock Text="💡 Click on a device to manage modules and details" 
                           FontSize="12">
                     <TextBlock.Foreground>
                         <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">

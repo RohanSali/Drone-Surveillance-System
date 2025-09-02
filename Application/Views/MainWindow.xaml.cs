@@ -15,6 +15,7 @@ using System.Windows.Media.Effects;
 using System.Windows.Media.Animation;
 using DroneSurveillanceSystem.Models;
 using DroneSurveillanceSystem.Services;
+using DroneSurveillanceSystem.Views;
 using Microsoft.Win32;
 using System.Linq;
 
@@ -200,17 +201,26 @@ namespace DroneSurveillanceSystem.Views
         
         public int ActiveAlertsCount => AlertManager.Instance.ActiveAlerts.Count;
         
-        public int NetworkActiveDronesCount => _networkService.Networks
-            .Where(n => n.Status == "Active" && n.Drones != null)
-            .Sum(n => n.Drones.Count);
+        public int NetworkActiveDronesCount => _networkService?.Networks
+            ?.Where(n => n.Status == "Active" && n.Drones != null)
+            ?.Sum(n => n.Drones.Count) ?? 0;
         
-        public int TotalDronesCount => _networkService.Networks
-            .Where(n => n.Drones != null)
-            .Sum(n => n.Drones.Count);
+        public int TotalDronesCount => _networkService?.Networks
+            ?.Where(n => n.Drones != null)
+            ?.Sum(n => n.Drones.Count) ?? 0;
+
+        // CCTV aggregates
+        public int NetworkActiveCctvsCount => _networkService?.Networks
+            ?.Where(n => n.Status == "Active" && n.Cctvs != null)
+            ?.Sum(n => n.Cctvs.Count) ?? 0;
+
+        public int TotalCctvsCount => _networkService?.Networks
+            ?.Where(n => n.Cctvs != null)
+            ?.Sum(n => n.Cctvs.Count) ?? 0;
         
         public string ActiveDronesDisplayText => $"{NetworkActiveDronesCount}/{TotalDronesCount}";
         
-        public ObservableCollection<Network> Networks => _networkService.Networks;
+        public ObservableCollection<Network> Networks => _networkService?.Networks ?? new ObservableCollection<Network>();
         
         public string SystemStatusDisplay
         {
@@ -220,49 +230,106 @@ namespace DroneSurveillanceSystem.Views
 
         public MainWindow()
         {
-            DataContext = this;
-
-            // Initialize collections
-            ActiveAlerts = new ObservableCollection<DetectionEvent>();
-            ActivityLog = new ObservableCollection<DetectionEvent>();
-
-            // Initialize services
-            _surveillanceService = new SurveillanceService();
-            _droneTrackingService = new DroneTrackingService();
-            _networkService = new NetworkService();
-            
-            // Subscribe to drone tracking events
-            _droneTrackingService.DronePositionUpdated += OnDronePositionUpdated;
-            _droneTrackingService.TrackingAlert += OnDroneAlert;
-            
-            // Subscribe to AlertManager's ActiveAlerts collection changes
-            AlertManager.Instance.ActiveAlerts.CollectionChanged += (s, e) =>
+            try
             {
-                OnPropertyChanged(nameof(ActiveAlertsCount));
-            };
-            
-            // Subscribe to NetworkService's Networks collection changes
-            _networkService.Networks.CollectionChanged += (s, e) =>
+                Console.WriteLine("MainWindow constructor started");
+                
+                // CRITICAL: Initialize XAML components first
+                InitializeComponent();
+                Console.WriteLine("InitializeComponent completed");
+                
+                DataContext = this;
+                Console.WriteLine("DataContext set");
+
+                // Initialize collections
+                ActiveAlerts = new ObservableCollection<DetectionEvent>();
+                ActivityLog = new ObservableCollection<DetectionEvent>();
+                Console.WriteLine("Collections initialized");
+
+                // Initialize basic services to prevent null reference exceptions
+                Console.WriteLine("Initializing basic services...");
+                try 
+                {
+                    _surveillanceService = new SurveillanceService();
+                    Console.WriteLine("SurveillanceService initialized");
+                    
+                    _droneTrackingService = new DroneTrackingService();
+                    Console.WriteLine("DroneTrackingService initialized");
+                    
+                    _networkService = new NetworkService();
+                    Console.WriteLine("NetworkService initialized");
+                }
+                catch (Exception serviceEx)
+                {
+                    Console.WriteLine($"Service initialization error: {serviceEx.Message}");
+                    // Create minimal fallback services
+                    _networkService = new NetworkService();
+                }
+                
+                // Subscribe to drone tracking events (only if service is available)
+                if (_droneTrackingService != null)
+                {
+                    _droneTrackingService.DronePositionUpdated += OnDronePositionUpdated;
+                    _droneTrackingService.TrackingAlert += OnDroneAlert;
+                    Console.WriteLine("Event subscriptions set");
+                }
+                
+                // Subscribe to AlertManager's ActiveAlerts collection changes
+                AlertManager.Instance.ActiveAlerts.CollectionChanged += (s, e) =>
+                {
+                    OnPropertyChanged(nameof(ActiveAlertsCount));
+                };
+                
+                // Subscribe to NetworkService's Networks collection changes
+                if (_networkService != null)
+                {
+                    _networkService.Networks.CollectionChanged += (s, e) =>
+                    {
+                        OnPropertyChanged(nameof(Networks));
+                        OnPropertyChanged(nameof(NetworkActiveDronesCount));
+                        OnPropertyChanged(nameof(TotalDronesCount));
+                        OnPropertyChanged(nameof(NetworkActiveCctvsCount));
+                        OnPropertyChanged(nameof(TotalCctvsCount));
+                        OnPropertyChanged(nameof(ActiveDronesDisplayText));
+                    };
+                    
+                    // Manually trigger Networks property change after initialization
+                    OnPropertyChanged(nameof(Networks));
+                    OnPropertyChanged(nameof(NetworkActiveDronesCount));
+                    OnPropertyChanged(nameof(TotalDronesCount));
+                    OnPropertyChanged(nameof(NetworkActiveCctvsCount));
+                    OnPropertyChanged(nameof(TotalCctvsCount));
+                    OnPropertyChanged(nameof(ActiveDronesDisplayText));
+                }
+                
+                // Initialize some drones for demonstration (only if service is available)
+                if (_droneTrackingService != null)
+                {
+                    Console.WriteLine("Initializing demo data...");
+                    _ = InitializeDemoData();
+                    
+                    // Start drone tracking
+                    _droneTrackingService.StartTracking();
+                }
+
+                // Setup timer for real-time updates
+                _updateTimer = new Timer(UpdateSystem, null, TimeSpan.Zero, TimeSpan.FromSeconds(1));
+
+                // Load initial scene
+                LoadDefaultScene();
+                
+                // Add some initial log entries
+                AddInitialLogEntries();
+                
+                Console.WriteLine("MainWindow constructor completed successfully");
+            }
+            catch (Exception ex)
             {
-                OnPropertyChanged(nameof(NetworkActiveDronesCount));
-                OnPropertyChanged(nameof(TotalDronesCount));
-                OnPropertyChanged(nameof(ActiveDronesDisplayText));
-            };
-            
-            // Initialize some drones for demonstration
-            _ = InitializeDemoData();
-
-            // Setup timer for real-time updates
-            _updateTimer = new Timer(UpdateSystem, null, TimeSpan.Zero, TimeSpan.FromSeconds(1));
-
-            // Load initial scene
-            LoadDefaultScene();
-            
-            // Add some initial log entries
-            AddInitialLogEntries();
-            
-            // Start drone tracking
-            _droneTrackingService.StartTracking();
+                Console.WriteLine($"Error in MainWindow constructor: {ex.Message}");
+                Console.WriteLine($"StackTrace: {ex.StackTrace}");
+                MessageBox.Show($"Error initializing MainWindow: {ex.Message}", "Initialization Error", 
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         private void UpdateSystem(object? state)
@@ -480,7 +547,11 @@ namespace DroneSurveillanceSystem.Views
 
         private void NetworkButton_Click(object sender, RoutedEventArgs e)
         {
-            var networkMonitoringPage = new NetworkMonitoringPage(_networkService);
+            var networkMonitoringPage = new NetworkMonitoringPage(_networkService)
+            {
+                Owner = this,
+                WindowState = WindowState.Maximized
+            };
             networkMonitoringPage.Show();
         }
 
@@ -515,17 +586,44 @@ namespace DroneSurveillanceSystem.Views
             controlPanelWindow.Show();
         }
 
-        private void LogoutButton_Click(object sender, RoutedEventArgs e)
+        private async void LogoutButton_Click(object sender, RoutedEventArgs e)
         {
-            var result = MessageBox.Show("Are you sure you want to exit the surveillance system?", 
-                                       "Confirm Logout", 
+            var result = MessageBox.Show("Are you sure you want to sign out?", 
+                                       "Confirm Sign Out", 
                                        MessageBoxButton.YesNo, 
                                        MessageBoxImage.Question);
             
             if (result == MessageBoxResult.Yes)
             {
-                _updateTimer?.Dispose();
-                Application.Current.Shutdown();
+                try
+                {
+                    // Sign out from authentication service
+                    var authService = new AuthService();
+                    await authService.SignOutAsync();
+                    
+                    // Show login window again
+                    var loginWindow = new LoginWindow(authService);
+                    loginWindow.ShowDialog();
+                    
+                    if (loginWindow.IsAuthenticated || loginWindow.IsGuestMode)
+                    {
+                        // User signed in again, refresh the main window
+                        this.Close();
+                        var newMainWindow = new MainWindow();
+                        newMainWindow.Show();
+                    }
+                    else
+                    {
+                        // User cancelled, exit application
+                        _updateTimer?.Dispose();
+                        Application.Current.Shutdown();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Sign out failed: {ex.Message}", "Error", 
+                        MessageBoxButton.OK, MessageBoxImage.Error);
+                }
             }
         }
         
@@ -589,25 +687,35 @@ namespace DroneSurveillanceSystem.Views
         
         private void UpdateDroneTrackingData()
         {
-var activeDrones = _droneTrackingService.ActiveDronePositions;
-            ActiveDronesCount = activeDrones.Count;
-            
-            // Calculate total casualties and anomalies
-            TotalCasualties = activeDrones.Sum(d => d.CasualtiesDetected);
-            TotalAnomalies = activeDrones.Sum(d => d.AnomaliesDetected);
-            
-            // Update system status based on drone data
-            if (activeDrones.Count == 0)
+            if (_droneTrackingService != null)
             {
-                SystemStatusDisplay = "No Active Drones";
-            }
-            else if (TotalCasualties > 0 || TotalAnomalies > 0)
-            {
-                SystemStatusDisplay = "ALERT: Incidents Detected";
+                var activeDrones = _droneTrackingService.ActiveDronePositions;
+                ActiveDronesCount = activeDrones.Count;
+                
+                // Calculate total casualties and anomalies
+                TotalCasualties = activeDrones.Sum(d => d.CasualtiesDetected);
+                TotalAnomalies = activeDrones.Sum(d => d.AnomaliesDetected);
+                
+                // Update system status based on drone data
+                if (activeDrones.Count == 0)
+                {
+                    SystemStatusDisplay = "No Active Drones";
+                }
+                else if (TotalCasualties > 0 || TotalAnomalies > 0)
+                {
+                    SystemStatusDisplay = "ALERT: Incidents Detected";
+                }
+                else
+                {
+                    SystemStatusDisplay = "All Systems Operational";
+                }
             }
             else
             {
-                SystemStatusDisplay = "All Systems Operational";
+                ActiveDronesCount = 0;
+                TotalCasualties = 0;
+                TotalAnomalies = 0;
+                SystemStatusDisplay = "Service Not Available";
             }
         }
         

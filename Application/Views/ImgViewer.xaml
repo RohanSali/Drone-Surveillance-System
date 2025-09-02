@@ -88,9 +88,8 @@
         <Border Grid.Row="1" Background="#1a1a1a" Margin="10">
             <Grid>
                 <!-- Image Container -->
-                <ScrollViewer Name="ImageScrollViewer" 
-                              HorizontalScrollBarVisibility="Auto" 
-                              VerticalScrollBarVisibility="Auto"
+                <ScrollViewer Name="ImageScrollViewer"
+                              Style="{StaticResource HiddenSmoothScrollViewer}"
                               Background="Transparent">
                     <Image Name="MainImage" 
                            Source="/Images/surveillance_placeholder.svg" 
