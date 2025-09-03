@@ -126,33 +126,45 @@ namespace DroneSurveillanceSystem.Views
 
         private void GenerateNetworkData()
         {
-            // Generate drones based on actual network assignments
-            int droneIndex = 1;
+            _connectedDrones.Clear();
+            _connectedCctvs.Clear();
+            _activeAlerts.Clear();
+
+            // Populate drones using actual assigned drones from the network
             if (_network.Drones != null)
             {
-                foreach (var assignedDrone in _network.Drones)
+                // Lookup table from DeviceDataManager for real device IDs
+                var allDrones = DeviceDataManager.GetAllDrones();
+
+                foreach (var assigned in _network.Drones)
                 {
+                    if (assigned == null) continue;
+
+                    // Resolve a real device id: prefer assigned.Id, else map by Name from DeviceDataManager
+                    string resolvedId = !string.IsNullOrWhiteSpace(assigned.Id)
+                        ? assigned.Id
+                        : allDrones.FirstOrDefault(d => string.Equals(d.Name, assigned.Name, StringComparison.OrdinalIgnoreCase))?.DeviceId
+                          ?? allDrones.FirstOrDefault(d => assigned.Name != null && d.Name.Contains(assigned.Name, StringComparison.OrdinalIgnoreCase))?.DeviceId
+                          ?? string.Empty;
+
                     var drone = new NetworkDrone
                     {
-                        Id = $"{(_network.Name ?? "Unknown").Replace(" ", "")}-D{droneIndex:D3}",
-                        Name = assignedDrone.Name ?? "Unknown Drone",
-                        Status = GetRandomDroneStatus(),
-                        Battery = 60 + _random.Next(35), // 60-95%
-                        Latitude = 37.7749 + (_random.NextDouble() - 0.5) * 0.02,
-                        Longitude = -122.4194 + (_random.NextDouble() - 0.5) * 0.02,
-                        Altitude = 30 + _random.Next(40), // 30-70m
-                        LastSeen = DateTime.Now.AddMinutes(-_random.Next(10))
+                        Id = resolvedId,
+                        Name = assigned.Name ?? "Unknown Drone",
+                        Status = assigned.StatusText,
+                        Battery = (int)Math.Round(assigned.BatteryLevel),
+                        Latitude = assigned.Latitude,
+                        Longitude = assigned.Longitude,
+                        Altitude = assigned.Altitude,
+                        LastSeen = assigned.LastSeen
                     };
-                    
                     _connectedDrones.Add(drone);
-                    droneIndex++;
                 }
             }
 
-            // If no drones are assigned, show a message
+            // If no drones are assigned, show placeholder card
             if (_connectedDrones.Count == 0)
             {
-                // Add a placeholder drone to show "No drones assigned"
                 var placeholderDrone = new NetworkDrone
                 {
                     Id = "NO-DRONES",
@@ -167,46 +179,33 @@ namespace DroneSurveillanceSystem.Views
                 _connectedDrones.Add(placeholderDrone);
             }
 
-            // Generate CCTVs based on actual network assignments
-            int camIndex = 1;
+            // Populate CCTVs using actual assigned CCTVs from the network
             if (_network.Cctvs != null)
             {
+                // Lookup table from DeviceDataManager for real device IDs and status
+                var allCctvs = DeviceDataManager.GetAllCctvs();
+
                 foreach (var cam in _network.Cctvs)
                 {
+                    if (cam == null) continue;
+
+                    var match = allCctvs.FirstOrDefault(c => string.Equals(c.Name, cam.Name, StringComparison.OrdinalIgnoreCase))
+                               ?? allCctvs.FirstOrDefault(c => cam.Name != null && c.Name.Contains(cam.Name, StringComparison.OrdinalIgnoreCase));
+
                     var cctv = new NetworkCctv
                     {
-                        Id = $"{(_network.Name ?? "Unknown").Replace(" ", "")}-C{camIndex:D3}",
+                        Id = match?.DeviceId ?? cam.Id ?? string.Empty,
                         Name = cam.Name ?? "Unknown CCTV",
-                        IsOnline = true,
-                        Resolution = "1080p",
-                        Fps = 30,
-                        LastSeen = DateTime.Now.AddMinutes(-_random.Next(10))
+                        IsOnline = match?.IsConnected ?? true,
+                        Resolution = match?.Resolution ?? string.Empty,
+                        Fps = match?.FrameRate ?? 0,
+                        LastSeen = DateTime.Now
                     };
                     _connectedCctvs.Add(cctv);
-                    camIndex++;
                 }
             }
 
-            // Generate sample alerts based on network
-            int alertCount = GetAlertCountForNetwork(_network.Name ?? "Unknown");
-            string[] alertTypes = { "Intrusion Detected", "Low Battery Warning", "Communication Lost", "Anomaly Detected", "Crowd Detected" };
-            string[] alertSeverities = { "High", "Medium", "Low" };
-
-            for (int i = 0; i < alertCount; i++)
-            {
-                var alert = new NetworkAlert
-                {
-                    Id = $"ALERT-{i + 1:D4}",
-                    Type = alertTypes[_random.Next(alertTypes.Length)],
-                    Severity = alertSeverities[_random.Next(alertSeverities.Length)],
-                    DroneId = _connectedDrones.Count > 0 ? _connectedDrones[_random.Next(_connectedDrones.Count)].Id : "NO-DRONES",
-                    Message = GenerateAlertMessage(),
-                    Timestamp = DateTime.Now.AddMinutes(-_random.Next(30)),
-                    IsActive = true
-                };
-                
-                _activeAlerts.Add(alert);
-            }
+            // Alerts: use AlertManager filtered by this network (already done in PopulateAlerts)
         }
 
         private string GetRandomDroneStatus()

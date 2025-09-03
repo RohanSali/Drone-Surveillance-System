@@ -157,7 +157,7 @@ namespace DroneSurveillanceSystem.Views
             {
                 DeviceFilterType.All => "🔍 All Devices",
                 DeviceFilterType.DronesOnly => "🚁 Drones Only",
-                DeviceFilterType.CctvOnly => "📹 CCTV Only",
+                DeviceFilterType.CctvOnly => "📷 CCTV Only",
                 _ => "🔍 All Devices"
             };
         }
@@ -170,10 +170,10 @@ namespace DroneSurveillanceSystem.Views
             // Update title
             DevicesTitle.Text = _currentFilter switch
             {
-                DeviceFilterType.All => "🚁📹 All Devices",
+                DeviceFilterType.All => "🚁📷 All Devices",
                 DeviceFilterType.DronesOnly => "🚁 Active Drones",
-                DeviceFilterType.CctvOnly => "📹 CCTV Cameras",
-                _ => "🚁📹 All Devices"
+                DeviceFilterType.CctvOnly => "📷 CCTV Cameras",
+                _ => "🚁📷 All Devices"
             };
 
             // Add devices based on filter
