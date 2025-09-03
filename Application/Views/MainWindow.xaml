@@ -473,7 +473,7 @@
                                 MouseLeftButtonUp="ActiveAlertsCard_Click" Cursor="Hand">
                             <StackPanel>
                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,5">
-                                    <TextBlock Text="⚠️" FontSize="16" Margin="0,0,5,0" Foreground="#ff4444"/>
+                                    <TextBlock Text="🚨" FontSize="16" Margin="0,0,5,0" Foreground="#ff4444"/>
                                     <TextBlock Text="Active Alerts" Foreground="White" FontSize="12" FontWeight="Bold"/>
                                 </StackPanel>
                                 <TextBlock Text="{Binding ActiveAlertsCount}" 

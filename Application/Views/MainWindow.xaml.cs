@@ -199,7 +199,7 @@ namespace DroneSurveillanceSystem.Views
         
         public string AnomaliesText => $"Anomalies Detected: {_totalAnomalies}";
         
-        public int ActiveAlertsCount => AlertManager.Instance.GetAllDeviceAlerts().Count();
+        public int ActiveAlertsCount => AlertManager.Instance.ActiveAlerts.Count;
         
         public int NetworkActiveDronesCount => _networkService?.Networks
             ?.Where(n => n.Status == "Active" && n.Drones != null)
@@ -608,6 +608,16 @@ namespace DroneSurveillanceSystem.Views
             {
                 try
                 {
+                    // Stop real-time updates and clear current alerts/state
+                    try
+                    {
+                        await DroneSurveillanceSystem.Services.ApiService.Instance.StopWebSocketAsync();
+                    }
+                    catch { }
+                    
+                    AlertManager.Instance.ClearAllAlerts();
+                    OnPropertyChanged(nameof(ActiveAlertsCount));
+                    
                     // Sign out from authentication service
                     var authService = new AuthService();
                     await authService.SignOutAsync();
@@ -618,6 +628,13 @@ namespace DroneSurveillanceSystem.Views
                     
                     if (loginWindow.IsAuthenticated || loginWindow.IsGuestMode)
                     {
+                        // Reinitialize realtime connection for the new session
+                        try
+                        {
+                            await DroneSurveillanceSystem.Services.ApiService.Instance.StartWebSocketAsync();
+                        }
+                        catch { }
+                        
                         // User signed in again, refresh the main window
                         this.Close();
                         var newMainWindow = new MainWindow();

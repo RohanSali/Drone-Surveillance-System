@@ -24,18 +24,21 @@ namespace DroneSurveillanceSystem.Services
 
     public class ApiService
     {
+        private static readonly Lazy<ApiService> _instance = new Lazy<ApiService>(() => new ApiService());
+        public static ApiService Instance => _instance.Value;
         private readonly HttpClient _httpClient;
         private readonly string _baseUrl;
         private readonly string _authToken;
         internal WebsocketClient? _client;
-        private readonly string _wsUrl = "wss://droneserver-5pfg.onrender.com/ws/application/app_001";
+        private readonly string _wsUrl = "wss://new-server-5iyd.onrender.com/ws/application/app_001";
         private readonly string _logFilePath;
         private bool _isConnected = false;
         private Timer? _heartbeatTimer;
         private readonly object _lockObject = new object();
+        private bool _isStarting = false;
         public event EventHandler<AlertReceivedEventArgs>? AlertReceived;
 
-        public ApiService(string baseUrl = "wss://droneserver-5pfg.onrender.com", string authToken = "")
+        public ApiService(string baseUrl = "wss://new-server-5iyd.onrender.com", string authToken = "")
         {
             _baseUrl = baseUrl;
             _authToken = authToken;
@@ -200,11 +203,17 @@ namespace DroneSurveillanceSystem.Services
         {
             lock (_lockObject)
             {
-                if (_client != null && _isConnected)
+                if (_isStarting)
+                {
+                    LogToFile("INFO", "WebSocket start already in progress, skipping duplicate start");
+                    return;
+                }
+                if (_client != null && _isConnected && _client.IsRunning)
                 {
                     LogToFile("INFO", "WebSocket already connected, skipping start");
                     return;
                 }
+                _isStarting = true;
             }
 
             try
@@ -265,6 +274,13 @@ namespace DroneSurveillanceSystem.Services
                 Console.WriteLine($"[WebSocket] ❌ Failed to start WebSocket connection: {ex.Message}");
                 throw;
             }
+            finally
+            {
+                lock (_lockObject)
+                {
+                    _isStarting = false;
+                }
+            }
         }
 
         public void HandleMessage(string message)
@@ -314,8 +330,8 @@ namespace DroneSurveillanceSystem.Services
                                     
                                     string actualImage = alertImageObj.ContainsKey("actual_image") ? alertImageObj["actual_image"]?.ToString() ?? "" : "";
                                     string matchedFrame = alertImageObj.ContainsKey("matched_frame") ? alertImageObj["matched_frame"]?.ToString() ?? "" : "";
-                                    string location = alertImageObj.ContainsKey("location") ? alertImageObj["location"]?.ToString() ?? "0, 0, 0" : "0, 0, 0";
-                                    string score = alertImageObj.ContainsKey("score") ? alertImageObj["score"]?.ToString() ?? "0" : "0";
+                                    string location = alertImageObj.ContainsKey("location") ? alertImageObj["location"]?.ToString() ?? "" : "";
+                                    string score = alertImageObj.ContainsKey("score") ? alertImageObj["score"]?.ToString() ?? "" : "";
                                     int found = alertImageObj.ContainsKey("found") ? Convert.ToInt32(alertImageObj["found"]) : 0;
                                     string name = alertImageObj.ContainsKey("name") ? alertImageObj["name"]?.ToString() ?? "" : "";
                                     
@@ -377,8 +393,8 @@ namespace DroneSurveillanceSystem.Services
                                         monitoringPage.HandleLostFindingResponse(
                                             actualImage ?? "", 
                                             matchedFrame ?? "", 
-                                            location ?? "0, 0, 0", 
-                                            score ?? "0", 
+                                            location ?? "", 
+                                            score ?? "", 
                                             found, 
                                             name ?? ""
                                         );
@@ -428,8 +444,8 @@ namespace DroneSurveillanceSystem.Services
                                     
                                     string actualImage = dataObj.ContainsKey("actual_image") ? dataObj["actual_image"]?.ToString() ?? "" : "";
                                     string matchedFrame = dataObj.ContainsKey("matched_frame") ? dataObj["matched_frame"]?.ToString() ?? "" : "";
-                                    string location = dataObj.ContainsKey("location") ? dataObj["location"]?.ToString() ?? "0, 0, 0" : "0, 0, 0";
-                                    string score = dataObj.ContainsKey("score") ? dataObj["score"]?.ToString() ?? "0" : "0";
+                                    string location = dataObj.ContainsKey("location") ? dataObj["location"]?.ToString() ?? "" : "";
+                                    string score = dataObj.ContainsKey("score") ? dataObj["score"]?.ToString() ?? "" : "";
                                     int found = dataObj.ContainsKey("found") ? Convert.ToInt32(dataObj["found"]) : 0;
                                     string name = dataObj.ContainsKey("name") ? dataObj["name"]?.ToString() ?? "" : "";
                                     
@@ -491,8 +507,8 @@ namespace DroneSurveillanceSystem.Services
                                         monitoringPage.HandleLostFindingResponse(
                                             actualImage ?? "", 
                                             matchedFrame ?? "", 
-                                            location ?? "0, 0, 0", 
-                                            score ?? "0", 
+                                            location ?? "", 
+                                            score ?? "", 
                                             found, 
                                             name ?? ""
                                         );
@@ -641,6 +657,39 @@ namespace DroneSurveillanceSystem.Services
                                 Console.WriteLine($"[WebSocket] Processed Alert - DroneId: '{alert.DroneId}', Location: {alert.AlertLocation}, Score: {alert.Score}");
                                 LogAlertToFile(alert);
                                 AlertReceived?.Invoke(this, new AlertReceivedEventArgs(alert));
+                            }
+                        }
+                    }
+                    else if (type == "alert_image" && msgObj.ContainsKey("data"))
+                    {
+                        // New: handle application broadcast format when a drone returns an analysis
+                        var dataJson = msgObj["data"]?.ToString();
+                        if (!string.IsNullOrEmpty(dataJson))
+                        {
+                            var dataObj = JsonConvert.DeserializeObject<Dictionary<string, object>>(dataJson);
+                            if (dataObj != null)
+                            {
+                                try
+                                {
+                                    int found = dataObj.ContainsKey("found") ? Convert.ToInt32(dataObj["found"]) : 0;
+                                    string name = dataObj.ContainsKey("name") ? dataObj["name"]?.ToString() ?? "" : "";
+                                    string actualImage = dataObj.ContainsKey("actual_image") ? dataObj["actual_image"]?.ToString() ?? "" : "";
+                                    string matchedFrame = dataObj.ContainsKey("matched_frame") ? dataObj["matched_frame"]?.ToString() ?? "" : "";
+                                    string location = dataObj.ContainsKey("location") ? dataObj["location"]?.ToString() ?? "" : "";
+                                    string score = dataObj.ContainsKey("score") ? dataObj["score"]?.ToString() ?? "" : "";
+
+                                    Console.WriteLine($"[WebSocket] alert_image received: found={found}, name='{name}', actual.len={actualImage?.Length ?? 0}, matched.len={matchedFrame?.Length ?? 0}");
+                                    
+                                    if (found == 1 && !string.IsNullOrEmpty(name))
+                                    {
+                                        // Update existing UI boxes with both actual and matched images
+                                        LostFindingManager.Instance.HandleResponse(name, matchedFrame ?? "", location ?? "", score ?? "", found, actualImage ?? "");
+                                    }
+                                }
+                                catch (Exception ex)
+                                {
+                                    Console.WriteLine($"[WebSocket] alert_image parsing error: {ex.Message}");
+                                }
                             }
                         }
                     }
