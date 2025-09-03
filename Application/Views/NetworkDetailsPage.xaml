@@ -61,7 +61,6 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
         <!-- Header -->
@@ -313,72 +312,7 @@
                         </Button.Template>
                     </Button>
                     
-                    <Button x:Name="LostFindingButton" 
-                            Content="🔍 Lost Finding" 
-                            Background="#0078D4" 
-                            Foreground="White" 
-                            BorderThickness="0" 
-                            Padding="15,8" 
-                            FontSize="12"
-                            FontWeight="Bold"
-                            Margin="5,0"
-                            MinWidth="120"
-                            Height="35"
-                            Click="LostFindingButton_Click"
-                            Cursor="Hand">
-                        <Button.Template>
-                            <ControlTemplate TargetType="Button">
-                                <Border Background="{TemplateBinding Background}" 
-                                        CornerRadius="6">
-                                    <ContentPresenter HorizontalAlignment="Center" 
-                                                    VerticalAlignment="Center"
-                                                    Margin="{TemplateBinding Padding}"/>
-                                </Border>
-                                <ControlTemplate.Triggers>
-                                    <Trigger Property="IsMouseOver" Value="True">
-                                        <Setter Property="Background" Value="#106EBE"/>
-                                    </Trigger>
-                                    <Trigger Property="IsPressed" Value="True">
-                                        <Setter Property="Background" Value="#005A9E"/>
-                                    </Trigger>
-                                </ControlTemplate.Triggers>
-                            </ControlTemplate>
-                        </Button.Template>
-                    </Button>
-                    
-                    <Button x:Name="PendingButton" 
-                            Content="⏳ 0" 
-                            Background="#FFD700" 
-                            Foreground="#1a1a1a" 
-                            BorderThickness="0" 
-                            Padding="12,8" 
-                            FontSize="12"
-                            FontWeight="Bold"
-                            Margin="5,0"
-                            Width="50"
-                            Height="35"
-                            Click="PendingButton_Click"
-                            Cursor="Hand"
-                            ToolTip="Pending requests count">
-                        <Button.Template>
-                            <ControlTemplate TargetType="Button">
-                                <Border Background="{TemplateBinding Background}" 
-                                        CornerRadius="6">
-                                    <ContentPresenter HorizontalAlignment="Center" 
-                                                    VerticalAlignment="Center"
-                                                    Margin="{TemplateBinding Padding}"/>
-                                </Border>
-                                <ControlTemplate.Triggers>
-                                    <Trigger Property="IsMouseOver" Value="True">
-                                        <Setter Property="Background" Value="#FFC700"/>
-                                    </Trigger>
-                                    <Trigger Property="IsPressed" Value="True">
-                                        <Setter Property="Background" Value="#FFB700"/>
-                                    </Trigger>
-                                </ControlTemplate.Triggers>
-                            </ControlTemplate>
-                        </Button.Template>
-                    </Button>
+
                 </StackPanel>
 
                 <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right">
@@ -393,53 +327,6 @@
             </Grid>
         </Border>
 
-        <!-- Lost Finding Analysis Section (initially hidden) -->
-        <Border x:Name="LostFindingSection" Grid.Row="3" Grid.ColumnSpan="2" 
-                Background="#2d2d2d" CornerRadius="10" Padding="20" Margin="0,0,0,0"
-                Visibility="Collapsed">
-            
-            <StackPanel>
-                <!-- Header with close button -->
-                <Border Background="#1e1e1e" CornerRadius="8" Padding="15" Margin="0,0,0,15">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        
-                        <TextBlock Grid.Column="0" Text="🔍 Lost Finding Analysis" 
-                                  Foreground="#00d4ff" FontWeight="Bold" FontSize="18" 
-                                  HorizontalAlignment="Center"/>
-                        
-                        <Button Grid.Column="1" Content="✕" Width="40" Height="40" 
-                                Click="CloseLostFindingSection_Click" HorizontalAlignment="Right" VerticalAlignment="Top"
-                                Background="#dc3545" Foreground="White" Cursor="Hand">
-                            <Button.Template>
-                                <ControlTemplate TargetType="Button">
-                                    <Border Background="{TemplateBinding Background}" CornerRadius="6">
-                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                    </Border>
-                                    <ControlTemplate.Triggers>
-                                        <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter Property="Background" Value="#c82333"/>
-                                        </Trigger>
-                                        <Trigger Property="IsPressed" Value="True">
-                                            <Setter Property="Background" Value="#bd2130"/>
-                                        </Trigger>
-                                    </ControlTemplate.Triggers>
-                                </ControlTemplate>
-                            </Button.Template>
-                        </Button>
-                    </Grid>
-                </Border>
 
-                <!-- Scrollable Content Area -->
-                <ScrollViewer MaxHeight="600" CanContentScroll="True" VerticalScrollBarVisibility="Auto">
-                    <StackPanel x:Name="LostFindingContentPanel">
-                        <!-- Dynamic content will be added here -->
-                    </StackPanel>
-                </ScrollViewer>
-            </StackPanel>
-        </Border>
     </Grid>
 </Window>

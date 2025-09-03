@@ -30,7 +30,7 @@
                 <CheckBox Content="Casuality inference Module" x:Name="CasualityModuleCheckBox" Margin="0,0,0,12" Foreground="White" FontWeight="Bold" FontSize="16"/>
                 <CheckBox Content="Anamoly inference Module" x:Name="AnamolyModuleCheckBox" Margin="0,0,0,12" Foreground="White" FontWeight="Bold" FontSize="16"/>
                 <CheckBox Content="Crowd Detection Module" x:Name="CrowdDetectionModuleCheckBox" Margin="0,0,0,12" Foreground="White" FontWeight="Bold" FontSize="16"/>
-                <CheckBox Content="Lost Finding Module" x:Name="LostFindingModuleCheckBox" Margin="0,0,0,12" Foreground="White" FontWeight="Bold" FontSize="16"/>
+
             </StackPanel>
         </Border>
 

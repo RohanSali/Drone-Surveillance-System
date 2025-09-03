@@ -63,7 +63,7 @@ namespace DroneSurveillanceSystem
                 AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
                 DispatcherUnhandledException += App_DispatcherUnhandledException;
                 
-                // Enable API service for WebSocket communication with drone (needed for Lost Finding feature)
+                // Enable API service for WebSocket communication with drone
                 _apiService = DroneSurveillanceSystem.Services.ApiService.Instance;
                 _apiService.AlertReceived += (sender, args) =>
                 {

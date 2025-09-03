@@ -305,239 +305,7 @@ namespace DroneSurveillanceSystem.Services
                     // Log all available keys in the message
                     Console.WriteLine($"[WebSocket] Available keys: {string.Join(", ", msgObj.Keys)}");
                     
-                    // Special handling for alert_image_received messages (drone responses)
-                    // Also handle direct alert_image messages from drone
-                    if (type == "alert_image_received" || type == "alert_image")
-                    {
-                        Console.WriteLine($"[WebSocket] 🔍 ALERT IMAGE RECEIVED MESSAGE DETECTED!");
-                        Console.WriteLine($"[WebSocket] Full alert_image_received message: {message}");
-                        
-                        // For direct alert_image messages, check both "alert_image" and "data" fields
-                        string dataFieldName = msgObj.ContainsKey("alert_image") ? "alert_image" : "data";
-                        
-                        if (msgObj.ContainsKey(dataFieldName))
-                        {
-                            Console.WriteLine($"[WebSocket] ✅ {dataFieldName} field found in message");
-                            var alertImageJson = msgObj[dataFieldName]?.ToString();
-                            Console.WriteLine($"[WebSocket] {dataFieldName} JSON: {alertImageJson}");
-                            
-                            if (!string.IsNullOrEmpty(alertImageJson))
-                            {
-                                var alertImageObj = JsonConvert.DeserializeObject<Dictionary<string, object>>(alertImageJson);
-                                if (alertImageObj != null)
-                                {
-                                    Console.WriteLine($"[WebSocket] {dataFieldName} object keys: {string.Join(", ", alertImageObj.Keys)}");
-                                    
-                                    string actualImage = alertImageObj.ContainsKey("actual_image") ? alertImageObj["actual_image"]?.ToString() ?? "" : "";
-                                    string matchedFrame = alertImageObj.ContainsKey("matched_frame") ? alertImageObj["matched_frame"]?.ToString() ?? "" : "";
-                                    string location = alertImageObj.ContainsKey("location") ? alertImageObj["location"]?.ToString() ?? "" : "";
-                                    string score = alertImageObj.ContainsKey("score") ? alertImageObj["score"]?.ToString() ?? "" : "";
-                                    int found = alertImageObj.ContainsKey("found") ? Convert.ToInt32(alertImageObj["found"]) : 0;
-                                    string name = alertImageObj.ContainsKey("name") ? alertImageObj["name"]?.ToString() ?? "" : "";
-                                    
-                                    Console.WriteLine($"[WebSocket] 📊 Parsed alert_image_received data:");
-                                    Console.WriteLine($"[WebSocket]   - Name: '{name}'");
-                                    Console.WriteLine($"[WebSocket]   - Found: {found}");
-                                    Console.WriteLine($"[WebSocket]   - Location: {location}");
-                                    Console.WriteLine($"[WebSocket]   - Score: {score}");
-                                    Console.WriteLine($"[WebSocket]   - Actual image length: {actualImage?.Length ?? 0}");
-                                    Console.WriteLine($"[WebSocket]   - Matched frame length: {matchedFrame?.Length ?? 0}");
-                                    
-                                    // Find the MonitoringAlertsPage and call HandleLostFindingResponse
-                                    DroneSurveillanceSystem.Views.MonitoringAlertsPage? monitoringPage = null;
-                                    
-                                    // Check if MonitoringAlertsPage is open
-                                    bool isPageOpen = DroneSurveillanceSystem.Views.MonitoringAlertsPage.IsMonitoringAlertsPageOpen();
-                                    Console.WriteLine($"[WebSocket] 📋 MonitoringAlertsPage open status: {isPageOpen}");
-                                    
-                                    // First try: Look in all windows
-                                    foreach (Window window in System.Windows.Application.Current.Windows)
-                                    {
-                                        Console.WriteLine($"[WebSocket] 🔍 Checking window: {window.GetType().Name}");
-                                        if (window is DroneSurveillanceSystem.Views.MonitoringAlertsPage alertsPage)
-                                        {
-                                            monitoringPage = alertsPage;
-                                            Console.WriteLine($"[WebSocket] ✅ Found MonitoringAlertsPage in main windows list");
-                                            break;
-                                        }
-                                    }
-                                    
-                                    // Second try: Look in owned windows of main window
-                                    if (monitoringPage == null)
-                                    {
-                                        Console.WriteLine($"[WebSocket] 🔍 Checking owned windows of main window");
-                                        var mainWindow = System.Windows.Application.Current.MainWindow;
-                                        if (mainWindow != null)
-                                        {
-                                            Console.WriteLine($"[WebSocket] 📋 Main window type: {mainWindow.GetType().Name}");
-                                            foreach (Window window in mainWindow.OwnedWindows)
-                                            {
-                                                Console.WriteLine($"[WebSocket] 🔍 Checking owned window: {window.GetType().Name}");
-                                                if (window is DroneSurveillanceSystem.Views.MonitoringAlertsPage alertsPage)
-                                                {
-                                                    monitoringPage = alertsPage;
-                                                    Console.WriteLine($"[WebSocket] ✅ Found MonitoringAlertsPage in owned windows");
-                                                    break;
-                                                }
-                                            }
-                                        }
-                                        else
-                                        {
-                                            Console.WriteLine($"[WebSocket] ❌ Main window is null");
-                                        }
-                                    }
-                                    
-                                    if (monitoringPage != null)
-                                    {
-                                        Console.WriteLine($"[WebSocket] ✅ Found MonitoringAlertsPage, calling HandleLostFindingResponse");
-                                        monitoringPage.HandleLostFindingResponse(
-                                            actualImage ?? "", 
-                                            matchedFrame ?? "", 
-                                            location ?? "", 
-                                            score ?? "", 
-                                            found, 
-                                            name ?? ""
-                                        );
-                                    }
-                                    else
-                                    {
-                                        Console.WriteLine($"[WebSocket] ❌ MonitoringAlertsPage not found! Total windows: {System.Windows.Application.Current.Windows.Count}");
-                                        foreach (Window window in System.Windows.Application.Current.Windows)
-                                        {
-                                            Console.WriteLine($"[WebSocket] Window type: {window.GetType().Name}");
-                                        }
-                                    }
-                                }
-                                else
-                                {
-                                    Console.WriteLine($"[WebSocket] ❌ Failed to parse alert_image JSON");
-                                }
-                            }
-                            else
-                            {
-                                Console.WriteLine($"[WebSocket] ❌ alert_image field is null or empty");
-                            }
-                        }
-                        else
-                        {
-                            Console.WriteLine($"[WebSocket] ❌ alert_image field not found in message");
-                        }
-                    }
-                    // Legacy support for image_received messages (keeping for backward compatibility)
-                    else if (type == "image_received")
-                    {
-                        Console.WriteLine($"[WebSocket] 🔍 IMAGE RECEIVED MESSAGE DETECTED!");
-                        Console.WriteLine($"[WebSocket] Full image_received message: {message}");
-                        
-                        if (msgObj.ContainsKey("data"))
-                        {
-                            Console.WriteLine($"[WebSocket] ✅ data field found in message");
-                            var dataJson = msgObj["data"]?.ToString();
-                            Console.WriteLine($"[WebSocket] data JSON: {dataJson}");
-                            
-                            if (!string.IsNullOrEmpty(dataJson))
-                            {
-                                var dataObj = JsonConvert.DeserializeObject<Dictionary<string, object>>(dataJson);
-                                if (dataObj != null)
-                                {
-                                    Console.WriteLine($"[WebSocket] data object keys: {string.Join(", ", dataObj.Keys)}");
-                                    
-                                    string actualImage = dataObj.ContainsKey("actual_image") ? dataObj["actual_image"]?.ToString() ?? "" : "";
-                                    string matchedFrame = dataObj.ContainsKey("matched_frame") ? dataObj["matched_frame"]?.ToString() ?? "" : "";
-                                    string location = dataObj.ContainsKey("location") ? dataObj["location"]?.ToString() ?? "" : "";
-                                    string score = dataObj.ContainsKey("score") ? dataObj["score"]?.ToString() ?? "" : "";
-                                    int found = dataObj.ContainsKey("found") ? Convert.ToInt32(dataObj["found"]) : 0;
-                                    string name = dataObj.ContainsKey("name") ? dataObj["name"]?.ToString() ?? "" : "";
-                                    
-                                    Console.WriteLine($"[WebSocket] 📊 Parsed image_received data:");
-                                    Console.WriteLine($"[WebSocket]   - Name: '{name}'");
-                                    Console.WriteLine($"[WebSocket]   - Found: {found}");
-                                    Console.WriteLine($"[WebSocket]   - Location: {location}");
-                                    Console.WriteLine($"[WebSocket]   - Score: {score}");
-                                    Console.WriteLine($"[WebSocket]   - Actual image length: {actualImage?.Length ?? 0}");
-                                    Console.WriteLine($"[WebSocket]   - Matched frame length: {matchedFrame?.Length ?? 0}");
-                                    
-                                    // Find the MonitoringAlertsPage and call HandleLostFindingResponse
-                                    DroneSurveillanceSystem.Views.MonitoringAlertsPage? monitoringPage = null;
-                                    
-                                    // Check if MonitoringAlertsPage is open
-                                    bool isPageOpen = DroneSurveillanceSystem.Views.MonitoringAlertsPage.IsMonitoringAlertsPageOpen();
-                                    Console.WriteLine($"[WebSocket] 📋 MonitoringAlertsPage open status: {isPageOpen}");
-                                    
-                                    // First try: Look in all windows
-                                    foreach (Window window in System.Windows.Application.Current.Windows)
-                                    {
-                                        Console.WriteLine($"[WebSocket] 🔍 Checking window: {window.GetType().Name}");
-                                        if (window is DroneSurveillanceSystem.Views.MonitoringAlertsPage alertsPage)
-                                        {
-                                            monitoringPage = alertsPage;
-                                            Console.WriteLine($"[WebSocket] ✅ Found MonitoringAlertsPage in main windows list");
-                                            break;
-                                        }
-                                    }
-                                    
-                                    // Second try: Look in owned windows of main window
-                                    if (monitoringPage == null)
-                                    {
-                                        Console.WriteLine($"[WebSocket] 🔍 Checking owned windows of main window");
-                                        var mainWindow = System.Windows.Application.Current.MainWindow;
-                                        if (mainWindow != null)
-                                        {
-                                            Console.WriteLine($"[WebSocket] 📋 Main window type: {mainWindow.GetType().Name}");
-                                            foreach (Window window in mainWindow.OwnedWindows)
-                                            {
-                                                Console.WriteLine($"[WebSocket] 🔍 Checking owned window: {window.GetType().Name}");
-                                                if (window is DroneSurveillanceSystem.Views.MonitoringAlertsPage alertsPage)
-                                                {
-                                                    monitoringPage = alertsPage;
-                                                    Console.WriteLine($"[WebSocket] ✅ Found MonitoringAlertsPage in owned windows");
-                                                    break;
-                                                }
-                                            }
-                                        }
-                                        else
-                                        {
-                                            Console.WriteLine($"[WebSocket] ❌ Main window is null");
-                                        }
-                                    }
-                                    
-                                    if (monitoringPage != null)
-                                    {
-                                        Console.WriteLine($"[WebSocket] ✅ Found MonitoringAlertsPage, calling HandleLostFindingResponse");
-                                        monitoringPage.HandleLostFindingResponse(
-                                            actualImage ?? "", 
-                                            matchedFrame ?? "", 
-                                            location ?? "", 
-                                            score ?? "", 
-                                            found, 
-                                            name ?? ""
-                                        );
-                                    }
-                                    else
-                                    {
-                                        Console.WriteLine($"[WebSocket] ❌ MonitoringAlertsPage not found! Total windows: {System.Windows.Application.Current.Windows.Count}");
-                                        foreach (Window window in System.Windows.Application.Current.Windows)
-                                        {
-                                            Console.WriteLine($"[WebSocket] Window type: {window.GetType().Name}");
-                                        }
-                                    }
-                                }
-                                else
-                                {
-                                    Console.WriteLine($"[WebSocket] ❌ Failed to parse data JSON");
-                                }
-                            }
-                            else
-                            {
-                                Console.WriteLine($"[WebSocket] ❌ data field is null or empty");
-                            }
-                        }
-                        else
-                        {
-                            Console.WriteLine($"[WebSocket] ❌ data field not found in message");
-                        }
-                    }
-                    else if (type == "new_alert" && msgObj.ContainsKey("alert"))
+                    if (type == "new_alert" && msgObj.ContainsKey("alert"))
                     {
                         // Handle the server's broadcast format to applications
                         var alertJson = msgObj["alert"]?.ToString();
@@ -587,7 +355,7 @@ namespace DroneSurveillanceSystem.Services
                                             {
                                                 var coords = JsonConvert.DeserializeObject<double[]>(locationStr);
                                                 if (coords != null && coords.Length >= 3)
-                            {
+                                                {
                                                     alert.AlertLocation = new Tuple<double, double, double>(coords[0], coords[1], coords[2]);
                                                     Console.WriteLine($"[WebSocket] Parsed location from string: [{coords[0]}, {coords[1]}, {coords[2]}]");
                                                 }
@@ -660,67 +428,12 @@ namespace DroneSurveillanceSystem.Services
                             }
                         }
                     }
-                    else if (type == "alert_image" && msgObj.ContainsKey("data"))
-                    {
-                        // New: handle application broadcast format when a drone returns an analysis
-                        var dataJson = msgObj["data"]?.ToString();
-                        if (!string.IsNullOrEmpty(dataJson))
-                        {
-                            var dataObj = JsonConvert.DeserializeObject<Dictionary<string, object>>(dataJson);
-                            if (dataObj != null)
-                            {
-                                try
-                                {
-                                    int found = dataObj.ContainsKey("found") ? Convert.ToInt32(dataObj["found"]) : 0;
-                                    string name = dataObj.ContainsKey("name") ? dataObj["name"]?.ToString() ?? "" : "";
-                                    string actualImage = dataObj.ContainsKey("actual_image") ? dataObj["actual_image"]?.ToString() ?? "" : "";
-                                    string matchedFrame = dataObj.ContainsKey("matched_frame") ? dataObj["matched_frame"]?.ToString() ?? "" : "";
-                                    string location = dataObj.ContainsKey("location") ? dataObj["location"]?.ToString() ?? "" : "";
-                                    string score = dataObj.ContainsKey("score") ? dataObj["score"]?.ToString() ?? "" : "";
-
-                                    Console.WriteLine($"[WebSocket] alert_image received: found={found}, name='{name}', actual.len={actualImage?.Length ?? 0}, matched.len={matchedFrame?.Length ?? 0}");
-                                    
-                                    if (found == 1 && !string.IsNullOrEmpty(name))
-                                    {
-                                        // Update existing UI boxes with both actual and matched images
-                                        LostFindingManager.Instance.HandleResponse(name, matchedFrame ?? "", location ?? "", score ?? "", found, actualImage ?? "");
-
-                                        // Notify any open windows to refresh their Lost Finding sections
-                                        try
-                                        {
-                                            foreach (Window window in System.Windows.Application.Current.Windows)
-                                            {
-                                                if (window is DroneSurveillanceSystem.Views.MonitoringAlertsPage monitoringPageWindow)
-                                                {
-                                                    Console.WriteLine($"[WebSocket] 🔔 Notifying MonitoringAlertsPage (alert_image) to refresh UI");
-                                                    monitoringPageWindow.HandleLostFindingResponse(actualImage ?? "", matchedFrame ?? "", location ?? "", score ?? "", found, name ?? "");
-                                                }
-                                                else if (window is DroneSurveillanceSystem.Views.NetworkDetailsPage networkDetailsWindow)
-                                                {
-                                                    Console.WriteLine($"[WebSocket] 🔔 Notifying NetworkDetailsPage (alert_image) to refresh UI");
-                                                    networkDetailsWindow.HandleLostFindingResponse(actualImage ?? "", matchedFrame ?? "", location ?? "", score ?? "", found, name ?? "");
-                                                }
-                                            }
-                                        }
-                                        catch (Exception notifyEx)
-                                        {
-                                            Console.WriteLine($"[WebSocket] UI notify error (alert_image): {notifyEx.Message}");
-                                        }
-                                    }
-                                }
-                                catch (Exception ex)
-                                {
-                                    Console.WriteLine($"[WebSocket] alert_image parsing error: {ex.Message}");
-                                }
-                            }
-                        }
-                    }
                     else if (type == "initial_alerts")
                     {
                         // Ignore initial alerts to ensure only real-time alerts are shown
                         Console.WriteLine($"[WebSocket] Received initial alerts - ignoring to maintain clean state");
                         if (msgObj.ContainsKey("alerts"))
-                    {
+                        {
                             var alertsJson = msgObj["alerts"]?.ToString();
                             if (!string.IsNullOrEmpty(alertsJson))
                             {
@@ -797,54 +510,62 @@ namespace DroneSurveillanceSystem.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[WebSocket] Logging error: {ex.Message}");
+                Console.WriteLine($"[WebSocket] Failed to log to file: {ex.Message}");
             }
         }
 
-        // Heartbeat mechanism to keep connection alive
         private void StartHeartbeatTimer()
         {
-            StopHeartbeatTimer(); // Stop any existing timer
-            
-            _heartbeatTimer = new Timer(_ =>
+            try
             {
-                if (_client != null && _isConnected)
-                {
-                    try
-                    {
-                        var pingMessage = JsonConvert.SerializeObject(new { type = "ping", timestamp = DateTime.Now });
-                        _client.Send(pingMessage);
-                        LogToFile("SENT", $"Heartbeat ping: {pingMessage}");
-                    }
-                    catch (Exception ex)
-                    {
-                        LogToFile("ERROR", $"Heartbeat ping failed: {ex.Message}");
-                        _isConnected = false;
-                    }
-                }
-            }, null, TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30)); // Send ping every 30 seconds
+                _heartbeatTimer?.Dispose();
+                _heartbeatTimer = new Timer(SendHeartbeat, null, TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30));
+                LogToFile("HEARTBEAT", "Heartbeat timer started");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[WebSocket] Failed to start heartbeat timer: {ex.Message}");
+            }
         }
 
         private void StopHeartbeatTimer()
         {
-            _heartbeatTimer?.Dispose();
-            _heartbeatTimer = null;
+            try
+            {
+                _heartbeatTimer?.Dispose();
+                _heartbeatTimer = null;
+                LogToFile("HEARTBEAT", "Heartbeat timer stopped");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[WebSocket] Failed to stop heartbeat timer: {ex.Message}");
+            }
         }
 
-        // Connection status check
-        public bool IsConnected => _isConnected && _client?.IsRunning == true;
-
-        // Manual reconnection method
-        public async Task ReconnectAsync()
+        private void SendHeartbeat(object? state)
         {
-            LogToFile("INFO", "Manual reconnection requested");
-            await StopWebSocketAsync();
-            await Task.Delay(2000); // Wait 2 seconds before reconnecting
-            await StartWebSocketAsync();
+            try
+            {
+                if (_client != null && _isConnected && _client.IsRunning)
+                {
+                    var heartbeat = new { type = "ping", timestamp = DateTime.UtcNow.ToString("o") };
+                    var json = JsonConvert.SerializeObject(heartbeat);
+                    _client.SendInstant(json);
+                    LogToFile("SENT", $"Heartbeat: {json}");
+                    Console.WriteLine($"[WebSocket] 💓 Heartbeat sent");
+                }
+                else
+                {
+                    Console.WriteLine($"[WebSocket] 💓 Heartbeat skipped - client not connected");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[WebSocket] Failed to send heartbeat: {ex.Message}");
+            }
         }
 
-        // Stop WebSocket connection
-        public async Task StopWebSocketAsync()
+        public void StopWebSocket()
         {
             try
             {
@@ -852,65 +573,83 @@ namespace DroneSurveillanceSystem.Services
                 
                 if (_client != null)
                 {
-                    LogToFile("DISCONNECT", "Stopping WebSocket connection");
-                    await _client.Stop(WebSocketCloseStatus.NormalClosure, "Application shutdown");
+                    _client.Stop(WebSocketCloseStatus.NormalClosure, "Application shutdown");
                     _client.Dispose();
                     _client = null;
                 }
                 
                 _isConnected = false;
-                LogToFile("DISCONNECT", "WebSocket connection stopped");
+                LogToFile("DISCONNECT", "WebSocket stopped by application");
+                Console.WriteLine($"[WebSocket] 🛑 WebSocket stopped by application");
             }
             catch (Exception ex)
             {
-                LogToFile("ERROR", $"Error stopping WebSocket: {ex.Message}");
+                Console.WriteLine($"[WebSocket] Error stopping WebSocket: {ex.Message}");
+            }
+        }
+
+        public bool IsConnected => _isConnected;
+
+        public async Task StopWebSocketAsync()
+        {
+            await Task.Run(() => StopWebSocket());
+        }
+
+        public async Task ReconnectAsync()
+        {
+            try
+            {
+                StopWebSocket();
+                await Task.Delay(1000); // Wait 1 second before reconnecting
+                await StartWebSocketAsync();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[WebSocket] Reconnection failed: {ex.Message}");
+                throw;
             }
         }
 
         public void Dispose()
         {
-            try
-            {
-                StopHeartbeatTimer();
-                _client?.Dispose();
-                _httpClient?.Dispose();
-                LogToFile("SYSTEM", "ApiService disposed");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"[WebSocket] Dispose error: {ex.Message}");
-            }
+            StopWebSocket();
+            _httpClient?.Dispose();
         }
     }
 
-    // API Response Models
+    // API Response wrapper
     public class ApiResponse<T>
     {
-        public bool Success { get; set; } = false;
-        public T? Data { get; set; } = default!;
-        public string? ErrorMessage { get; set; } = string.Empty;
+        public bool Success { get; set; }
+        public T? Data { get; set; }
+        public string? ErrorMessage { get; set; }
     }
 
+    // API Result models
     public class GroupCreationResult
     {
-        [JsonProperty("group_id")]
         public int GroupId { get; set; }
+        public string? Message { get; set; }
     }
 
     public class DroneRegistrationResult
     {
-        [JsonProperty("group_id")]
-        public int GroupId { get; set; }
-        public string Error { get; set; } = string.Empty;
+        public int DroneId { get; set; }
+        public string? Status { get; set; }
+        public string? Message { get; set; }
     }
 
     public class DataUploadResult
     {
-        public string Status { get; set; } = string.Empty;
+        public string? FileId { get; set; }
+        public string? Status { get; set; }
+        public string? Message { get; set; }
     }
 
     public class ControlCommandResult
     {
-        public string Status { get; set; } = string.Empty;
+        public string? Command { get; set; }
+        public string? Status { get; set; }
+        public string? Message { get; set; }
     }
 }

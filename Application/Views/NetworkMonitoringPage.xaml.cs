@@ -229,16 +229,7 @@ namespace DroneSurveillanceSystem.Views
             this.Close();
         }
 
-        private void LostFindingButton_Click(object sender, RoutedEventArgs e)
-        {
-            // Open the MonitoringAlertsPage where the Lost Finding functionality is properly implemented
-            var monitoringAlertsPage = new MonitoringAlertsPage();
-            monitoringAlertsPage.Owner = this;
-            monitoringAlertsPage.Show();
-            
-            MessageBox.Show("Lost Finding page opened! Use the Lost Finding button in the monitoring page to upload images and view results.", 
-                          "Lost Finding", MessageBoxButton.OK, MessageBoxImage.Information);
-        }
+
 
         private void AcknowledgeAllAlertsButton_Click(object sender, RoutedEventArgs e)
         {
