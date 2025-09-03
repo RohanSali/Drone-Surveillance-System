@@ -923,7 +923,7 @@ namespace DroneSurveillanceSystem.Views
 
             try
             {
-                var apiService = new ApiService();
+                var apiService = DroneSurveillanceSystem.Services.ApiService.Instance;
                 if (apiService == null)
                 {
                     MessageBox.Show("WebSocket service not available.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
@@ -935,6 +935,7 @@ namespace DroneSurveillanceSystem.Views
                 }
                 if (apiService._client != null && apiService._client.IsRunning)
                 {
+                    DroneSurveillanceSystem.Services.LostFindingManager.LogWebSocket("SENT", json);
                     await apiService._client.SendInstant(json);
                     Console.WriteLine($"[NetworkDetailsPage] Sent alert_image request with name: {uniqueName}");
                     MessageBox.Show($"Lost Finding alert image sent for {_network.Name ?? "Unknown"}!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
@@ -947,10 +948,10 @@ namespace DroneSurveillanceSystem.Views
                         RequestId = requestId,
                         ActualImageBase64 = base64Image,
                         MatchedImageBase64 = "",
-                        Location = "0, 0, 0",
-                        Score = "Pending...",
+                        Location = "",
+                        Score = "",
                         Timestamp = DateTime.Now,
-                        Name = uniqueName // Use the unique name
+                        Name = uniqueName
                     };
                     
                     _lostFindingManager.AddPendingRequest(uniqueName, lostFindingItem);
@@ -1240,7 +1241,7 @@ namespace DroneSurveillanceSystem.Views
             });
             locationStack.Children.Add(new TextBlock
             {
-                Text = data.Location,
+                Text = string.IsNullOrWhiteSpace(data.Location) ? "—" : data.Location,
                 Foreground = Brushes.White,
                 FontSize = 11,
                 TextWrapping = TextWrapping.Wrap
@@ -1266,7 +1267,7 @@ namespace DroneSurveillanceSystem.Views
             });
             scoreStack.Children.Add(new TextBlock
             {
-                Text = data.Score,
+                Text = string.IsNullOrWhiteSpace(data.Score) ? "—" : data.Score,
                 Foreground = Brushes.White,
                 FontSize = 14,
                 FontWeight = FontWeights.Bold
@@ -1296,6 +1297,32 @@ namespace DroneSurveillanceSystem.Views
         {
             // Remove this analysis from the content panel
             LostFindingContentPanel.Children.Remove(analysisBorder);
+            
+            // Also remove the data from the manager to update pending count
+            // Extract the name from the header text to identify which analysis to remove
+            if (analysisBorder.Child is Grid grid && grid.Children.Count > 0)
+            {
+                if (grid.Children[0] is Border headerBorder && headerBorder.Child is Grid headerGrid)
+                {
+                    if (headerGrid.Children[0] is TextBlock headerText)
+                    {
+                        // Extract name from header text like "🔍 Lost Finding Analysis - 23:36:33"
+                        string headerTextContent = headerText.Text;
+                        if (headerTextContent.Contains(" - "))
+                        {
+                            string timestamp = headerTextContent.Split(" - ").Last();
+                            // Find the corresponding data by timestamp
+                            var dataToRemove = _lostFindingManager.LostFindingData
+                                .FirstOrDefault(d => d.Timestamp.ToString("HH:mm:ss") == timestamp);
+                            if (dataToRemove != null)
+                            {
+                                _lostFindingManager.RemoveLostFindingData(dataToRemove.Name);
+                                Console.WriteLine($"[NetworkDetailsPage] Removed Lost Finding analysis: {dataToRemove.Name}");
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         private void CloseLostFindingSection_Click(object sender, RoutedEventArgs e)
@@ -1317,7 +1344,7 @@ namespace DroneSurveillanceSystem.Views
                 Console.WriteLine($"[NetworkDetailsPage]   - LostFindingSection current visibility: {LostFindingSection.Visibility}");
                 
                 // Use the persistent manager to handle the response
-                _lostFindingManager.HandleResponse(name, matchedImageBase64 ?? "", location ?? "0, 0, 0", score ?? "0", found);
+                _lostFindingManager.HandleResponse(name, matchedImageBase64 ?? "", location ?? "", score ?? "", found);
                 
                 // Always show the LostFindingSection when we receive a response
                 Console.WriteLine($"[NetworkDetailsPage] 📺 Making LostFindingSection visible");
