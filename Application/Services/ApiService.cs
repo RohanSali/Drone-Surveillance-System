@@ -11,6 +11,8 @@ using DroneSurveillanceSystem.Views;
 using System.IO;
 using System.Linq; // Added for .OfType() and .FirstOrDefault()
 using System.Windows; // Added for Window
+using System.Threading; // Added for Timer
+using System.Net.WebSockets; // Added for WebSocketCloseStatus
 
 namespace DroneSurveillanceSystem.Services
 {
@@ -27,6 +29,10 @@ namespace DroneSurveillanceSystem.Services
         private readonly string _authToken;
         internal WebsocketClient? _client;
         private readonly string _wsUrl = "wss://droneserver-5pfg.onrender.com/ws/application/app_001";
+        private readonly string _logFilePath;
+        private bool _isConnected = false;
+        private Timer? _heartbeatTimer;
+        private readonly object _lockObject = new object();
         public event EventHandler<AlertReceivedEventArgs>? AlertReceived;
 
         public ApiService(string baseUrl = "wss://droneserver-5pfg.onrender.com", string authToken = "")
@@ -34,11 +40,15 @@ namespace DroneSurveillanceSystem.Services
             _baseUrl = baseUrl;
             _authToken = authToken;
             _httpClient = new HttpClient();
+            _logFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "logger.txt");
             
             if (!string.IsNullOrEmpty(_authToken))
             {
                 _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {_authToken}");
             }
+            
+            // Initialize log file
+            InitializeLogFile();
         }
 
         // Group Management
@@ -188,49 +198,84 @@ namespace DroneSurveillanceSystem.Services
 
         public async Task StartWebSocketAsync()
         {
-            var url = new Uri(_wsUrl);
-            _client = new WebsocketClient(url);
-            _client.ReconnectTimeout = TimeSpan.FromSeconds(30);
-
-            _client.ReconnectionHappened.Subscribe(info =>
+            lock (_lockObject)
             {
-                Console.WriteLine($"[WebSocket] 🔄 Reconnection happened, type: {info.Type}");
-                System.Diagnostics.Debug.WriteLine($"[WebSocket] Reconnection happened, type: {info.Type}");
-            });
-            
-            _client.DisconnectionHappened.Subscribe(info =>
-            {
-                Console.WriteLine($"[WebSocket] ❌ Disconnection happened, type: {info.Type}, reason: {info.CloseStatusDescription}");
-                System.Diagnostics.Debug.WriteLine($"[WebSocket] Disconnection happened, type: {info.Type}, reason: {info.CloseStatusDescription}");
-            });
-
-            _client.MessageReceived
-                .Where(msg => msg.Text != null)
-                .Subscribe(msg => 
+                if (_client != null && _isConnected)
                 {
-                    Console.WriteLine($"[WebSocket] 📨 Message received from server");
-                    HandleMessage(msg.Text);
+                    LogToFile("INFO", "WebSocket already connected, skipping start");
+                    return;
+                }
+            }
+
+            try
+            {
+                var url = new Uri(_wsUrl);
+                _client = new WebsocketClient(url);
+                
+                // Enhanced reconnection settings
+                _client.ReconnectTimeout = TimeSpan.FromSeconds(60);
+                _client.ErrorReconnectTimeout = TimeSpan.FromSeconds(30);
+                
+                // Enable automatic reconnection
+                _client.ReconnectionHappened.Subscribe(info =>
+                {
+                    _isConnected = true;
+                    LogToFile("RECONNECT", $"Reconnection happened, type: {info.Type}");
+                    Console.WriteLine($"[WebSocket] 🔄 Reconnection happened, type: {info.Type}");
+                    
+                    // Restart heartbeat timer after reconnection
+                    StartHeartbeatTimer();
                 });
                 
-            Console.WriteLine($"[WebSocket] 🚀 Starting WebSocket connection to: {_wsUrl}");
-            await _client.Start();
-            Console.WriteLine($"[WebSocket] ✅ WebSocket connection started successfully");
+                _client.DisconnectionHappened.Subscribe(info =>
+                {
+                    _isConnected = false;
+                    LogToFile("DISCONNECT", $"Disconnection happened, type: {info.Type}, reason: {info.CloseStatusDescription}");
+                    Console.WriteLine($"[WebSocket] ❌ Disconnection happened, type: {info.Type}, reason: {info.CloseStatusDescription}");
+                    
+                    // Stop heartbeat timer on disconnection
+                    StopHeartbeatTimer();
+                });
+
+                _client.MessageReceived
+                    .Where(msg => msg.Text != null)
+                    .Subscribe(msg => 
+                    {
+                        LogToFile("RECEIVED", msg.Text);
+                        Console.WriteLine($"[WebSocket] 📨 Message received from server");
+                        HandleMessage(msg.Text);
+                    });
+                    
+                LogToFile("CONNECT", $"Starting WebSocket connection to: {_wsUrl}");
+                Console.WriteLine($"[WebSocket] 🚀 Starting WebSocket connection to: {_wsUrl}");
+                
+                await _client.Start();
+                _isConnected = true;
+                
+                // Start heartbeat timer
+                StartHeartbeatTimer();
+                
+                LogToFile("CONNECT", "WebSocket connection started successfully");
+                Console.WriteLine($"[WebSocket] ✅ WebSocket connection started successfully");
+            }
+            catch (Exception ex)
+            {
+                _isConnected = false;
+                LogToFile("ERROR", $"Failed to start WebSocket connection: {ex.Message}");
+                Console.WriteLine($"[WebSocket] ❌ Failed to start WebSocket connection: {ex.Message}");
+                throw;
+            }
         }
 
         public void HandleMessage(string message)
         {
             Console.WriteLine($"[WebSocket] Received raw message: {message}");
             
-            // Log to file for debugging
-            try
+            // Handle ping responses
+            if (message.Contains("\"type\":\"pong\"") || message.Contains("\"type\":\"ping\""))
             {
-                var logPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "websocket_debug.log");
-                var logEntry = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] RECEIVED: {message}\n";
-                File.AppendAllText(logPath, logEntry);
-            }
-            catch (Exception logEx)
-            {
-                Console.WriteLine($"[WebSocket] Logging error: {logEx.Message}");
+                LogToFile("RECEIVED", $"Heartbeat response: {message}");
+                return;
             }
             
             try
@@ -651,9 +696,119 @@ namespace DroneSurveillanceSystem.Services
             }
         }
 
+        // Comprehensive logging methods
+        private void InitializeLogFile()
+        {
+            try
+            {
+                var logHeader = $"\n{'='*80}\n" +
+                               $"WebSocket Communication Log - {DateTime.Now:yyyy-MM-dd HH:mm:ss}\n" +
+                               $"Application: Drone Surveillance System\n" +
+                               $"WebSocket URL: {_wsUrl}\n" +
+                               $"{'='*80}\n\n";
+                
+                File.WriteAllText(_logFilePath, logHeader);
+                LogToFile("SYSTEM", "Logger initialized successfully");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[WebSocket] Failed to initialize log file: {ex.Message}");
+            }
+        }
+
+        private void LogToFile(string type, string message)
+        {
+            try
+            {
+                var timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff");
+                var logEntry = $"[{timestamp}] [{type}] {message}\n";
+                File.AppendAllText(_logFilePath, logEntry);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[WebSocket] Logging error: {ex.Message}");
+            }
+        }
+
+        // Heartbeat mechanism to keep connection alive
+        private void StartHeartbeatTimer()
+        {
+            StopHeartbeatTimer(); // Stop any existing timer
+            
+            _heartbeatTimer = new Timer(_ =>
+            {
+                if (_client != null && _isConnected)
+                {
+                    try
+                    {
+                        var pingMessage = JsonConvert.SerializeObject(new { type = "ping", timestamp = DateTime.Now });
+                        _client.Send(pingMessage);
+                        LogToFile("SENT", $"Heartbeat ping: {pingMessage}");
+                    }
+                    catch (Exception ex)
+                    {
+                        LogToFile("ERROR", $"Heartbeat ping failed: {ex.Message}");
+                        _isConnected = false;
+                    }
+                }
+            }, null, TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30)); // Send ping every 30 seconds
+        }
+
+        private void StopHeartbeatTimer()
+        {
+            _heartbeatTimer?.Dispose();
+            _heartbeatTimer = null;
+        }
+
+        // Connection status check
+        public bool IsConnected => _isConnected && _client?.IsRunning == true;
+
+        // Manual reconnection method
+        public async Task ReconnectAsync()
+        {
+            LogToFile("INFO", "Manual reconnection requested");
+            await StopWebSocketAsync();
+            await Task.Delay(2000); // Wait 2 seconds before reconnecting
+            await StartWebSocketAsync();
+        }
+
+        // Stop WebSocket connection
+        public async Task StopWebSocketAsync()
+        {
+            try
+            {
+                StopHeartbeatTimer();
+                
+                if (_client != null)
+                {
+                    LogToFile("DISCONNECT", "Stopping WebSocket connection");
+                    await _client.Stop(WebSocketCloseStatus.NormalClosure, "Application shutdown");
+                    _client.Dispose();
+                    _client = null;
+                }
+                
+                _isConnected = false;
+                LogToFile("DISCONNECT", "WebSocket connection stopped");
+            }
+            catch (Exception ex)
+            {
+                LogToFile("ERROR", $"Error stopping WebSocket: {ex.Message}");
+            }
+        }
+
         public void Dispose()
         {
-            _httpClient?.Dispose();
+            try
+            {
+                StopHeartbeatTimer();
+                _client?.Dispose();
+                _httpClient?.Dispose();
+                LogToFile("SYSTEM", "ApiService disposed");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[WebSocket] Dispose error: {ex.Message}");
+            }
         }
     }
 

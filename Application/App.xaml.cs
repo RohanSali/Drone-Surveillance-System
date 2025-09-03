@@ -88,6 +88,29 @@ namespace DroneSurveillanceSystem
                     {
                         await _apiService.StartWebSocketAsync();
                         Console.WriteLine("[App] WebSocket connection started successfully");
+                        
+                        // Start connection monitoring task
+                        _ = Task.Run(async () =>
+                        {
+                            while (true)
+                            {
+                                await Task.Delay(60000); // Check every minute
+                                
+                                if (!_apiService.IsConnected)
+                                {
+                                    Console.WriteLine("[App] WebSocket disconnected, attempting reconnection...");
+                                    try
+                                    {
+                                        await _apiService.ReconnectAsync();
+                                        Console.WriteLine("[App] WebSocket reconnection successful");
+                                    }
+                                    catch (Exception reconnectEx)
+                                    {
+                                        Console.WriteLine($"[App] WebSocket reconnection failed: {reconnectEx.Message}");
+                                    }
+                                }
+                            }
+                        });
                     }
                     catch (Exception wsEx)
                     {
