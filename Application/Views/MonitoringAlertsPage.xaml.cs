@@ -546,7 +546,8 @@ namespace DroneSurveillanceSystem.Views
             {
                 try
                 {
-                    byte[] imageBytes = Convert.FromBase64String(data.ActualImageBase64);
+                    var actualBase64 = SanitizeBase64(data.ActualImageBase64);
+                    byte[] imageBytes = Convert.FromBase64String(actualBase64);
                     var bitmap = new BitmapImage();
                     bitmap.BeginInit();
                     bitmap.StreamSource = new System.IO.MemoryStream(imageBytes);
@@ -630,7 +631,8 @@ namespace DroneSurveillanceSystem.Views
                 
                 try
                 {
-                    byte[] imageBytes = Convert.FromBase64String(data.MatchedImageBase64);
+                    var matchedBase64 = SanitizeBase64(data.MatchedImageBase64);
+                    byte[] imageBytes = Convert.FromBase64String(matchedBase64);
                     Console.WriteLine($"[MonitoringAlertsPage]   - Converted to {imageBytes.Length} bytes");
                     
                     var bitmap = new BitmapImage();
@@ -764,6 +766,22 @@ namespace DroneSurveillanceSystem.Views
 
             border.Child = grid;
             return border;
+        }
+
+        private static string SanitizeBase64(string input)
+        {
+            if (string.IsNullOrWhiteSpace(input)) return input;
+            // Strip common data URI prefixes
+            const string pngPrefix = "data:image/png;base64,";
+            const string jpgPrefix = "data:image/jpeg;base64,";
+            const string jpegPrefix = "data:image/jpg;base64,";
+            const string webpPrefix = "data:image/webp;base64,";
+            if (input.StartsWith(pngPrefix, StringComparison.OrdinalIgnoreCase)) return input.Substring(pngPrefix.Length);
+            if (input.StartsWith(jpgPrefix, StringComparison.OrdinalIgnoreCase)) return input.Substring(jpgPrefix.Length);
+            if (input.StartsWith(jpegPrefix, StringComparison.OrdinalIgnoreCase)) return input.Substring(jpegPrefix.Length);
+            if (input.StartsWith(webpPrefix, StringComparison.OrdinalIgnoreCase)) return input.Substring(webpPrefix.Length);
+            // Trim whitespace/newlines just in case
+            return input.Trim();
         }
 
         private void RemoveLostFindingAnalysis(Border analysisBorder)

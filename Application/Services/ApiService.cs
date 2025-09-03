@@ -684,6 +684,28 @@ namespace DroneSurveillanceSystem.Services
                                     {
                                         // Update existing UI boxes with both actual and matched images
                                         LostFindingManager.Instance.HandleResponse(name, matchedFrame ?? "", location ?? "", score ?? "", found, actualImage ?? "");
+
+                                        // Notify any open windows to refresh their Lost Finding sections
+                                        try
+                                        {
+                                            foreach (Window window in System.Windows.Application.Current.Windows)
+                                            {
+                                                if (window is DroneSurveillanceSystem.Views.MonitoringAlertsPage monitoringPageWindow)
+                                                {
+                                                    Console.WriteLine($"[WebSocket] 🔔 Notifying MonitoringAlertsPage (alert_image) to refresh UI");
+                                                    monitoringPageWindow.HandleLostFindingResponse(actualImage ?? "", matchedFrame ?? "", location ?? "", score ?? "", found, name ?? "");
+                                                }
+                                                else if (window is DroneSurveillanceSystem.Views.NetworkDetailsPage networkDetailsWindow)
+                                                {
+                                                    Console.WriteLine($"[WebSocket] 🔔 Notifying NetworkDetailsPage (alert_image) to refresh UI");
+                                                    networkDetailsWindow.HandleLostFindingResponse(actualImage ?? "", matchedFrame ?? "", location ?? "", score ?? "", found, name ?? "");
+                                                }
+                                            }
+                                        }
+                                        catch (Exception notifyEx)
+                                        {
+                                            Console.WriteLine($"[WebSocket] UI notify error (alert_image): {notifyEx.Message}");
+                                        }
                                     }
                                 }
                                 catch (Exception ex)
