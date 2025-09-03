@@ -139,6 +139,10 @@ namespace DroneSurveillanceSystem
                 AlertManager.Instance.ClearAllAlerts();
                 Console.WriteLine("All active alerts cleared on application exit.");
                 
+                // Clear all pending requests when application exits
+                LostFindingManager.Instance.ClearAllPendingRequests();
+                Console.WriteLine("All pending requests cleared on application exit.");
+                
                 // Clear alert log file as well
                 var alertLogPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "alert_log.txt");
                 if (File.Exists(alertLogPath))

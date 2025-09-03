@@ -5,6 +5,7 @@ using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using Microsoft.Win32;
@@ -44,6 +45,15 @@ namespace DroneSurveillanceSystem.Views
             DataContext = this;
             
             _pendingRequests = new ObservableCollection<PendingRequest>();
+            
+            // Initialize LostFindingManager with current user
+            // For now, we'll use a placeholder user ID - this should be passed from the main window
+            LostFindingManager.Instance.SetCurrentUser("current_user");
+            // Copy requests from manager to local collection
+            foreach (var request in LostFindingManager.Instance.PendingRequests)
+            {
+                _pendingRequests.Add(request);
+            }
             
             // Subscribe to WebSocket messages for responses
             ApiService.Instance.MessageReceived += OnWebSocketMessageReceived;
@@ -130,7 +140,7 @@ namespace DroneSurveillanceSystem.Views
                 {
                     Name = uniqueName,
                     Timestamp = DateTime.Now.ToString("HH:mm:ss"),
-                    Status = "Sent",
+                    Status = "Pending",
                     StatusColor = "#FF9800",
                     ImageBase64 = _selectedImageBase64,
                     MatchScore = 0,
@@ -138,6 +148,7 @@ namespace DroneSurveillanceSystem.Views
                 };
                 
                 _pendingRequests.Add(pendingRequest);
+                LostFindingManager.Instance.AddPendingRequest(pendingRequest);
                 
                 // Automatically select the newly added request (latest request)
                 foreach (var req in _pendingRequests)
@@ -181,7 +192,7 @@ namespace DroneSurveillanceSystem.Views
                         if (matchingRequest != null)
                         {
                             // Update the request status and store results
-                            matchingRequest.Status = "Found";
+                            matchingRequest.Status = "Matched";
                             matchingRequest.StatusColor = "#4CAF50";
                             
                             // Store matched image and score
@@ -189,10 +200,28 @@ namespace DroneSurveillanceSystem.Views
                             if (!string.IsNullOrEmpty(matchedFrame))
                             {
                                 matchingRequest.MatchedImageBase64 = matchedFrame;
+                                Console.WriteLine($"[LostFinding] Stored matched frame for {name}, length: {matchedFrame.Length}");
                             }
                             
-                            var score = data?.score ?? 0;
+                            // Properly fetch and convert score
+                            var scoreValue = data?.score;
+                            double score = 0;
+                            if (scoreValue != null)
+                            {
+                                if (scoreValue is double d)
+                                    score = d;
+                                else if (scoreValue is float f)
+                                    score = f;
+                                else if (scoreValue is int i)
+                                    score = i / 100.0; // Convert percentage to decimal
+                                else if (double.TryParse(scoreValue.ToString(), out double parsed))
+                                    score = parsed;
+                            }
                             matchingRequest.MatchScore = score;
+                            Console.WriteLine($"[LostFinding] Stored match score for {name}: {score} ({score:P1})");
+                            
+                            // Update the request in the manager
+                            LostFindingManager.Instance.UpdatePendingRequest(matchingRequest);
                             
                             // Update UI on the main thread
                             Dispatcher.Invoke(() =>
@@ -228,25 +257,22 @@ namespace DroneSurveillanceSystem.Views
                     {
                         MatchedImage.Source = matchedImage;
                         NoResultsText.Visibility = Visibility.Collapsed;
+                        Console.WriteLine($"[LostFinding] Updated matched image display for {request.Name}");
                     }
                 }
                 
-                // Update match score
-                var score = data?.score ?? 0;
-                MatchScoreText.Text = $"{score:F1}%";
+                // Update match score using the stored score from the request
+                MatchScoreText.Text = $"{request.MatchScore:P1}";
                 
                 // Update status
-                StatusText.Text = "Match Found";
+                StatusText.Text = "Matched";
                 StatusText.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#4CAF50"));
                 
-                // Show success message
-                MessageBox.Show($"Match found for request: {request.Name}\nMatch Score: {score:F1}%", 
-                    "Match Found", MessageBoxButton.OK, MessageBoxImage.Information);
+                Console.WriteLine($"[LostFinding] Updated results for {request.Name}: Score={request.MatchScore:P1}, Status=Matched");
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error updating results: {ex.Message}", "Error", 
-                    MessageBoxButton.OK, MessageBoxImage.Error);
+                Console.WriteLine($"[LostFinding] Error updating results: {ex.Message}");
             }
         }
 
@@ -331,7 +357,10 @@ namespace DroneSurveillanceSystem.Views
                     UpdateDisplayForSelectedRequest();
                 }
                 
-                // Show refresh feedback
+                // Show refresh feedback without changing the actual status
+                var originalStatusText = StatusText.Text;
+                var originalStatusColor = StatusText.Foreground;
+                
                 StatusText.Text = "Refreshed";
                 StatusText.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#17a2b8"));
                 
@@ -341,17 +370,8 @@ namespace DroneSurveillanceSystem.Views
                 timer.Tick += (s, args) =>
                 {
                     timer.Stop();
-                    if (SelectedRequest != null)
-                    {
-                        StatusText.Text = SelectedRequest.Status == "Found" ? "Match Found" : "Request Sent";
-                        StatusText.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString(
-                            SelectedRequest.Status == "Found" ? "#4CAF50" : "#FF9800"));
-                    }
-                    else
-                    {
-                        StatusText.Text = "Waiting...";
-                        StatusText.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FF9800"));
-                    }
+                    StatusText.Text = originalStatusText;
+                    StatusText.Foreground = originalStatusColor;
                 };
                 timer.Start();
             }
@@ -384,13 +404,14 @@ namespace DroneSurveillanceSystem.Views
                 }
 
                 // Update right panel with results if available
-                if (SelectedRequest.Status == "Found" && !string.IsNullOrEmpty(SelectedRequest.MatchedImageBase64))
+                if (SelectedRequest.Status == "Matched" && !string.IsNullOrEmpty(SelectedRequest.MatchedImageBase64))
                 {
                     var matchedImage = ConvertBase64ToImage(SelectedRequest.MatchedImageBase64);
                     if (matchedImage != null)
                     {
                         MatchedImage.Source = matchedImage;
                         NoResultsText.Visibility = Visibility.Collapsed;
+                        Console.WriteLine($"[LostFinding] Displayed matched image for selected request: {SelectedRequest.Name}");
                     }
                 }
                 else
@@ -400,14 +421,42 @@ namespace DroneSurveillanceSystem.Views
                 }
 
                 // Update match score and status
-                MatchScoreText.Text = $"{SelectedRequest.MatchScore:F1}%";
-                StatusText.Text = SelectedRequest.Status == "Found" ? "Match Found" : "Request Sent";
+                MatchScoreText.Text = $"{SelectedRequest.MatchScore:P1}";
+                StatusText.Text = SelectedRequest.Status == "Matched" ? "Matched" : "Pending";
                 StatusText.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString(
-                    SelectedRequest.Status == "Found" ? "#4CAF50" : "#FF9800"));
+                    SelectedRequest.Status == "Matched" ? "#4CAF50" : "#FF9800"));
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Error updating display for selected request: {ex.Message}");
+            }
+        }
+
+        private void DeleteRequest_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button button && button.Tag is PendingRequest request)
+            {
+                var result = MessageBox.Show(
+                    $"Are you sure you want to delete the request '{request.Name}'?",
+                    "Delete Request",
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Question);
+
+                if (result == MessageBoxResult.Yes)
+                {
+                    // Remove from local collection
+                    _pendingRequests.Remove(request);
+                    
+                    // Remove from manager
+                    LostFindingManager.Instance.RemovePendingRequest(request);
+                    
+                    // If this was the selected request, clear selection
+                    if (SelectedRequest == request)
+                    {
+                        SelectedRequest = null;
+                        ClearResults();
+                    }
+                }
             }
         }
 
@@ -437,6 +486,7 @@ namespace DroneSurveillanceSystem.Views
         private string _matchedImageBase64 = string.Empty;
         private double _matchScore = 0;
         private bool _isSelected = false;
+        private string _userId = string.Empty;
 
         public string Name
         {
@@ -514,6 +564,16 @@ namespace DroneSurveillanceSystem.Views
             set
             {
                 _isSelected = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public string UserId
+        {
+            get => _userId;
+            set
+            {
+                _userId = value;
                 OnPropertyChanged();
             }
         }

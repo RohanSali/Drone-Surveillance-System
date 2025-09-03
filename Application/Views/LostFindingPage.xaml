@@ -351,19 +351,62 @@
                                             </Style.Triggers>
                                         </Style>
                                     </Border.Style>
-                                    <StackPanel>
-                                        <TextBlock Text="{Binding Name}" 
-                                                  Foreground="White" 
-                                                  FontWeight="Bold" 
-                                                  FontSize="12"/>
-                                        <TextBlock Text="{Binding Timestamp}" 
-                                                  Foreground="#888" 
-                                                  FontSize="10"/>
-                                        <TextBlock Text="{Binding Status}" 
-                                                  Foreground="{Binding StatusColor}" 
-                                                  FontSize="10" 
-                                                  FontWeight="Bold"/>
-                                    </StackPanel>
+                                    <Grid>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                        </Grid.RowDefinitions>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        
+                                        <StackPanel Grid.Row="0" Grid.Column="0">
+                                            <TextBlock Text="{Binding Name}" 
+                                                      Foreground="White" 
+                                                      FontWeight="Bold" 
+                                                      FontSize="12"/>
+                                            <TextBlock Text="{Binding Timestamp}" 
+                                                      Foreground="#888" 
+                                                      FontSize="10"/>
+                                            <TextBlock Text="{Binding Status}" 
+                                                      Foreground="{Binding StatusColor}" 
+                                                      FontSize="10" 
+                                                      FontWeight="Bold"/>
+                                        </StackPanel>
+                                        
+                                        <Button Grid.Row="0" Grid.Column="1" 
+                                                Content="✕" 
+                                                Background="#dc3545" 
+                                                Foreground="White" 
+                                                BorderThickness="0" 
+                                                Padding="5,2" 
+                                                FontSize="10"
+                                                FontWeight="Bold"
+                                                Click="DeleteRequest_Click"
+                                                Tag="{Binding}"
+                                                Margin="5,0,0,0"
+                                                Width="20" Height="20">
+                                            <Button.Template>
+                                                <ControlTemplate TargetType="Button">
+                                                    <Border Background="{TemplateBinding Background}" 
+                                                            CornerRadius="3">
+                                                        <ContentPresenter HorizontalAlignment="Center" 
+                                                                        VerticalAlignment="Center"/>
+                                                    </Border>
+                                                    <ControlTemplate.Triggers>
+                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                            <Setter Property="Background" Value="#c82333"/>
+                                                        </Trigger>
+                                                        <Trigger Property="IsPressed" Value="True">
+                                                            <Setter Property="Background" Value="#bd2130"/>
+                                                        </Trigger>
+                                                    </ControlTemplate.Triggers>
+                                                </ControlTemplate>
+                                            </Button.Template>
+                                        </Button>
+                                    </Grid>
                                 </Border>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
