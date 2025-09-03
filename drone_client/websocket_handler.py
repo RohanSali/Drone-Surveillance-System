@@ -12,7 +12,7 @@ ALERT_QUEUE_FILE = os.path.join(current_dir, "alert_queue.txt")
 TARGETS_FILE = os.path.join(current_dir, "capture_engine", "drone_targets.txt")
 LOST_PERSON_FOLDER = os.path.join(current_dir, "inference_engine", "lost_person")
 
-SERVER_URL = "wss://droneserver-5pfg.onrender.com"
+SERVER_URL = "wss://new-server-5iyd.onrender.com"
 
 class DroneWebSocketHandler:
     def __init__(self, drone_id: str):
@@ -31,12 +31,12 @@ class DroneWebSocketHandler:
                 self.connected = True
                 print(f"✅ Connected to WebSocket at: {self.server_url}")
 
-                # Send initial handshake
-                await self.websocket.send(json.dumps({
-                    "type": "drone_connect",
-                    "data": {"drone_id": self.drone_id}
-                }))
-                print("📤 Initial connection message sent.")
+                # # Send initial handshake
+                # await self.websocket.send(json.dumps({
+                #     "type": "drone_connect",
+                #     "data": {"drone_id": self.drone_id}
+                # }))
+                # print("📤 Initial connection message sent.")
 
             except Exception as e:
                 print(f"❌ Connection failed: {e}. Retrying in 5s...")
