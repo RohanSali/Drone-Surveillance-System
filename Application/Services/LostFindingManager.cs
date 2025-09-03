@@ -18,10 +18,11 @@ namespace DroneSurveillanceSystem.Services
         private static readonly object _lock = new object();
         
         private readonly string _dataFilePath;
+        private readonly string _statusLogPath;
         private List<LostFindingRequest> _pendingRequests = new List<LostFindingRequest>();
         private List<LostFindingData> _lostFindingData = new List<LostFindingData>();
 
-        // Use the same logger file as ApiService
+        // Use the same logger file as ApiService for raw comms
         private static readonly string LoggerPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "logger.txt");
 
         public event PropertyChangedEventHandler? PropertyChanged;
@@ -31,7 +32,9 @@ namespace DroneSurveillanceSystem.Services
             var appDataPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "DroneSurveillanceSystem");
             Directory.CreateDirectory(appDataPath);
             _dataFilePath = Path.Combine(appDataPath, "lost_finding_data.json");
+            _statusLogPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "lost_finding_status.log");
             LoadData();
+            InitializeStatusLog();
         }
 
         public static LostFindingManager Instance
@@ -68,10 +71,32 @@ namespace DroneSurveillanceSystem.Services
                 var logEntry = $"[{timestamp}] [{type}] {raw}\n";
                 File.AppendAllText(LoggerPath, logEntry);
             }
-            catch
+            catch { }
+        }
+
+        // Status log (pending/fulfilled tracking)
+        private void InitializeStatusLog()
+        {
+            try
             {
-                // Swallow logging errors silently to avoid breaking app flow
+                var header = $"\n{'='*80}\n" +
+                             $"Lost Finding Status Log - {DateTime.Now:yyyy-MM-dd HH:mm:ss}\n" +
+                             $"Tracks pending and fulfilled Lost Finding items\n" +
+                             $"{'='*80}\n\n";
+                File.WriteAllText(_statusLogPath, header);
+                LogStatus("SYSTEM", "Status logger initialized");
             }
+            catch { }
+        }
+
+        private void LogStatus(string type, string message)
+        {
+            try
+            {
+                var ts = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff");
+                File.AppendAllText(_statusLogPath, $"[{ts}] [{type}] {message}\n");
+            }
+            catch { }
         }
 
         public void AddPendingRequest(string name, string actualImageBase64)
@@ -102,6 +127,8 @@ namespace DroneSurveillanceSystem.Services
             OnPropertyChanged(nameof(PendingCount));
             OnPropertyChanged(nameof(PendingRequests));
             OnPropertyChanged(nameof(LostFindingData));
+
+            LogStatus("PENDING", $"Added request: name='{name}', requestId='{request.RequestId}'");
         }
 
         public void AddPendingRequest(string name, LostFindingData lostFindingItem)
@@ -121,11 +148,13 @@ namespace DroneSurveillanceSystem.Services
             OnPropertyChanged(nameof(PendingCount));
             OnPropertyChanged(nameof(PendingRequests));
             OnPropertyChanged(nameof(LostFindingData));
+
+            LogStatus("PENDING", $"Added request: name='{name}', requestId='{lostFindingItem.RequestId}'");
         }
 
-        public void HandleResponse(string name, string matchedImageBase64, string location, string score, int found)
+        // Extended to optionally update ActualImageBase64 from response
+        public void HandleResponse(string name, string matchedImageBase64, string location, string score, int found, string actualImageBase64 = "")
         {
-            // No pending/data logs — ApiService already logs raw RECEIVED messages
             if (!string.IsNullOrEmpty(name))
             {
                 var matchingData = _lostFindingData.FirstOrDefault(data => data.Name == name);
@@ -133,6 +162,10 @@ namespace DroneSurveillanceSystem.Services
                 
                 if (matchingData != null)
                 {
+                    if (!string.IsNullOrEmpty(actualImageBase64))
+                    {
+                        matchingData.ActualImageBase64 = actualImageBase64;
+                    }
                     matchingData.MatchedImageBase64 = found == 1 ? matchedImageBase64 : "";
                     matchingData.Location = location;
                     matchingData.Score = score;
@@ -147,6 +180,8 @@ namespace DroneSurveillanceSystem.Services
                     OnPropertyChanged(nameof(PendingCount));
                     OnPropertyChanged(nameof(PendingRequests));
                     OnPropertyChanged(nameof(LostFindingData));
+
+                    LogStatus(found == 1 ? "FULFILLED" : "UPDATED", $"name='{name}', found={found}, location='{location}', score='{score}'");
                 }
                 else
                 {
@@ -157,6 +192,10 @@ namespace DroneSurveillanceSystem.Services
                         var correspondingData = _lostFindingData.FirstOrDefault(d => d.Name == oldestPending.Name);
                         if (correspondingData != null)
                         {
+                            if (!string.IsNullOrEmpty(actualImageBase64))
+                            {
+                                correspondingData.ActualImageBase64 = actualImageBase64;
+                            }
                             correspondingData.MatchedImageBase64 = found == 1 ? matchedImageBase64 : "";
                             correspondingData.Location = location;
                             correspondingData.Score = score;
@@ -166,6 +205,8 @@ namespace DroneSurveillanceSystem.Services
                         OnPropertyChanged(nameof(PendingCount));
                         OnPropertyChanged(nameof(PendingRequests));
                         OnPropertyChanged(nameof(LostFindingData));
+
+                        LogStatus(found == 1 ? "FULFILLED" : "UPDATED", $"fallback matched to name='{oldestPending.Name}', found={found}");
                     }
                 }
             }
@@ -178,6 +219,10 @@ namespace DroneSurveillanceSystem.Services
                     var correspondingData = _lostFindingData.FirstOrDefault(d => d.Name == oldestPending.Name);
                     if (correspondingData != null)
                     {
+                        if (!string.IsNullOrEmpty(actualImageBase64))
+                        {
+                            correspondingData.ActualImageBase64 = actualImageBase64;
+                        }
                         correspondingData.MatchedImageBase64 = found == 1 ? matchedImageBase64 : "";
                         correspondingData.Location = location;
                         correspondingData.Score = score;
@@ -187,6 +232,8 @@ namespace DroneSurveillanceSystem.Services
                     OnPropertyChanged(nameof(PendingCount));
                     OnPropertyChanged(nameof(PendingRequests));
                     OnPropertyChanged(nameof(LostFindingData));
+
+                    LogStatus(found == 1 ? "FULFILLED" : "UPDATED", $"fallback (no name) matched to name='{oldestPending.Name}', found={found}");
                 }
             }
         }
@@ -208,6 +255,8 @@ namespace DroneSurveillanceSystem.Services
                 OnPropertyChanged(nameof(PendingCount));
                 OnPropertyChanged(nameof(PendingRequests));
                 OnPropertyChanged(nameof(LostFindingData));
+
+                LogStatus("FULFILLED", $"name='{name}', found={found}, score='{score}', location='{location}'");
             }
         }
 
@@ -224,6 +273,8 @@ namespace DroneSurveillanceSystem.Services
             OnPropertyChanged(nameof(PendingCount));
             OnPropertyChanged(nameof(PendingRequests));
             OnPropertyChanged(nameof(LostFindingData));
+
+            LogStatus("REMOVED", $"name='{name}' removed from tracking");
         }
 
         public void ClearAllData()
@@ -235,6 +286,8 @@ namespace DroneSurveillanceSystem.Services
             OnPropertyChanged(nameof(PendingCount));
             OnPropertyChanged(nameof(PendingRequests));
             OnPropertyChanged(nameof(LostFindingData));
+
+            LogStatus("CLEARED", "All lost finding data cleared");
         }
 
         private void SaveData()
@@ -251,10 +304,7 @@ namespace DroneSurveillanceSystem.Services
                 var json = JsonConvert.SerializeObject(data, Formatting.Indented);
                 File.WriteAllText(_dataFilePath, json);
             }
-            catch
-            {
-                // Only communication logs requested; skip persistence error logs
-            }
+            catch { }
         }
 
         private void LoadData()

@@ -660,6 +660,39 @@ namespace DroneSurveillanceSystem.Services
                             }
                         }
                     }
+                    else if (type == "alert_image" && msgObj.ContainsKey("data"))
+                    {
+                        // New: handle application broadcast format when a drone returns an analysis
+                        var dataJson = msgObj["data"]?.ToString();
+                        if (!string.IsNullOrEmpty(dataJson))
+                        {
+                            var dataObj = JsonConvert.DeserializeObject<Dictionary<string, object>>(dataJson);
+                            if (dataObj != null)
+                            {
+                                try
+                                {
+                                    int found = dataObj.ContainsKey("found") ? Convert.ToInt32(dataObj["found"]) : 0;
+                                    string name = dataObj.ContainsKey("name") ? dataObj["name"]?.ToString() ?? "" : "";
+                                    string actualImage = dataObj.ContainsKey("actual_image") ? dataObj["actual_image"]?.ToString() ?? "" : "";
+                                    string matchedFrame = dataObj.ContainsKey("matched_frame") ? dataObj["matched_frame"]?.ToString() ?? "" : "";
+                                    string location = dataObj.ContainsKey("location") ? dataObj["location"]?.ToString() ?? "" : "";
+                                    string score = dataObj.ContainsKey("score") ? dataObj["score"]?.ToString() ?? "" : "";
+
+                                    Console.WriteLine($"[WebSocket] alert_image received: found={found}, name='{name}', actual.len={actualImage?.Length ?? 0}, matched.len={matchedFrame?.Length ?? 0}");
+                                    
+                                    if (found == 1 && !string.IsNullOrEmpty(name))
+                                    {
+                                        // Update existing UI boxes with both actual and matched images
+                                        LostFindingManager.Instance.HandleResponse(name, matchedFrame ?? "", location ?? "", score ?? "", found, actualImage ?? "");
+                                    }
+                                }
+                                catch (Exception ex)
+                                {
+                                    Console.WriteLine($"[WebSocket] alert_image parsing error: {ex.Message}");
+                                }
+                            }
+                        }
+                    }
                     else if (type == "initial_alerts")
                     {
                         // Ignore initial alerts to ensure only real-time alerts are shown
