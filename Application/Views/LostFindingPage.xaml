@@ -1,0 +1,375 @@
+<Window x:Class="DroneSurveillanceSystem.Views.LostFindingPage"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        Title="Lost Person Finding" Height="800" Width="1200"
+        WindowStartupLocation="CenterScreen"
+        WindowState="Maximized"
+        Background="#0a0a0a"
+        FontFamily="Segoe UI">
+
+    <Window.Resources>
+        <Style x:Key="HeaderText" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontSize" Value="20"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Margin" Value="0,10"/>
+        </Style>
+
+        <Style x:Key="SubHeaderText" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="#cccccc"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="Margin" Value="0,5"/>
+        </Style>
+
+        <Style x:Key="ModernButton" TargetType="Button">
+            <Setter Property="Background" Value="#0078d4"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="20,12"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" CornerRadius="8">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#106EBE"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter Property="Background" Value="#005A9E"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="SuccessButton" TargetType="Button">
+            <Setter Property="Background" Value="#28A745"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="20,12"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" CornerRadius="8">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#218838"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter Property="Background" Value="#1E7E34"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="ImageBorder" TargetType="Border">
+            <Setter Property="Background" Value="#2a2a2a"/>
+            <Setter Property="BorderBrush" Value="#444"/>
+            <Setter Property="BorderThickness" Value="2"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Padding" Value="10"/>
+        </Style>
+    </Window.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <Border Grid.Row="0" Background="#2d2d2d" Padding="20">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="🔍" FontSize="30" Margin="0,0,10,0"/>
+                    <StackPanel>
+                        <TextBlock Text="Lost Person Finding" 
+                                  Foreground="White" 
+                                  FontWeight="Bold" 
+                                  FontSize="24"/>
+                        <TextBlock Text="Upload image to search for lost person" 
+                                  Foreground="#cccccc" 
+                                  FontSize="14"/>
+                    </StackPanel>
+                </StackPanel>
+
+                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button Name="RefreshButton" 
+                            Content="🔄 Refresh" 
+                            Background="#17a2b8" 
+                            Foreground="White" 
+                            BorderThickness="0" 
+                            Padding="15,8" 
+                            FontSize="14"
+                            Click="RefreshButton_Click"
+                            Margin="0,0,10,0">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border Background="{TemplateBinding Background}" 
+                                        CornerRadius="6">
+                                    <ContentPresenter HorizontalAlignment="Center" 
+                                                    VerticalAlignment="Center"
+                                                    Margin="{TemplateBinding Padding}"/>
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter Property="Background" Value="#138496"/>
+                                    </Trigger>
+                                    <Trigger Property="IsPressed" Value="True">
+                                        <Setter Property="Background" Value="#117a8b"/>
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
+                    <Button Name="CloseButton" 
+                            Content="✕ Close" 
+                            Background="#dc3545" 
+                            Foreground="White" 
+                            BorderThickness="0" 
+                            Padding="15,8" 
+                            FontSize="14"
+                            Click="CloseButton_Click">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border Background="{TemplateBinding Background}" 
+                                        CornerRadius="6">
+                                    <ContentPresenter HorizontalAlignment="Center" 
+                                                    VerticalAlignment="Center"
+                                                    Margin="{TemplateBinding Padding}"/>
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter Property="Background" Value="#c82333"/>
+                                    </Trigger>
+                                    <Trigger Property="IsPressed" Value="True">
+                                        <Setter Property="Background" Value="#bd2130"/>
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Main Content -->
+        <Grid Grid.Row="1" Margin="20">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Left Panel - Upload Image -->
+            <Border Grid.Column="0" Background="#2a2a2a" CornerRadius="8" Padding="20" Margin="0,0,10,0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Upload Section Header -->
+                    <StackPanel Grid.Row="0" Margin="0,0,0,20">
+                        <TextBlock Text="📤 Upload Image" 
+                                  Style="{StaticResource HeaderText}"
+                                  Foreground="#00BCD4"/>
+                        <TextBlock Text="Select an image of the lost person to search for" 
+                                  Style="{StaticResource SubHeaderText}"/>
+                    </StackPanel>
+
+                    <!-- Image Display Area -->
+                    <Border Grid.Row="1" Style="{StaticResource ImageBorder}" MinHeight="300">
+                        <Grid>
+                            <Image x:Name="UploadedImage" 
+                                   Stretch="Uniform" 
+                                   HorizontalAlignment="Center" 
+                                   VerticalAlignment="Center"
+                                   MaxWidth="400" 
+                                   MaxHeight="300"/>
+                            <TextBlock x:Name="NoImageText" 
+                                       Text="No image selected" 
+                                       Foreground="#888" 
+                                       FontSize="16" 
+                                       HorizontalAlignment="Center" 
+                                       VerticalAlignment="Center"/>
+                        </Grid>
+                    </Border>
+
+                    <!-- Upload Controls -->
+                    <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,20,0,0">
+                        <Button Name="SelectImageButton" 
+                                Content="📁 Select Image" 
+                                Style="{StaticResource ModernButton}" 
+                                Click="SelectImageButton_Click"
+                                Margin="0,0,10,0"/>
+                        <Button Name="SendRequestButton" 
+                                Content="🚀 Send Request" 
+                                Style="{StaticResource SuccessButton}" 
+                                Click="SendRequestButton_Click"
+                                IsEnabled="False"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- Right Panel - Results -->
+            <Border Grid.Column="1" Background="#2a2a2a" CornerRadius="8" Padding="20" Margin="10,0,0,0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Results Section Header -->
+                    <StackPanel Grid.Row="0" Margin="0,0,0,20">
+                        <TextBlock Text="📊 Search Results" 
+                                  Style="{StaticResource HeaderText}"
+                                  Foreground="#4CAF50"/>
+                        <TextBlock Text="Matched images and search results will appear here" 
+                                  Style="{StaticResource SubHeaderText}"/>
+                    </StackPanel>
+
+                    <!-- Results Display Area -->
+                    <Border Grid.Row="1" Style="{StaticResource ImageBorder}" MinHeight="300">
+                        <Grid>
+                            <Image x:Name="MatchedImage" 
+                                   Stretch="Uniform" 
+                                   HorizontalAlignment="Center" 
+                                   VerticalAlignment="Center"
+                                   MaxWidth="400" 
+                                   MaxHeight="300"/>
+                            <TextBlock x:Name="NoResultsText" 
+                                       Text="No results yet" 
+                                       Foreground="#888" 
+                                       FontSize="16" 
+                                       HorizontalAlignment="Center" 
+                                       VerticalAlignment="Center"/>
+                        </Grid>
+                    </Border>
+
+                    <!-- Results Info -->
+                    <StackPanel Grid.Row="2" Margin="0,20,0,0">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            
+                            <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                                <TextBlock Text="Match Score:" 
+                                          Foreground="#cccccc" 
+                                          FontSize="12"/>
+                                <TextBlock x:Name="MatchScoreText" 
+                                          Text="0%" 
+                                          Foreground="#4CAF50" 
+                                          FontSize="18" 
+                                          FontWeight="Bold"/>
+                            </StackPanel>
+                            
+                            <StackPanel Grid.Column="1" Margin="10,0,0,0">
+                                <TextBlock Text="Status:" 
+                                          Foreground="#cccccc" 
+                                          FontSize="12"/>
+                                <TextBlock x:Name="StatusText" 
+                                          Text="Waiting..." 
+                                          Foreground="#FF9800" 
+                                          FontSize="18" 
+                                          FontWeight="Bold"/>
+                            </StackPanel>
+                        </Grid>
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- Footer - Pending Requests -->
+        <Border Grid.Row="2" Background="#1e1e1e" Padding="15,10">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                
+                <TextBlock Grid.Row="0" 
+                          Text="📋 Pending Requests" 
+                          Foreground="White" 
+                          FontSize="16" 
+                          FontWeight="Bold" 
+                          Margin="0,0,0,10"/>
+                
+                <ScrollViewer Grid.Row="1" 
+                              HorizontalScrollBarVisibility="Auto" 
+                              VerticalScrollBarVisibility="Disabled"
+                              MaxHeight="80">
+                    <ItemsControl x:Name="PendingRequestsList" 
+                                  ItemsSource="{Binding PendingRequests}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <StackPanel Orientation="Horizontal"/>
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border CornerRadius="6" 
+                                        Padding="10" 
+                                        Margin="5,0" 
+                                        MinWidth="200"
+                                        Cursor="Hand"
+                                        MouseLeftButtonDown="PendingRequest_Click"
+                                        Tag="{Binding}">
+                                    <Border.Style>
+                                        <Style TargetType="Border">
+                                            <Setter Property="Background" Value="#333"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                                    <Setter Property="Background" Value="#0078d4"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Border.Style>
+                                    <StackPanel>
+                                        <TextBlock Text="{Binding Name}" 
+                                                  Foreground="White" 
+                                                  FontWeight="Bold" 
+                                                  FontSize="12"/>
+                                        <TextBlock Text="{Binding Timestamp}" 
+                                                  Foreground="#888" 
+                                                  FontSize="10"/>
+                                        <TextBlock Text="{Binding Status}" 
+                                                  Foreground="{Binding StatusColor}" 
+                                                  FontSize="10" 
+                                                  FontWeight="Bold"/>
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>

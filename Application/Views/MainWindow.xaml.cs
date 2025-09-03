@@ -590,6 +590,14 @@ namespace DroneSurveillanceSystem.Views
             monitoringWindow.Show();
         }
 
+        private void LostFindingButton_Click(object sender, RoutedEventArgs e)
+        {
+            var lostFindingWindow = new LostFindingPage();
+            lostFindingWindow.Owner = this;
+            lostFindingWindow.WindowState = WindowState.Maximized;
+            lostFindingWindow.Show();
+        }
+
         private void AdvancedControlButton_Click(object sender, RoutedEventArgs e)
         {
             var controlPanelWindow = new ControlPanelWindow();

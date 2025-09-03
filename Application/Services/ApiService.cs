@@ -37,6 +37,7 @@ namespace DroneSurveillanceSystem.Services
         private readonly object _lockObject = new object();
         private bool _isStarting = false;
         public event EventHandler<AlertReceivedEventArgs>? AlertReceived;
+        public event EventHandler<string>? MessageReceived;
 
         public ApiService(string baseUrl = "wss://new-server-5iyd.onrender.com", string authToken = "")
         {
@@ -253,6 +254,9 @@ namespace DroneSurveillanceSystem.Services
                         LogToFile("RECEIVED", msg.Text);
                         Console.WriteLine($"[WebSocket] 📨 Message received from server");
                         HandleMessage(msg.Text);
+                        
+                        // Trigger MessageReceived event for Lost Finding functionality
+                        MessageReceived?.Invoke(this, msg.Text);
                     });
                     
                 LogToFile("CONNECT", $"Starting WebSocket connection to: {_wsUrl}");
@@ -606,6 +610,29 @@ namespace DroneSurveillanceSystem.Services
             catch (Exception ex)
             {
                 Console.WriteLine($"[WebSocket] Reconnection failed: {ex.Message}");
+                throw;
+            }
+        }
+
+        public void SendMessage(string message)
+        {
+            try
+            {
+                if (_client != null && _isConnected)
+                {
+                    _client.Send(message);
+                    LogToFile("SENT", message);
+                    Console.WriteLine($"[WebSocket] 📤 Message sent to server");
+                }
+                else
+                {
+                    Console.WriteLine($"[WebSocket] ❌ Cannot send message - WebSocket not connected");
+                    throw new InvalidOperationException("WebSocket is not connected");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[WebSocket] ❌ Error sending message: {ex.Message}");
                 throw;
             }
         }
