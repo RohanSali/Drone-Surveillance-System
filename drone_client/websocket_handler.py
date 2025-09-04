@@ -5,7 +5,6 @@ import json
 import base64
 import urllib.parse
 from datetime import datetime
-import time
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 DRONE_JSON_FILE_PATH = os.path.join(current_dir, "drone_info.json")
@@ -102,7 +101,6 @@ class DroneWebSocketHandler:
 
                         await self.websocket.send(json.dumps(message))
                         print(f"📤 Drone position sent: {message}")
-                        time.sleep(DRONE_POS_UPDATE_INTERVAL)
             except Exception as e:
                 print(f"❌ Error sending drone position: {e}")
 
@@ -175,16 +173,19 @@ class DroneWebSocketHandler:
 
     async def run(self):
         """Run main loop"""
+        drone_pos_task = None
         while True:
             if not self.connected:
                 await self.connect()
 
+            if drone_pos_task is None or drone_pos_task.done():
+                drone_pos_task = asyncio.create_task(self.send_drone_position())
+
             send_task = asyncio.create_task(self.send_alert_from_queue())
             listen_task = asyncio.create_task(self.listen())
-            drone_pos_task = asyncio.create_task(self.send_drone_position())
 
             done, pending = await asyncio.wait(
-                [send_task, listen_task, drone_pos_task],
+                [send_task, listen_task],
                 return_when=asyncio.FIRST_COMPLETED
             )
 
