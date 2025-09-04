@@ -6,13 +6,15 @@ namespace DroneSurveillanceSystem.Views
 {
     public partial class AlertInfoPopup : Window
     {
-        private readonly AlertData _alertData;
+        private AlertData _alertData;
         public AlertInfoPopup(AlertData alertData)
         {
             InitializeComponent();
             _alertData = alertData;
             LoadAlertDetails();
         }
+
+        public string? CurrentAlertId => _alertData.AlertId;
 
         private void LoadAlertDetails()
         {
@@ -119,6 +121,36 @@ namespace DroneSurveillanceSystem.Views
             }
         }
 
+        public void UpdateFromServer(AlertData updated)
+        {
+            try
+            {
+                // Only update if same alert id, or if no id available update anyway
+                if (!string.IsNullOrEmpty(updated.AlertId) && !string.IsNullOrEmpty(_alertData.AlertId))
+                {
+                    if (!string.Equals(updated.AlertId, _alertData.AlertId, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return;
+                    }
+                }
+
+                // Merge incoming fields
+                _alertData.Alert = updated.Alert ?? _alertData.Alert;
+                _alertData.DroneId = updated.DroneId ?? _alertData.DroneId;
+                _alertData.AlertLocation = updated.AlertLocation ?? _alertData.AlertLocation;
+                _alertData.Image = string.IsNullOrEmpty(updated.Image) ? _alertData.Image : updated.Image;
+                _alertData.ImageReceived = updated.ImageReceived != 0 ? updated.ImageReceived : _alertData.ImageReceived;
+                _alertData.RLResponsed = updated.RLResponsed != 0 ? updated.RLResponsed : _alertData.RLResponsed;
+                _alertData.Score = updated.Score != 0 ? updated.Score : _alertData.Score;
+                _alertData.Timestamp = updated.Timestamp ?? _alertData.Timestamp;
+                _alertData.AlertId = updated.AlertId ?? _alertData.AlertId;
+
+                // Refresh UI
+                Dispatcher.Invoke(LoadAlertDetails);
+            }
+            catch { }
+        }
+
         private void ViewFullImageButton_Click(object sender, RoutedEventArgs e)
         {
             if (_alertData.ImageReceived == 1 && !string.IsNullOrEmpty(_alertData.Image))
@@ -145,6 +177,7 @@ namespace DroneSurveillanceSystem.Views
     // AlertData class for passing alert info
     public class AlertData
     {
+        public string? AlertId { get; set; }
         public string? Alert { get; set; }
         public string? DroneId { get; set; }
         public Tuple<double, double, double>? AlertLocation { get; set; }

@@ -118,15 +118,19 @@
             </Grid>
         </Border>
 
-        <!-- Main Content - Same layout as MonitoringAlertsPage -->
+        <!-- Main Content -->
         <Grid Grid.Row="1" Margin="20">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="2*"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="35*"/>
+                <RowDefinition Height="65*"/>
+            </Grid.RowDefinitions>
 
             <!-- Left Panel - Devices (Drones and CCTVs) -->
-            <Border Grid.Column="0" Background="#2a2a2a" CornerRadius="6" Padding="15" Margin="0,0,10,0">
+            <Border Grid.Column="0" Grid.RowSpan="2" Background="#2a2a2a" CornerRadius="6" Padding="15" Margin="0,0,10,0">
                 <StackPanel>
                     <TextBlock x:Name="DevicesTitle" Text="🚁📷 Network Devices" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,15">
                         <TextBlock.Foreground>
@@ -138,7 +142,7 @@
                     </TextBlock>
                     
                     <!-- Dynamic Devices List -->
-                    <ScrollViewer Style="{StaticResource HiddenSmoothScrollViewer}" MaxHeight="550">
+                    <ScrollViewer Style="{StaticResource HiddenSmoothScrollViewer}">
                         <ItemsControl ItemsSource="{Binding FilteredDevices}">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
@@ -165,8 +169,70 @@
                 </StackPanel>
             </Border>
 
-            <!-- Right Panel - Alerts -->
-            <Border Grid.Column="1" Background="#2a2a2a" CornerRadius="6" Padding="15" Margin="10,0,0,0">
+            <!-- Network Summary Block - Moved to top right -->
+            <Border Grid.Column="1" Grid.Row="0" Background="#2a2a2a" CornerRadius="6" Padding="15" Margin="10,0,0,10">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    
+                    <!-- Summary Header -->
+                    <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,15">
+                        <TextBlock Text="📊" FontSize="20" Margin="0,0,10,0" Foreground="#FF9800"/>
+                        <TextBlock Text="Network Summary" FontSize="18" FontWeight="Bold" Foreground="White"/>
+                    </StackPanel>
+                    
+                    <!-- Summary Metrics Grid -->
+                    <Grid Grid.Row="1">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        
+                        <!-- Left Column -->
+                        <StackPanel Grid.Column="0" Margin="0,0,8,0">
+                            <!-- Active Drones -->
+                            <Border Background="#333" CornerRadius="6" Padding="12" Margin="0,0,0,8">
+                                <StackPanel>
+                                    <TextBlock Text="Active Drones" Foreground="#cccccc" FontSize="12" Margin="0,0,0,4"/>
+                                    <TextBlock Text="{Binding ActiveDronesCount}" Foreground="#4CAF50" FontSize="20" FontWeight="Bold"/>
+                                </StackPanel>
+                            </Border>
+                            
+                            <!-- Active CCTVs -->
+                            <Border Background="#333" CornerRadius="6" Padding="12">
+                                <StackPanel>
+                                    <TextBlock Text="Active CCTVs" Foreground="#cccccc" FontSize="12" Margin="0,0,0,4"/>
+                                    <TextBlock Text="{Binding ActiveCctvsCount}" Foreground="#4CAF50" FontSize="20" FontWeight="Bold"/>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                        
+                        <!-- Right Column -->
+                        <StackPanel Grid.Column="1" Margin="8,0,0,0">
+                            <!-- Total Alerts -->
+                            <Border Background="#333" CornerRadius="6" Padding="12" Margin="0,0,0,8">
+                                <StackPanel>
+                                    <TextBlock Text="Total Alerts" Foreground="#cccccc" FontSize="12" Margin="0,0,0,4"/>
+                                    <TextBlock Text="{Binding TotalAlertsCount}" Foreground="#FF9800" FontSize="20" FontWeight="Bold"/>
+                                </StackPanel>
+                            </Border>
+                            
+                            <!-- Total CCTVs -->
+                            <Border Background="#333" CornerRadius="6" Padding="12">
+                                <StackPanel>
+                                    <TextBlock Text="Total CCTVs" Foreground="#cccccc" FontSize="12" Margin="0,0,0,4"/>
+                                    <TextBlock Text="{Binding TotalCctvsCount}" Foreground="#FF9800" FontSize="20" FontWeight="Bold"/>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </Grid>
+                </Grid>
+            </Border>
+
+            <!-- Right Panel - Alerts (Now larger with 7:3 ratio) -->
+            <Border Grid.Column="1" Grid.Row="1" Background="#2a2a2a" CornerRadius="6" Padding="15" Margin="10,10,0,0">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>

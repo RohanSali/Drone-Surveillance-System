@@ -28,6 +28,50 @@ namespace DroneSurveillanceSystem.Views
         public ObservableCollection<DeviceDisplayItem> FilteredDevices { get; } = new ObservableCollection<DeviceDisplayItem>();
         public ObservableCollection<AlertData> FilteredAlerts { get; } = new ObservableCollection<AlertData>();
 
+        // Network Summary Properties
+        private int _activeDronesCount;
+        private double _coverageArea;
+        private int _activeCctvsCount;
+        private int _totalAlertsCount;
+        private double _averageBattery;
+        private int _totalCctvsCount;
+
+        public int ActiveDronesCount
+        {
+            get => _activeDronesCount;
+            set { _activeDronesCount = value; OnPropertyChanged(nameof(ActiveDronesCount)); }
+        }
+
+        public double CoverageArea
+        {
+            get => _coverageArea;
+            set { _coverageArea = value; OnPropertyChanged(nameof(CoverageArea)); }
+        }
+
+        public int ActiveCctvsCount
+        {
+            get => _activeCctvsCount;
+            set { _activeCctvsCount = value; OnPropertyChanged(nameof(ActiveCctvsCount)); }
+        }
+
+        public int TotalAlertsCount
+        {
+            get => _totalAlertsCount;
+            set { _totalAlertsCount = value; OnPropertyChanged(nameof(TotalAlertsCount)); }
+        }
+
+        public double AverageBattery
+        {
+            get => _averageBattery;
+            set { _averageBattery = value; OnPropertyChanged(nameof(AverageBattery)); }
+        }
+
+        public int TotalCctvsCount
+        {
+            get => _totalCctvsCount;
+            set { _totalCctvsCount = value; OnPropertyChanged(nameof(TotalCctvsCount)); }
+        }
+
         public event PropertyChangedEventHandler? PropertyChanged;
         protected void OnPropertyChanged(string propertyName)
         {
@@ -55,6 +99,7 @@ namespace DroneSurveillanceSystem.Views
             // Populate devices and alerts
             PopulateDevices();
             PopulateAlerts();
+            UpdateNetworkSummary();
             
             // Subscribe to AlertManager changes for real-time updates
             AlertManager.Instance.ActiveAlerts.CollectionChanged += (sender, e) =>
@@ -245,6 +290,47 @@ namespace DroneSurveillanceSystem.Views
             OnPropertyChanged(nameof(FilteredAlerts));
         }
 
+        private void UpdateNetworkSummary()
+        {
+            // Get all devices for this network
+            var allDrones = DeviceDataManager.GetAllDrones();
+            var allCctvs = DeviceDataManager.GetAllCctvs();
+            
+            // Get network device IDs
+            var networkDroneIds = _network.Drones?.Select(d => d.Id).Where(id => !string.IsNullOrEmpty(id)).ToHashSet() ?? new HashSet<string>();
+            var networkCctvIds = _network.Cctvs?.Select(c => c.Id).Where(id => !string.IsNullOrEmpty(id)).ToHashSet() ?? new HashSet<string>();
+            
+            // Calculate active drones count
+            var networkDrones = allDrones.Where(d => 
+                networkDroneIds.Contains(d.DeviceId) || 
+                _network.Drones?.Any(nd => nd.Name == d.Name) == true).ToList();
+            ActiveDronesCount = networkDrones.Count(d => d.IsConnected);
+            
+            // Calculate total CCTVs count
+            var networkCctvs = allCctvs.Where(c => 
+                networkCctvIds.Contains(c.DeviceId) || 
+                _network.Cctvs?.Any(nc => nc.Name == c.Name) == true).ToList();
+            TotalCctvsCount = networkCctvs.Count;
+            ActiveCctvsCount = networkCctvs.Count(c => c.IsConnected);
+            
+            // Calculate average battery level
+            if (networkDrones.Any())
+            {
+                AverageBattery = networkDrones.Where(d => d.IsConnected).Average(d => d.BatteryLevel);
+            }
+            else
+            {
+                AverageBattery = 0;
+            }
+            
+            // Calculate coverage area (simplified calculation based on number of active devices)
+            // Each active drone covers approximately 2.5 km², each CCTV covers 0.5 km²
+            CoverageArea = (ActiveDronesCount * 2.5) + (ActiveCctvsCount * 0.5);
+            
+            // Calculate total alerts count
+            TotalAlertsCount = FilteredAlerts.Count;
+        }
+
 
 
 
@@ -271,6 +357,7 @@ namespace DroneSurveillanceSystem.Views
             // Refresh devices and alerts periodically
             PopulateDevices();
             PopulateAlerts();
+            UpdateNetworkSummary();
         }
 
         private void CloseButton_Click(object sender, RoutedEventArgs e)

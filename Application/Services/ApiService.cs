@@ -309,7 +309,86 @@ namespace DroneSurveillanceSystem.Services
                     // Log all available keys in the message
                     Console.WriteLine($"[WebSocket] Available keys: {string.Join(", ", msgObj.Keys)}");
                     
-                    if (type == "new_alert" && msgObj.ContainsKey("alert"))
+                    if (type == "validated_alert" && (msgObj.ContainsKey("alert") || msgObj.ContainsKey("data")))
+                    {
+                        // Validated alert with authoritative data and image
+                        var alertJson = (msgObj.ContainsKey("alert") ? msgObj["alert"] : msgObj["data"])?.ToString();
+                        if (!string.IsNullOrEmpty(alertJson))
+                        {
+                            var alertData = JsonConvert.DeserializeObject<Dictionary<string, object>>(alertJson);
+                            if (alertData != null)
+                            {
+                                var alert = new AlertData
+                                {
+                                    AlertId = alertData.ContainsKey("alert_id") ? alertData["alert_id"]?.ToString() : null,
+                                    Alert = alertData.ContainsKey("alert") ? alertData["alert"]?.ToString() ?? "Unknown Alert" : "Unknown Alert",
+                                    DroneId = alertData.ContainsKey("drone_id") ? alertData["drone_id"]?.ToString() ?? "Unknown" : "Unknown",
+                                    Score = alertData.ContainsKey("score") ? Convert.ToDouble(alertData["score"]) : 0.0,
+                                    RLResponsed = alertData.ContainsKey("rl_responsed") ? Convert.ToInt32(alertData["rl_responsed"]) : 0,
+                                    ImageReceived = alertData.ContainsKey("image") && !string.IsNullOrEmpty(alertData["image"]?.ToString()) ? 1 : 0,
+                                    Image = alertData.ContainsKey("image") ? alertData["image"]?.ToString() : null,
+                                    Timestamp = alertData.ContainsKey("timestamp") ? alertData["timestamp"]?.ToString() ?? DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss.fff") : DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss.fff")
+                                };
+                                
+                                if (alertData.ContainsKey("alert_location") && alertData["alert_location"] != null)
+                                {
+                                    var locationValue = alertData["alert_location"];
+                                    try
+                                    {
+                                        if (locationValue is Newtonsoft.Json.Linq.JArray locationArray)
+                                        {
+                                            var coords = locationArray.ToObject<double[]>();
+                                            if (coords != null && coords.Length >= 3)
+                                            {
+                                                alert.AlertLocation = new Tuple<double, double, double>(coords[0], coords[1], coords[2]);
+                                            }
+                                        }
+                                        else
+                                        {
+                                            var locationStr = locationValue?.ToString();
+                                            if (!string.IsNullOrEmpty(locationStr) && locationStr.StartsWith("[") && locationStr.EndsWith("]"))
+                                            {
+                                                var coords = JsonConvert.DeserializeObject<double[]>(locationStr);
+                                                if (coords != null && coords.Length >= 3)
+                                                {
+                                                    alert.AlertLocation = new Tuple<double, double, double>(coords[0], coords[1], coords[2]);
+                                                }
+                                            }
+                                        }
+                                    }
+                                    catch { }
+                                }
+
+                                // Also update or insert into ActiveAlerts list so lists reflect validated data
+                                try
+                                {
+                                    var existing = AlertManager.Instance.ActiveAlerts.FirstOrDefault(a => !string.IsNullOrEmpty(a.AlertId) && string.Equals(a.AlertId, alert.AlertId, StringComparison.OrdinalIgnoreCase));
+                                    if (existing != null)
+                                    {
+                                        existing.Alert = alert.Alert;
+                                        existing.DroneId = alert.DroneId;
+                                        existing.AlertLocation = alert.AlertLocation;
+                                        existing.Image = alert.Image;
+                                        existing.ImageReceived = alert.ImageReceived;
+                                        existing.RLResponsed = alert.RLResponsed;
+                                        existing.Score = alert.Score;
+                                        existing.Timestamp = alert.Timestamp;
+                                    }
+                                }
+                                catch { }
+
+                                // Update any open AlertInfoPopup with matching alert id
+                                Application.Current.Dispatcher.Invoke(() =>
+                                {
+                                    foreach (var popup in Application.Current.Windows.OfType<AlertInfoPopup>())
+                                    {
+                                        popup.UpdateFromServer(alert);
+                                    }
+                                });
+                            }
+                        }
+                    }
+                    else if (type == "new_alert" && msgObj.ContainsKey("alert"))
                     {
                         // Handle the server's broadcast format to applications
                         var alertJson = msgObj["alert"]?.ToString();
