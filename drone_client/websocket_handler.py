@@ -5,13 +5,14 @@ import json
 import base64
 import urllib.parse
 from datetime import datetime
+import time
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 DRONE_JSON_FILE_PATH = os.path.join(current_dir, "drone_info.json")
 ALERT_QUEUE_FILE = os.path.join(current_dir, "alert_queue.txt")
 TARGETS_FILE = os.path.join(current_dir, "capture_engine", "drone_targets.txt")
 LOST_PERSON_FOLDER = os.path.join(current_dir, "inference_engine", "lost_person")
-DRONE_POS_UPDATE_INTERVAL = 5000 # seconds
+DRONE_POS_UPDATE_INTERVAL = 10 # seconds
 
 SERVER_URL = "wss://new-server-5iyd.onrender.com"
 
@@ -31,14 +32,6 @@ class DroneWebSocketHandler:
                 self.websocket = await websockets.connect(self.server_url, ping_interval=20, ping_timeout=20)
                 self.connected = True
                 print(f"✅ Connected to WebSocket at: {self.server_url}")
-
-                # # Send initial handshake
-                # await self.websocket.send(json.dumps({
-                #     "type": "drone_connect",
-                #     "data": {"drone_id": self.drone_id}
-                # }))
-                # print("📤 Initial connection message sent.")
-
             except Exception as e:
                 print(f"❌ Connection failed: {e}. Retrying in 5s...")
                 await asyncio.sleep(5)
@@ -91,19 +84,25 @@ class DroneWebSocketHandler:
                         with open(DRONE_JSON_FILE_PATH, "r") as f:
                             data = json.load(f)
 
-                        pos = data.get("pos", {})
+                        position = data.get("location", {})
                         drone_id = data.get("drone_id", self.drone_id)
+                        battery_status = data.get("battery status", "Unknown")
+                        status = data.get("status", "Unknown")
 
                         message = {
                             "type": "drone_pos",
                             "data": {
                                 "drone_id": drone_id,
-                                "pos": pos
+                                "position": position,
+                                "battery_status": battery_status,
+                                "status": status,
+                                "timestamp": datetime.utcnow().isoformat()
                             }
                         }
 
                         await self.websocket.send(json.dumps(message))
                         print(f"📤 Drone position sent: {message}")
+                        time.sleep(DRONE_POS_UPDATE_INTERVAL)
             except Exception as e:
                 print(f"❌ Error sending drone position: {e}")
 
@@ -182,10 +181,10 @@ class DroneWebSocketHandler:
 
             send_task = asyncio.create_task(self.send_alert_from_queue())
             listen_task = asyncio.create_task(self.listen())
-            # drone_pos_task = asyncio.create_task(self.send_drone_position())
+            drone_pos_task = asyncio.create_task(self.send_drone_position())
 
             done, pending = await asyncio.wait(
-                [send_task, listen_task],
+                [send_task, listen_task, drone_pos_task],
                 return_when=asyncio.FIRST_COMPLETED
             )
 
