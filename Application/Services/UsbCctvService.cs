@@ -8,10 +8,10 @@ namespace DroneSurveillanceSystem.Services
     public class UsbCctv
     {
         public string Name { get; set; } = "";
-        public string Status { get; set; } = "Ready for Connection";
+        public string Status { get; set; } = "Disconnected";
         public string UsbPort { get; set; } = "";
         public string DeviceId { get; set; } = "";
-        public bool IsConnected { get; set; } = true;
+        public bool IsConnected { get; set; } = false;
         public string FirmwareVersion { get; set; } = "v1.0.0";
         public string Resolution { get; set; } = "1080p";
         public int FrameRate { get; set; } = 30;

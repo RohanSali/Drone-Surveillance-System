@@ -12,6 +12,8 @@
         FontFamily="Segoe UI">
 
     <Window.Resources>
+        <local:ActiveStatusDotConverter x:Key="ActiveStatusDotConverter"/>
+        <local:BoolStatusDotConverter x:Key="BoolStatusDotConverter"/>
         <Style x:Key="DarkButton" TargetType="Button">
             <Setter Property="Background" Value="#0078d4"/>
             <Setter Property="Foreground" Value="White"/>
@@ -542,7 +544,7 @@
                                                                                 <TextBlock Text="{Binding StatusText}" Foreground="#ccc" FontSize="8"/>
                                                                             </StackPanel>
                                                                             <!-- Status Indicator -->
-                                                                            <Ellipse Grid.Column="2" Width="4" Height="4" Fill="#4CAF50" VerticalAlignment="Center"/>
+                                                                            <Ellipse Grid.Column="2" Width="4" Height="4" Fill="{Binding StatusText, Converter={StaticResource ActiveStatusDotConverter}}" VerticalAlignment="Center"/>
                                                                         </Grid>
                                                                     </Border>
                                                                 </DataTemplate>
@@ -568,7 +570,7 @@
                                                                                 <TextBlock Text="CCTV" Foreground="#ccc" FontSize="8"/>
                                                                             </StackPanel>
                                                                             <!-- Status Dot -->
-                                                                            <Ellipse Grid.Column="2" Width="4" Height="4" Fill="#4CAF50" VerticalAlignment="Center"/>
+                                                                            <Ellipse Grid.Column="2" Width="4" Height="4" Fill="{Binding IsOnline, Converter={StaticResource BoolStatusDotConverter}}" VerticalAlignment="Center"/>
                                                                         </Grid>
                                                                     </Border>
                                                                 </DataTemplate>

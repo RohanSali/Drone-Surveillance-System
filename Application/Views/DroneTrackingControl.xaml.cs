@@ -71,7 +71,7 @@ namespace DroneSurveillanceSystem.Views
                 _gridLines = new List<UIElement>();
 
                 // Initialize the tracking service
-                _trackingService = new DroneTrackingService();
+                _trackingService = DroneTrackingService.Instance;
 
                 // Setup event handlers
                 _trackingService.DronePositionUpdated += OnDronePositionUpdated;

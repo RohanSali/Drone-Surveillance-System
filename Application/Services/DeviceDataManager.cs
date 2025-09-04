@@ -12,6 +12,8 @@ namespace DroneSurveillanceSystem.Services
         private static readonly List<UsbCctv> _persistentCctvs = new List<UsbCctv>();
         private static string _currentUserKey = "guest";
         private static readonly object _lockObject = new object();
+        private static readonly Dictionary<string, DateTime> _droneLastSeenUtc = new Dictionary<string, DateTime>(StringComparer.OrdinalIgnoreCase);
+        private static System.Threading.Timer? _presenceTimer;
 
         private static string GetStorageDirectory()
         {
@@ -66,6 +68,20 @@ namespace DroneSurveillanceSystem.Services
                     _persistentDrones.Clear();
                     _persistentCctvs.Clear();
                 }
+
+                // Ensure defaults are inactive on load
+                foreach (var d in _persistentDrones)
+                {
+                    d.IsConnected = false;
+                    if (string.IsNullOrWhiteSpace(d.Status) || d.Status.Equals("Connected - Ready for Operations", StringComparison.OrdinalIgnoreCase))
+                        d.Status = "Disconnected";
+                }
+                foreach (var c in _persistentCctvs)
+                {
+                    c.IsConnected = false;
+                    if (string.IsNullOrWhiteSpace(c.Status) || c.Status.Equals("Ready for Connection", StringComparison.OrdinalIgnoreCase))
+                        c.Status = "Disconnected";
+                }
             }
             catch
             {
@@ -76,6 +92,7 @@ namespace DroneSurveillanceSystem.Services
             {
                 DronesChanged?.Invoke(_persistentDrones.ToList());
                 CctvsChanged?.Invoke(_persistentCctvs.ToList());
+                EnsurePresenceTimerStarted();
             }
         }
 
@@ -208,6 +225,123 @@ namespace DroneSurveillanceSystem.Services
 
         // Get count of CCTVs
         public static int CctvCount => _persistentCctvs.Count;
+
+        // Presence handling for incoming telemetry
+        private static void EnsurePresenceTimerStarted()
+        {
+            if (_presenceTimer != null) return;
+            _presenceTimer = new System.Threading.Timer(CheckPresence, null, TimeSpan.FromMinutes(1), TimeSpan.FromMinutes(1));
+        }
+
+        private static void CheckPresence(object? state)
+        {
+            try
+            {
+                lock (_lockObject)
+                {
+                    var nowUtc = DateTime.UtcNow;
+                    bool changed = false;
+                    foreach (var drone in _persistentDrones)
+                    {
+                        var key = string.IsNullOrWhiteSpace(drone.DeviceId) ? drone.Name : drone.DeviceId;
+                        if (string.IsNullOrWhiteSpace(key)) continue;
+                        if (_droneLastSeenUtc.TryGetValue(key, out var lastSeen))
+                        {
+                            if (nowUtc - lastSeen > TimeSpan.FromMinutes(10))
+                            {
+                                if (drone.IsConnected || !string.Equals(drone.Status, "Disconnected", StringComparison.OrdinalIgnoreCase))
+                                {
+                                    drone.IsConnected = false;
+                                    drone.Status = "Disconnected";
+                                    changed = true;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            if (drone.IsConnected)
+                            {
+                                drone.IsConnected = false;
+                                drone.Status = "Disconnected";
+                                changed = true;
+                            }
+                        }
+                    }
+                    if (changed)
+                    {
+                        DronesChanged?.Invoke(_persistentDrones.ToList());
+                        SaveForCurrentUser();
+                    }
+                }
+            }
+            catch { }
+        }
+
+        public static void UpdateDroneFromPositionMessage(string droneId, double[]? positionArray, string? batteryStatus, string? status, DateTime? timestampUtc)
+        {
+            if (string.IsNullOrWhiteSpace(droneId)) return;
+            lock (_lockObject)
+            {
+                // Match by DeviceId first, then by Name
+                var drone = _persistentDrones.FirstOrDefault(d => string.Equals(d.DeviceId, droneId, StringComparison.OrdinalIgnoreCase))
+                            ?? _persistentDrones.FirstOrDefault(d => string.Equals(d.Name, droneId, StringComparison.OrdinalIgnoreCase));
+
+                if (drone == null)
+                {
+                    // If unknown drone arrives, create a lightweight entry so UI reflects it
+                    drone = new UsbDrone
+                    {
+                        Name = droneId,
+                        DeviceId = droneId,
+                        UsbPort = "",
+                        DroneType = "Surveillance",
+                        FirmwareVersion = "",
+                    };
+                    _persistentDrones.Add(drone);
+                }
+
+                bool changed = false;
+
+                // Mark as connected/active on any telemetry
+                if (!drone.IsConnected) { drone.IsConnected = true; changed = true; }
+
+                // Update status only if provided
+                if (!string.IsNullOrWhiteSpace(status) && !string.Equals(drone.Status, status, StringComparison.Ordinal))
+                {
+                    drone.Status = status;
+                    changed = true;
+                }
+
+                // Try to parse battery if numeric (ignore unknown)
+                if (!string.IsNullOrWhiteSpace(batteryStatus) && int.TryParse(batteryStatus, out var batteryPct))
+                {
+                    var clamped = Math.Max(0, Math.Min(100, batteryPct));
+                    if (drone.BatteryLevel != clamped)
+                    {
+                        drone.BatteryLevel = clamped;
+                        changed = true;
+                    }
+                }
+
+                // Update last seen
+                var seen = timestampUtc?.ToUniversalTime() ?? DateTime.UtcNow;
+                var key = string.IsNullOrWhiteSpace(drone.DeviceId) ? drone.Name : drone.DeviceId;
+                if (!string.IsNullOrWhiteSpace(key))
+                {
+                    _droneLastSeenUtc[key] = seen;
+                }
+
+                if (changed)
+                {
+                    // Persist and notify only if something changed
+                    DronesChanged?.Invoke(_persistentDrones.ToList());
+                    SaveForCurrentUser();
+                }
+
+                // Ensure presence timer is running
+                EnsurePresenceTimerStarted();
+            }
+        }
     }
 
     internal class UserDevicesPayload

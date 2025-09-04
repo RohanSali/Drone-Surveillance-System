@@ -163,6 +163,8 @@ namespace DroneSurveillanceSystem.Views
                         Details = $"Device ID: {drone.DeviceId}",
                         AdditionalInfo = $"USB Port: {drone.UsbPort} | Firmware: {drone.FirmwareVersion}",
                         Status = drone.IsConnected ? "CONNECTED" : "DISCONNECTED",
+                        StatusText = string.IsNullOrWhiteSpace(drone.Status) ? (drone.IsConnected ? "Connected" : "Disconnected") : drone.Status,
+                        BatteryText = $"Battery: {Math.Max(0, Math.Min(100, drone.BatteryLevel))}%",
                         StatusColor = drone.IsConnected ? "#88C999" : "#FF6B6B",
                         DeviceId = drone.DeviceId,
                         DeviceType = "Drone"
@@ -266,5 +268,7 @@ namespace DroneSurveillanceSystem.Views
         public string StatusColor { get; set; } = "#88C999";
         public string DeviceId { get; set; } = string.Empty;
         public string DeviceType { get; set; } = string.Empty;
+        public string StatusText { get; set; } = string.Empty;
+        public string BatteryText { get; set; } = string.Empty;
     }
 }

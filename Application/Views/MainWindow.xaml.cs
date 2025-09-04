@@ -201,22 +201,14 @@ namespace DroneSurveillanceSystem.Views
         
         public int ActiveAlertsCount => AlertManager.Instance.ActiveAlerts.Count;
         
-        public int NetworkActiveDronesCount => _networkService?.Networks
-            ?.Where(n => n.Status == "Active" && n.Drones != null)
-            ?.Sum(n => n.Drones.Count) ?? 0;
+        public int NetworkActiveDronesCount => DeviceDataManager.GetAllDrones().Count(d => d.IsConnected);
         
-        public int TotalDronesCount => _networkService?.Networks
-            ?.Where(n => n.Drones != null)
-            ?.Sum(n => n.Drones.Count) ?? 0;
+        public int TotalDronesCount => DeviceDataManager.GetAllDrones().Count;
 
         // CCTV aggregates
-        public int NetworkActiveCctvsCount => _networkService?.Networks
-            ?.Where(n => n.Status == "Active" && n.Cctvs != null)
-            ?.Sum(n => n.Cctvs.Count) ?? 0;
+        public int NetworkActiveCctvsCount => DeviceDataManager.GetAllCctvs().Count(c => c.IsConnected);
 
-        public int TotalCctvsCount => _networkService?.Networks
-            ?.Where(n => n.Cctvs != null)
-            ?.Sum(n => n.Cctvs.Count) ?? 0;
+        public int TotalCctvsCount => DeviceDataManager.GetAllCctvs().Count;
         
         public string ActiveDronesDisplayText => $"{NetworkActiveDronesCount}/{TotalDronesCount}";
         
@@ -296,14 +288,34 @@ namespace DroneSurveillanceSystem.Views
                         OnPropertyChanged(nameof(ActiveDronesDisplayText));
                     };
                     
-                    // Manually trigger Networks property change after initialization
+                    // Manually trigger property change after initialization
                     OnPropertyChanged(nameof(Networks));
                     OnPropertyChanged(nameof(NetworkActiveDronesCount));
                     OnPropertyChanged(nameof(TotalDronesCount));
                     OnPropertyChanged(nameof(NetworkActiveCctvsCount));
                     OnPropertyChanged(nameof(TotalCctvsCount));
                     OnPropertyChanged(nameof(ActiveDronesDisplayText));
+                    OnPropertyChanged(nameof(ActiveAlertsCount));
                 }
+
+                // Subscribe to device data changes to refresh counts live
+                DeviceDataManager.DronesChanged += (drones) =>
+                {
+                    Dispatcher.Invoke(() =>
+                    {
+                        OnPropertyChanged(nameof(NetworkActiveDronesCount));
+                        OnPropertyChanged(nameof(TotalDronesCount));
+                        OnPropertyChanged(nameof(ActiveDronesDisplayText));
+                    });
+                };
+                DeviceDataManager.CctvsChanged += (cctvs) =>
+                {
+                    Dispatcher.Invoke(() =>
+                    {
+                        OnPropertyChanged(nameof(NetworkActiveCctvsCount));
+                        OnPropertyChanged(nameof(TotalCctvsCount));
+                    });
+                };
                 
                 // Initialize some drones for demonstration (only if service is available)
                 if (_droneTrackingService != null)
@@ -343,6 +355,13 @@ namespace DroneSurveillanceSystem.Views
                 
                 // Update drone tracking data
                 UpdateDroneTrackingData();
+                // Refresh counts and alerts on every tick so UI is persistent
+                OnPropertyChanged(nameof(NetworkActiveDronesCount));
+                OnPropertyChanged(nameof(TotalDronesCount));
+                OnPropertyChanged(nameof(NetworkActiveCctvsCount));
+                OnPropertyChanged(nameof(TotalCctvsCount));
+                OnPropertyChanged(nameof(ActiveDronesDisplayText));
+                OnPropertyChanged(nameof(ActiveAlertsCount));
                 
                 if (_isDetectionRunning)
                 {

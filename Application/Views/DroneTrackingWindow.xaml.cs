@@ -29,7 +29,7 @@ namespace DroneSurveillanceSystem.Views
             InitializeComponent();
             DataContext = this;
 
-            _trackingService = new DroneTrackingService();
+            _trackingService = DroneTrackingService.Instance;
             _droneIndicators = new List<UIElement>();
             _alertElements = new List<Border>();
             _sessionStartTime = DateTime.Now;

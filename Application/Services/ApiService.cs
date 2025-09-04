@@ -451,6 +451,70 @@ namespace DroneSurveillanceSystem.Services
                             }
                         }
                     }
+                    else if (type == "drone_pos" && msgObj.ContainsKey("data"))
+                    {
+                        try
+                        {
+                            var dataJson = msgObj["data"]?.ToString();
+                            if (!string.IsNullOrEmpty(dataJson))
+                            {
+                                var dataObj = JsonConvert.DeserializeObject<Dictionary<string, object>>(dataJson);
+                                if (dataObj != null)
+                                {
+                                    var droneId = dataObj.ContainsKey("drone_id") ? dataObj["drone_id"]?.ToString() : null;
+                                    double[]? position = null;
+                                    string? battery = dataObj.ContainsKey("battery_status") ? dataObj["battery_status"]?.ToString() : null;
+                                    string? status = dataObj.ContainsKey("status") ? dataObj["status"]?.ToString() : null;
+                                    DateTime? ts = null;
+                                    try
+                                    {
+                                        if (dataObj.ContainsKey("position"))
+                                        {
+                                            var posVal = dataObj["position"];
+                                            if (posVal is Newtonsoft.Json.Linq.JArray arr)
+                                                position = arr.ToObject<double[]>();
+                                            else if (posVal != null)
+                                                position = JsonConvert.DeserializeObject<double[]>(posVal.ToString());
+                                        }
+                                    }
+                                    catch { }
+                                    try
+                                    {
+                                        if (dataObj.ContainsKey("timestamp"))
+                                        {
+                                            var tsStr = dataObj["timestamp"]?.ToString();
+                                            if (!string.IsNullOrWhiteSpace(tsStr))
+                                                ts = DateTime.Parse(tsStr, null, System.Globalization.DateTimeStyles.AdjustToUniversal);
+                                        }
+                                    }
+                                    catch { }
+
+                                    // Update device presence and persist
+                                    if (!string.IsNullOrWhiteSpace(droneId))
+                                    {
+                                        DeviceDataManager.UpdateDroneFromPositionMessage(droneId!, position, battery, status, ts);
+                                        try
+                                        {
+                                            // Also update tracking service for visualization
+                                            double lat = 0, lon = 0, alt = 0;
+                                            if (position != null && position.Length >= 3)
+                                            {
+                                                lat = position[0]; lon = position[1]; alt = position[2];
+                                            }
+                                            double? bat = null;
+                                            if (!string.IsNullOrWhiteSpace(battery) && double.TryParse(battery, out var b)) bat = b;
+                                            DroneTrackingService.Instance.UpdateFromTelemetry(droneId!, lat, lon, alt, bat, status, ts);
+                                        }
+                                        catch { }
+                                    }
+                                }
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"[WebSocket] Error handling drone_pos: {ex.Message}");
+                        }
+                    }
                     else
                     {
                         // Log any other message types we receive

@@ -11,6 +11,8 @@ namespace DroneSurveillanceSystem.Services
 {
     public class DroneTrackingService : INotifyPropertyChanged
     {
+        private static readonly Lazy<DroneTrackingService> _instance = new Lazy<DroneTrackingService>(() => new DroneTrackingService());
+        public static DroneTrackingService Instance => _instance.Value;
         private readonly Timer _trackingTimer;
         private readonly List<DroneTrackingData> _trackingHistory;
         private readonly Dictionary<string, DronePosition> _activeDrones;
@@ -58,38 +60,20 @@ namespace DroneSurveillanceSystem.Services
             private set { _totalDistance = value; OnPropertyChanged(); }
         }
 
-        public List<DronePosition> ActiveDronePositions => _activeDrones.Values.ToList();
+        public List<DronePosition> ActiveDronePositions => _activeDrones.Values
+            .Where(d => d.LastSeen != default && DateTime.UtcNow - d.LastSeen.ToUniversalTime() <= TimeSpan.FromMinutes(10))
+            .Where(d => !double.IsNaN(d.Latitude) && !double.IsNaN(d.Longitude))
+            .ToList();
 
         public DroneTrackingService()
         {
             _trackingHistory = new List<DroneTrackingData>();
             _activeDrones = new Dictionary<string, DronePosition>();
             
-            // Initialize with some sample drones
-            InitializeSampleDrones();
-            
             // Start tracking timer - update every 2 seconds
             _trackingTimer = new Timer(UpdateTracking, null, TimeSpan.Zero, TimeSpan.FromSeconds(2));
             
             TrackingStatus = "Active";
-        }
-
-        private void InitializeSampleDrones()
-        {
-            var sampleDrones = new[]
-            {
-                new DronePosition { Id = "DRONE-001", Name = "Surveillance Alpha", Latitude = 37.7749, Longitude = -122.4194, Altitude = 50, Status = DroneFlightStatus.Flying },
-                new DronePosition { Id = "DRONE-002", Name = "Surveillance Beta", Latitude = 37.7759, Longitude = -122.4184, Altitude = 45, Status = DroneFlightStatus.Hovering },
-                new DronePosition { Id = "DRONE-003", Name = "Surveillance Gamma", Latitude = 37.7739, Longitude = -122.4204, Altitude = 55, Status = DroneFlightStatus.Flying }
-            };
-
-            foreach (var drone in sampleDrones)
-            {
-                _activeDrones[drone.Id] = drone;
-            }
-
-            ActiveDronesCount = _activeDrones.Count;
-            TotalDronesTracked = _activeDrones.Count;
         }
 
         private void UpdateTracking(object? state)
@@ -101,16 +85,15 @@ namespace DroneSurveillanceSystem.Services
 
                 foreach (var drone in _activeDrones.Values)
                 {
-                    var oldPosition = new { drone.Latitude, drone.Longitude, drone.Altitude };
-                    
-                    // Simulate drone movement
-                    SimulateDroneMovement(drone);
-                    
-                    // Calculate movement distance and speed
-                    var distance = CalculateDistance(oldPosition.Latitude, oldPosition.Longitude, drone.Latitude, drone.Longitude);
+                    // Calculate movement distance and speed based on last history point if any
+                    var last = _trackingHistory.LastOrDefault(h => h.DroneId == drone.Id);
+                    double distance = 0.0;
+                    if (last != null)
+                    {
+                        distance = CalculateDistance(last.Position.Latitude, last.Position.Longitude, drone.Latitude, drone.Longitude);
+                    }
                     totalMovement += distance;
-                    
-                    var speed = distance * 30; // Convert to approximate speed (distance per 2 seconds * 30 = per minute)
+                    var speed = distance * 30; // per minute approximation
                     speeds.Add(speed);
                     drone.Speed = speed;
                     
@@ -158,68 +141,49 @@ namespace DroneSurveillanceSystem.Services
             }
         }
 
-        private void SimulateDroneMovement(DronePosition drone)
-        {
-            // Simulate realistic drone movement patterns
-            switch (drone.Status)
-            {
-                case DroneFlightStatus.Flying:
-                    // Flying drones move more
-                    drone.Latitude += (_random.NextDouble() - 0.5) * 0.001;
-                    drone.Longitude += (_random.NextDouble() - 0.5) * 0.001;
-                    drone.Altitude += (_random.NextDouble() - 0.5) * 5;
-                    
-                    // Occasionally change to hovering
-                    if (_random.NextDouble() < 0.1)
-                        drone.Status = DroneFlightStatus.Hovering;
-                    break;
-                    
-                case DroneFlightStatus.Hovering:
-                    // Hovering drones move very little
-                    drone.Latitude += (_random.NextDouble() - 0.5) * 0.0001;
-                    drone.Longitude += (_random.NextDouble() - 0.5) * 0.0001;
-                    drone.Altitude += (_random.NextDouble() - 0.5) * 1;
-                    
-                    // Occasionally resume flying
-                    if (_random.NextDouble() < 0.15)
-                        drone.Status = DroneFlightStatus.Flying;
-                    break;
-                    
-                case DroneFlightStatus.Returning:
-                    // Return to base pattern
-                    drone.Latitude += (37.7749 - drone.Latitude) * 0.1;
-                    drone.Longitude += (-122.4194 - drone.Longitude) * 0.1;
-                    drone.Altitude = Math.Max(30, drone.Altitude - 2);
-                    break;
-            }
+        // Simulation removed: telemetry updates provided via UpdateFromTelemetry
 
-            // Keep altitude within reasonable bounds
-            drone.Altitude = Math.Max(10, Math.Min(100, drone.Altitude));
-            
-            // Simulate battery drain
-            drone.BatteryLevel = Math.Max(0, drone.BatteryLevel - _random.NextDouble() * 0.1);
-            
-            // Simulate signal strength variations
-            drone.SignalStrength = Math.Max(20, Math.Min(100, drone.SignalStrength + (_random.NextDouble() - 0.5) * 10));
-            
-            // Simulate casualty detection (random chance)
-            if (_random.NextDouble() < 0.02) // 2% chance per update
+        public void UpdateFromTelemetry(string droneId, double latitude, double longitude, double altitude, double? batteryPercent, string? status, DateTime? seenUtc = null)
+        {
+            if (string.IsNullOrWhiteSpace(droneId)) return;
+            var id = droneId.Trim();
+            if (!_activeDrones.TryGetValue(id, out var drone))
             {
-                drone.CasualtiesDetected++;
-                drone.LastCasualtyTime = DateTime.Now;
-                TrackingAlert?.Invoke(this, $"CASUALTY DETECTED: {drone.Name} - Total: {drone.CasualtiesDetected}");
+                drone = new DronePosition { Id = id, Name = id };
+                _activeDrones[id] = drone;
+                TotalDronesTracked = _activeDrones.Count;
             }
-            
-            // Simulate anomaly detection (random chance)
-            if (_random.NextDouble() < 0.05) // 5% chance per update
+            drone.Latitude = latitude;
+            drone.Longitude = longitude;
+            drone.Altitude = altitude;
+            if (batteryPercent.HasValue)
             {
-                drone.AnomaliesDetected++;
-                drone.LastAnomalyTime = DateTime.Now;
-                TrackingAlert?.Invoke(this, $"ANOMALY DETECTED: {drone.Name} - Total: {drone.AnomaliesDetected}");
+                drone.BatteryLevel = Math.Max(0, Math.Min(100, batteryPercent.Value));
             }
-            
-            // Update last seen
-            drone.LastSeen = DateTime.Now;
+            if (!string.IsNullOrWhiteSpace(status))
+            {
+                switch (status.Trim().ToLowerInvariant())
+                {
+                    case "active":
+                    case "flying":
+                        drone.Status = DroneFlightStatus.Flying; break;
+                    case "hovering":
+                        drone.Status = DroneFlightStatus.Hovering; break;
+                    case "landing":
+                        drone.Status = DroneFlightStatus.Landing; break;
+                    case "returning":
+                        drone.Status = DroneFlightStatus.Returning; break;
+                    case "takingoff":
+                    case "taking_off":
+                        drone.Status = DroneFlightStatus.TakingOff; break;
+                    case "emergency":
+                        drone.Status = DroneFlightStatus.Emergency; break;
+                    default:
+                        drone.Status = DroneFlightStatus.Grounded; break;
+                }
+            }
+            drone.LastSeen = (seenUtc ?? DateTime.UtcNow).ToLocalTime();
+            ActiveDronesCount = _activeDrones.Values.Count(d => DateTime.UtcNow - d.LastSeen.ToUniversalTime() <= TimeSpan.FromMinutes(10));
         }
 
         private static double CalculateDistance(double lat1, double lon1, double lat2, double lon2)

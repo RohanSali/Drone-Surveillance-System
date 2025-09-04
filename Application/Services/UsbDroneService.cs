@@ -8,10 +8,10 @@ namespace DroneSurveillanceSystem.Services
     public class UsbDrone
     {
         public string Name { get; set; } = "";
-        public string Status { get; set; } = "Ready for Module Installation";
+        public string Status { get; set; } = "Disconnected";
         public string UsbPort { get; set; } = "";
         public string DeviceId { get; set; } = "";
-        public bool IsConnected { get; set; } = true;
+        public bool IsConnected { get; set; } = false;
         public DateTime ConnectedTime { get; set; } = DateTime.Now;
         public string DroneType { get; set; } = "Surveillance";
         public string FirmwareVersion { get; set; } = "v2.1.0";

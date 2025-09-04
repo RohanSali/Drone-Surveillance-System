@@ -192,6 +192,8 @@ namespace DroneSurveillanceSystem.Views
                         Details = $"Device ID: {drone.DeviceId}",
                         AdditionalInfo = $"USB Port: {drone.UsbPort} | Firmware: {drone.FirmwareVersion}",
                         Status = drone.IsConnected ? "CONNECTED" : "DISCONNECTED",
+                        StatusText = string.IsNullOrWhiteSpace(drone.Status) ? (drone.IsConnected ? "Connected" : "Disconnected") : drone.Status,
+                        BatteryText = $"Battery: {Math.Max(0, Math.Min(100, drone.BatteryLevel))}%",
                         StatusColor = drone.IsConnected ? "#88C999" : "#FF6B6B",
                         DeviceId = drone.DeviceId,
                         DeviceType = "Drone"
@@ -313,15 +315,9 @@ namespace DroneSurveillanceSystem.Views
             TotalCctvsCount = networkCctvs.Count;
             ActiveCctvsCount = networkCctvs.Count(c => c.IsConnected);
             
-            // Calculate average battery level
-            if (networkDrones.Any())
-            {
-                AverageBattery = networkDrones.Where(d => d.IsConnected).Average(d => d.BatteryLevel);
-            }
-            else
-            {
-                AverageBattery = 0;
-            }
+            // Calculate average battery level (only among connected drones)
+            var connectedDrones = networkDrones.Where(d => d.IsConnected).ToList();
+            AverageBattery = connectedDrones.Any() ? connectedDrones.Average(d => d.BatteryLevel) : 0;
             
             // Calculate coverage area (simplified calculation based on number of active devices)
             // Each active drone covers approximately 2.5 km², each CCTV covers 0.5 km²
