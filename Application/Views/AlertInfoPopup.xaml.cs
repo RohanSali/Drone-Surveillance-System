@@ -32,7 +32,7 @@ namespace DroneSurveillanceSystem.Views
                 {
                     droneIdValue = "Unknown";
                 }
-                DroneIdText.Text = $"Drone ID: {droneIdValue}";
+                DroneIdText.Text = $"{droneIdValue}";
                 
                 // Location information
                 if (_alertData.AlertLocation != null)
@@ -68,15 +68,39 @@ namespace DroneSurveillanceSystem.Views
                 RLStatusText.Text = _alertData.RLResponsed == 1 ? "✅ Sent" : "❌ Not Sent";
                 
                 // Image status and handling
-                if (_alertData.ImageReceived == 1 && !string.IsNullOrEmpty(_alertData.Image))
+                if (_alertData.ImageReceived == 1)
                 {
                     ImageStatusText.Text = "✅ Image Available";
                     
                     try
                     {
-                        // Try to load the image
-                        var imageUri = new Uri(_alertData.Image, UriKind.RelativeOrAbsolute);
-                        AlertImage.Source = new BitmapImage(imageUri);
+                        BitmapImage bmp;
+                        var img = _alertData.Image ?? string.Empty;
+                        if (img.StartsWith("data:image", StringComparison.OrdinalIgnoreCase) || img.Length > 100)
+                        {
+                            var base64 = img;
+                            var commaIdx = base64.IndexOf(",");
+                            if (commaIdx > 0 && base64.Substring(0, commaIdx).Contains("base64"))
+                            {
+                                base64 = base64[(commaIdx + 1)..];
+                            }
+                            var bytes = Convert.FromBase64String(base64);
+                            using (var ms = new System.IO.MemoryStream(bytes))
+                            {
+                                bmp = new BitmapImage();
+                                bmp.BeginInit();
+                                bmp.CacheOption = BitmapCacheOption.OnLoad;
+                                bmp.StreamSource = ms;
+                                bmp.EndInit();
+                                bmp.Freeze();
+                            }
+                        }
+                        else
+                        {
+                            var imageUri = new Uri(img, UriKind.RelativeOrAbsolute);
+                            bmp = new BitmapImage(imageUri);
+                        }
+                        AlertImage.Source = bmp;
                         
                         // Show image section and view full image button
                         ImageSection.Visibility = Visibility.Visible;

@@ -309,10 +309,10 @@ namespace DroneSurveillanceSystem.Services
                     // Log all available keys in the message
                     Console.WriteLine($"[WebSocket] Available keys: {string.Join(", ", msgObj.Keys)}");
                     
-                    if (type == "validated_alert" && (msgObj.ContainsKey("alert") || msgObj.ContainsKey("data")))
+                    if (type == "validated_alert" && msgObj.ContainsKey("data"))
                     {
                         // Validated alert with authoritative data and image
-                        var alertJson = (msgObj.ContainsKey("alert") ? msgObj["alert"] : msgObj["data"])?.ToString();
+                        var alertJson = msgObj["data"]?.ToString();
                         if (!string.IsNullOrEmpty(alertJson))
                         {
                             var alertData = JsonConvert.DeserializeObject<Dictionary<string, object>>(alertJson);
@@ -325,7 +325,7 @@ namespace DroneSurveillanceSystem.Services
                                     DroneId = alertData.ContainsKey("drone_id") ? alertData["drone_id"]?.ToString() ?? "Unknown" : "Unknown",
                                     Score = alertData.ContainsKey("score") ? Convert.ToDouble(alertData["score"]) : 0.0,
                                     RLResponsed = alertData.ContainsKey("rl_responsed") ? Convert.ToInt32(alertData["rl_responsed"]) : 0,
-                                    ImageReceived = alertData.ContainsKey("image") && !string.IsNullOrEmpty(alertData["image"]?.ToString()) ? 1 : 0,
+                                    ImageReceived = alertData.ContainsKey("image") && !string.IsNullOrEmpty(alertData["image_received"]?.ToString()) ? 1 : 0,
                                     Image = alertData.ContainsKey("image") ? alertData["image"]?.ToString() : null,
                                     Timestamp = alertData.ContainsKey("timestamp") ? alertData["timestamp"]?.ToString() ?? DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss.fff") : DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss.fff")
                                 };
@@ -362,9 +362,14 @@ namespace DroneSurveillanceSystem.Services
                                 // Also update or insert into ActiveAlerts list so lists reflect validated data
                                 try
                                 {
-                                    var existing = AlertManager.Instance.ActiveAlerts.FirstOrDefault(a => !string.IsNullOrEmpty(a.AlertId) && string.Equals(a.AlertId, alert.AlertId, StringComparison.OrdinalIgnoreCase));
+                                    // Preferred match: by alert_id
+                                    var existing = AlertManager.Instance.ActiveAlerts.FirstOrDefault(a =>
+                                        !string.IsNullOrEmpty(a.AlertId) && !string.IsNullOrEmpty(alert.AlertId) &&
+                                        string.Equals(a.AlertId, alert.AlertId, StringComparison.OrdinalIgnoreCase));
+
                                     if (existing != null)
                                     {
+                                        existing.AlertId = string.IsNullOrEmpty(existing.AlertId) ? alert.AlertId : existing.AlertId;
                                         existing.Alert = alert.Alert;
                                         existing.DroneId = alert.DroneId;
                                         existing.AlertLocation = alert.AlertLocation;
@@ -373,6 +378,10 @@ namespace DroneSurveillanceSystem.Services
                                         existing.RLResponsed = alert.RLResponsed;
                                         existing.Score = alert.Score;
                                         existing.Timestamp = alert.Timestamp;
+                                    }
+                                    else
+                                    {
+                                        AlertManager.Instance.ActiveAlerts.Insert(0, alert);
                                     }
                                 }
                                 catch { }
@@ -385,75 +394,6 @@ namespace DroneSurveillanceSystem.Services
                                         popup.UpdateFromServer(alert);
                                     }
                                 });
-                            }
-                        }
-                    }
-                    else if (type == "new_alert" && msgObj.ContainsKey("alert"))
-                    {
-                        // Handle the server's broadcast format to applications
-                        var alertJson = msgObj["alert"]?.ToString();
-                        if (!string.IsNullOrEmpty(alertJson))
-                        {
-                            Console.WriteLine($"[WebSocket] Alert JSON: {alertJson}");
-                            
-                            var alertData = JsonConvert.DeserializeObject<Dictionary<string, object>>(alertJson);
-                            if (alertData != null)
-                            {
-                                Console.WriteLine($"[WebSocket] Alert data keys: {string.Join(", ", alertData.Keys)}");
-                                
-                                var alert = new AlertData
-                                {
-                                    Alert = alertData.ContainsKey("alert") ? alertData["alert"]?.ToString() ?? "Unknown Alert" : "Unknown Alert",
-                                    DroneId = alertData.ContainsKey("drone_id") ? alertData["drone_id"]?.ToString() ?? "Unknown" : "Unknown",
-                                    Score = alertData.ContainsKey("score") ? Convert.ToDouble(alertData["score"]) : 0.0,
-                                    RLResponsed = alertData.ContainsKey("rl_responsed") ? Convert.ToInt32(alertData["rl_responsed"]) : 0,
-                                    ImageReceived = alertData.ContainsKey("image_received") ? Convert.ToInt32(alertData["image_received"]) : 0,
-                                    Image = alertData.ContainsKey("image") ? alertData["image"]?.ToString() : null,
-                                    Timestamp = alertData.ContainsKey("timestamp") ? alertData["timestamp"]?.ToString() ?? DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss.fff") : DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss.fff")
-                                };
-                                
-                                // Parse alert_location - could be array or string
-                                if (alertData.ContainsKey("alert_location") && alertData["alert_location"] != null)
-                                {
-                                    var locationValue = alertData["alert_location"];
-                                    Console.WriteLine($"[WebSocket] Location value type: {locationValue.GetType()}, value: {locationValue}");
-                                    
-                                    try
-                                    {
-                                        if (locationValue is Newtonsoft.Json.Linq.JArray locationArray)
-                                        {
-                                            // It's already a JArray
-                                            var coords = locationArray.ToObject<double[]>();
-                                            if (coords != null && coords.Length >= 3)
-                                            {
-                                                alert.AlertLocation = new Tuple<double, double, double>(coords[0], coords[1], coords[2]);
-                                                Console.WriteLine($"[WebSocket] Parsed location from JArray: [{coords[0]}, {coords[1]}, {coords[2]}]");
-                                            }
-                                        }
-                                        else
-                                        {
-                                            // Try to parse as string
-                                            var locationStr = locationValue?.ToString();
-                                            if (!string.IsNullOrEmpty(locationStr) && locationStr.StartsWith("[") && locationStr.EndsWith("]"))
-                                            {
-                                                var coords = JsonConvert.DeserializeObject<double[]>(locationStr);
-                                                if (coords != null && coords.Length >= 3)
-                                                {
-                                                    alert.AlertLocation = new Tuple<double, double, double>(coords[0], coords[1], coords[2]);
-                                                    Console.WriteLine($"[WebSocket] Parsed location from string: [{coords[0]}, {coords[1]}, {coords[2]}]");
-                                                }
-                                            }
-                                        }
-                                    }
-                                    catch (Exception locEx)
-                                    {
-                                        Console.WriteLine($"[WebSocket] Location parsing error: {locEx.Message}");
-                                    }
-                                }
-                                
-                                Console.WriteLine($"[WebSocket] Processed Alert - DroneId: '{alert.DroneId}', Location: {alert.AlertLocation}, Score: {alert.Score}");
-                                LogAlertToFile(alert);
-                                AlertReceived?.Invoke(this, new AlertReceivedEventArgs(alert));
                             }
                         }
                     }
@@ -475,9 +415,9 @@ namespace DroneSurveillanceSystem.Services
                                     Alert = dataObj.ContainsKey("alert") ? dataObj["alert"]?.ToString() : "Unknown Alert",
                                     DroneId = dataObj.ContainsKey("drone_id") ? dataObj["drone_id"]?.ToString() : "Unknown",
                                     Score = dataObj.ContainsKey("score") ? Convert.ToDouble(dataObj["score"]) : 0.0,
-                                    RLResponsed = 0, // Default value
-                                    ImageReceived = 0, // Default value
-                                    Image = null,
+                                    RLResponsed = dataObj.ContainsKey("rl_responsed") ? Convert.ToInt32(dataObj["rl_responsed"]) : 0,
+                                    ImageReceived = dataObj.ContainsKey("image_received") && !string.IsNullOrEmpty(dataObj["image_received"]?.ToString()) ? 1 : 0,
+                                    Image = dataObj.ContainsKey("image") ? dataObj["image"]?.ToString() : null,
                                     Timestamp = dataObj.ContainsKey("timestamp") ? dataObj["timestamp"]?.ToString() : DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss.fff")
                                 };
                                 
@@ -508,23 +448,6 @@ namespace DroneSurveillanceSystem.Services
                                 Console.WriteLine($"[WebSocket] Processed Alert - DroneId: '{alert.DroneId}', Location: {alert.AlertLocation}, Score: {alert.Score}");
                                 LogAlertToFile(alert);
                                 AlertReceived?.Invoke(this, new AlertReceivedEventArgs(alert));
-                            }
-                        }
-                    }
-                    else if (type == "initial_alerts")
-                    {
-                        // Ignore initial alerts to ensure only real-time alerts are shown
-                        Console.WriteLine($"[WebSocket] Received initial alerts - ignoring to maintain clean state");
-                        if (msgObj.ContainsKey("alerts"))
-                        {
-                            var alertsJson = msgObj["alerts"]?.ToString();
-                            if (!string.IsNullOrEmpty(alertsJson))
-                            {
-                                var alerts = JsonConvert.DeserializeObject<List<Dictionary<string, object>>>(alertsJson);
-                                if (alerts != null)
-                                {
-                                    Console.WriteLine($"[WebSocket] Ignoring {alerts.Count} initial alerts to maintain clean state");
-                                }
                             }
                         }
                     }
