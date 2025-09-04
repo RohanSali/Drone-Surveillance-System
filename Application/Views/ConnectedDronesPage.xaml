@@ -74,7 +74,7 @@
                 </Grid.ColumnDefinitions>
                 
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="20,0">
-                    <TextBlock Text="🔌" FontSize="24" VerticalAlignment="Center" Margin="0,0,15,0" Foreground="#FF00BCD4"/>
+                    <TextBlock Text="🔌" FontSize="50" VerticalAlignment="Center" Margin="0,0,15,0" Foreground="#FF00BCD4"/>
                     <TextBlock Text="USB Connected Devices" 
                               Foreground="White" 
                               FontWeight="Bold" 

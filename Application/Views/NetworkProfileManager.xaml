@@ -266,8 +266,8 @@
                 </Grid.ColumnDefinitions>
                 
                 <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="20,0">
-                    <Ellipse Width="50" Height="50" Fill="#FF0078D4" Margin="0,0,15,0"/>
-                    <TextBlock Text="🌐" FontSize="35" VerticalAlignment="Center" Margin="-42,0,20,0" Foreground="#FF00BCD4"/>
+                    <Ellipse Width="50" Height="50" Fill="#FFFFFF" Margin="0,0,15,0"/>
+                    <TextBlock Text="🌐" FontSize="35" VerticalAlignment="Center" Margin="-64,0,20,0" Foreground="#4CAF50"/>
                     <StackPanel VerticalAlignment="Center">
                         <TextBlock Text="NETWORK PROFILE MANAGER" 
                                   Foreground="White" 
@@ -305,7 +305,7 @@
 
                     <!-- Network List Header -->
                     <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,20">
-                        <TextBlock Text="📋 Network Profiles" Style="{StaticResource HeaderStyle}"/>
+                        <TextBlock Text="📋 Network Profiles" Style="{StaticResource HeaderStyle}" Foreground="#FFD700"/>
                         <Button Name="CreateNetworkButton" 
                                 Content="➕ Create New Network" 
                                 Style="{StaticResource SuccessButton}"

@@ -65,7 +65,7 @@
                 </Grid.ColumnDefinitions>
 
                 <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-                    <TextBlock Text="🌐" FontSize="30" Margin="0,0,10,0" x:Name="NetworkIcon"/>
+                    <TextBlock Text="🌐" FontSize="30" Margin="0,0,10,0" x:Name="NetworkIcon" Foreground="#4CAF50"/>
                     <StackPanel>
                         <TextBlock x:Name="NetworkNameText" 
                                   Text="Network Details" 

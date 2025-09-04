@@ -201,12 +201,17 @@
                 </StackPanel>
                 
                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="20,0">
-                    <Button Name="LostFindingButton" Content="🔍 Lost Finding" 
+                    <Button Name="LostFindingButton" 
                             Style="{StaticResource ModernButton}" 
                             Click="LostFindingButton_Click"
                             Height="40" 
                             MinWidth="150" 
-                            Margin="5,0"/>
+                            Margin="5,0">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="🔍" FontSize="16" Foreground="white" Margin="0,0,5,0" VerticalAlignment="Center"/>
+                            <TextBlock Text="Lost Finding" Foreground="White" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
                     <Button Name="AdvancedControlButton" Content="🚀 Advanced Control" 
                             Style="{StaticResource ModernButton}" 
                             Click="AdvancedControlButton_Click"

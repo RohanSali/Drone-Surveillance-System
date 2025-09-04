@@ -104,14 +104,14 @@
                 </Grid.ColumnDefinitions>
 
                 <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-                    <TextBlock Text="🔍" FontSize="30" Margin="0,0,10,0"/>
+                    <TextBlock Text="🔍" FontSize="30" Margin="0,0,10,0" Foreground="#2196F3" />
                     <StackPanel>
                         <TextBlock Text="Lost Person Finding" 
                                   Foreground="White" 
                                   FontWeight="Bold" 
                                   FontSize="24"/>
                         <TextBlock Text="Upload image to search for lost person" 
-                                  Foreground="#cccccc" 
+                                  Foreground="#FFD700" 
                                   FontSize="14"/>
                     </StackPanel>
                 </StackPanel>
@@ -220,17 +220,21 @@
                     </Border>
 
                     <!-- Upload Controls -->
-                    <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,20,0,0">
+                    <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,25,0,0">
                         <Button Name="SelectImageButton" 
                                 Content="📁 Select Image" 
                                 Style="{StaticResource ModernButton}" 
                                 Click="SelectImageButton_Click"
-                                Margin="0,0,10,0"/>
+                                Margin="0,0,10,0"
+                                Width="200"
+                                Height="40"/>
                         <Button Name="SendRequestButton" 
                                 Content="🚀 Send Request" 
                                 Style="{StaticResource SuccessButton}" 
                                 Click="SendRequestButton_Click"
-                                IsEnabled="False"/>
+                                IsEnabled="False"
+                                Width="200"
+                                Height="40"/>
                     </StackPanel>
                 </Grid>
             </Border>
@@ -307,7 +311,7 @@
         </Grid>
 
         <!-- Footer - Pending Requests -->
-        <Border Grid.Row="2" Background="#1e1e1e" Padding="15,10">
+        <Border Grid.Row="2" Background="#1e1e1e" Padding="15,10" Height="140">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
@@ -316,10 +320,10 @@
                 
                 <TextBlock Grid.Row="0" 
                           Text="📋 Pending Requests" 
-                          Foreground="White" 
+                          Foreground="#FFD700" 
                           FontSize="16" 
                           FontWeight="Bold" 
-                          Margin="0,0,0,10"/>
+                          Margin="0,0,0,20"/>
                 
                 <ScrollViewer Grid.Row="1" 
                               HorizontalScrollBarVisibility="Auto" 
