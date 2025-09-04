@@ -11,6 +11,7 @@ DRONE_JSON_FILE_PATH = os.path.join(current_dir, "drone_info.json")
 ALERT_QUEUE_FILE = os.path.join(current_dir, "alert_queue.txt")
 TARGETS_FILE = os.path.join(current_dir, "capture_engine", "drone_targets.txt")
 LOST_PERSON_FOLDER = os.path.join(current_dir, "inference_engine", "lost_person")
+DRONE_POS_UPDATE_INTERVAL = 5000 # seconds
 
 SERVER_URL = "wss://new-server-5iyd.onrender.com"
 
@@ -72,12 +73,41 @@ class DroneWebSocketHandler:
                         print(f"✅ {alert_type} sent to server! : {payload['alert']}")
                     elif alert_type=="alert_image":
                         print(f"✅ {alert_type} sent to server! : {payload['name']}")
+                    elif alert_type=="validated_alert":
+                        print(f"✅ {alert_type} sent to server! : {payload['alert']}")
 
                 except Exception as e:
                     print(f"❌ Failed to send alert from queue: {e}")
 
         except Exception as e:
             print(f"❌ Error reading alert queue: {e}")
+
+    async def send_drone_position(self):
+        """Continuously send drone position from JSON file"""
+        while True:
+            try:
+                if self.connected and self.websocket:
+                    if os.path.exists(DRONE_JSON_FILE_PATH):
+                        with open(DRONE_JSON_FILE_PATH, "r") as f:
+                            data = json.load(f)
+
+                        pos = data.get("pos", {})
+                        drone_id = data.get("drone_id", self.drone_id)
+
+                        message = {
+                            "type": "drone_pos",
+                            "data": {
+                                "drone_id": drone_id,
+                                "pos": pos
+                            }
+                        }
+
+                        await self.websocket.send(json.dumps(message))
+                        print(f"📤 Drone position sent: {message}")
+            except Exception as e:
+                print(f"❌ Error sending drone position: {e}")
+
+            await asyncio.sleep(DRONE_POS_UPDATE_INTERVAL)
 
     async def handle_alert_image(self, data):
         """Process incoming alert_image message"""
@@ -128,7 +158,7 @@ class DroneWebSocketHandler:
 
                     if msg_type == "alert_image":
                         await self.handle_alert_image(data)
-                    elif msg_type == "target":
+                    elif msg_type == "target_pos":
                         await self.handle_target(data)
                     elif msg_type == "connection_established":
                         print("✅ Connection established with server")
@@ -152,6 +182,7 @@ class DroneWebSocketHandler:
 
             send_task = asyncio.create_task(self.send_alert_from_queue())
             listen_task = asyncio.create_task(self.listen())
+            # drone_pos_task = asyncio.create_task(self.send_drone_position())
 
             done, pending = await asyncio.wait(
                 [send_task, listen_task],

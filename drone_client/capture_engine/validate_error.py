@@ -127,6 +127,7 @@ def validate_alert(alert_name,alert_id,frame,capture_timestamp = datetime.now())
     if detected:
         frame_blob = encode_frame(frame)
         payload = {
+            "alert_id" : alert_id,
             "alert" : type + " - " + alert_name,
             "drone_id" : drone_info.get('drone_id','NO DRONE'),
             "alert_location" : [0,0,0],
@@ -138,4 +139,4 @@ def validate_alert(alert_name,alert_id,frame,capture_timestamp = datetime.now())
         }
 
         save_to_machine(payload)
-        asyncio.run(send_alert(payload))
+        asyncio.run(send_alert(payload,type='validated_alert'))

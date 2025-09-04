@@ -46,6 +46,8 @@ async def send_alert(payload,type="alert"):
             print(f"✅ Alert queued: {payload.get('alert', 'No Alert Specified')}")
         elif type == "alert_image":
             print(f"✅ Alert queued: Found - {payload.get('name', 'No Name Specified')}")
+        elif type == "validated_alert":
+            print(f"✅ Validated Alert queued: {payload.get('alert', 'No Alert Specified')}")
         else:
             print("❌ Unknown type specified for alert queuing.")
     except Exception as e:
