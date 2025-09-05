@@ -195,7 +195,7 @@
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="20,0">
                     <Ellipse Width="45" Height="45" Fill="#2563EB" Margin="0,0,12,0"/>
                     <TextBlock Text="🚁" FontSize="24" VerticalAlignment="Center" Margin="-50,0,15,0" Foreground="White"/>
-                    <TextBlock Text="Drone Surveillance System" 
+                    <TextBlock Text="Vigilance and Rapid Alerts" 
                               Foreground="White" 
                               FontWeight="Bold" 
                               FontSize="24" 
@@ -214,7 +214,7 @@
                             <TextBlock Text="Lost Finding" Foreground="White" VerticalAlignment="Center"/>
                         </StackPanel>
                     </Button>
-                    <Button Name="AdvancedControlButton" Content="🚀 Advanced Control" 
+                    <Button Name="AdvancedControlButton" Content="🚀 Device Controls" 
                             Style="{StaticResource ModernButton}" 
                             Click="AdvancedControlButton_Click"
                             Height="40" 
@@ -306,7 +306,7 @@
                                 <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
                             
-                            <TextBlock Grid.Row="0" Text="Monitor Drone" 
+                            <TextBlock Grid.Row="0" Text="Monitor Devices" 
                                       Foreground="White" 
                                       FontWeight="Bold" 
                                       FontSize="18" 

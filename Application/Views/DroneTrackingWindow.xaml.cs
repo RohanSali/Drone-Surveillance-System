@@ -36,7 +36,7 @@ namespace DroneSurveillanceSystem.Views
 
             // Setup event handlers
             _trackingService.DronePositionUpdated += OnDronePositionUpdated;
-            _trackingService.TrackingAlert += OnTrackingAlert;
+            // _trackingService.TrackingAlert += OnTrackingAlert;
             _trackingService.PropertyChanged += OnTrackingServicePropertyChanged;
 
             // Setup UI update timer
@@ -305,79 +305,6 @@ namespace DroneSurveillanceSystem.Views
             {
                 // Update UI will be called by timer
             });
-        }
-
-        private void OnTrackingAlert(object? sender, string alert)
-        {
-            Dispatcher.Invoke(() =>
-            {
-                AddAlert(alert);
-            });
-        }
-
-        private void AddAlert(string alertMessage)
-        {
-            var alertBorder = new Border
-            {
-                Background = new SolidColorBrush(Color.FromRgb(26, 26, 26)),
-                CornerRadius = new CornerRadius(5),
-                Padding = new Thickness(10),
-                Margin = new Thickness(0, 5, 0, 5)
-            };
-
-            var alertGrid = new Grid();
-            alertGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-            alertGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            alertGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-
-            var indicator = new Ellipse
-            {
-                Width = 8,
-                Height = 8,
-                Fill = new SolidColorBrush(Colors.Red),
-                VerticalAlignment = VerticalAlignment.Center,
-                Margin = new Thickness(0, 0, 10, 0)
-            };
-
-            var messageText = new TextBlock
-            {
-                Text = alertMessage,
-                Foreground = new SolidColorBrush(Color.FromRgb(255, 68, 68)),
-                FontSize = 12,
-                FontWeight = FontWeights.Bold,
-                VerticalAlignment = VerticalAlignment.Center,
-                Margin = new Thickness(5, 2, 5, 2)
-            };
-
-            var timeText = new TextBlock
-            {
-                Text = DateTime.Now.ToString("HH:mm"),
-                Foreground = new SolidColorBrush(Color.FromRgb(136, 136, 136)),
-                FontSize = 10,
-                VerticalAlignment = VerticalAlignment.Center
-            };
-
-            Grid.SetColumn(indicator, 0);
-            Grid.SetColumn(messageText, 1);
-            Grid.SetColumn(timeText, 2);
-
-            alertGrid.Children.Add(indicator);
-            alertGrid.Children.Add(messageText);
-            alertGrid.Children.Add(timeText);
-
-            alertBorder.Child = alertGrid;
-
-            AlertsPanel.Children.Insert(0, alertBorder);
-            _alertElements.Add(alertBorder);
-
-            // Keep only last 10 alerts
-            while (AlertsPanel.Children.Count > 10)
-            {
-                AlertsPanel.Children.RemoveAt(AlertsPanel.Children.Count - 1);
-            }
-
-            // Update alert count
-            AlertCountText.Text = AlertsPanel.Children.Count.ToString();
         }
 
         private void OnTrackingServicePropertyChanged(object? sender, PropertyChangedEventArgs e)
