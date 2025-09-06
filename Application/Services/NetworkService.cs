@@ -212,7 +212,7 @@ namespace DroneSurveillanceSystem.Services
         private static string _currentUserKey = "guest";
         private static readonly object _lockObject = new object();
 
-        private string StorageFile => $"networks_{Sanitize(_currentUserKey)}.json";
+        private string StorageFile => Path.Combine("assets","networks",$"networks_{Sanitize(_currentUserKey)}.json");
 
         private static string Sanitize(string input)
         {
