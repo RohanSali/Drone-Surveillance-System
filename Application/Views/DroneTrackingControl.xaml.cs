@@ -19,7 +19,6 @@ namespace DroneSurveillanceSystem.Views
         private readonly DispatcherTimer _uiUpdateTimer;
         private readonly List<UIElement> _droneIndicators;
         private readonly List<UIElement> _gridLines;
-        private readonly Random _random = new Random();
 
         // Binding properties
         private int _activeDronesCount = 0;
@@ -101,9 +100,6 @@ namespace DroneSurveillanceSystem.Views
                 // Initialize map after control is loaded
                 await InitializeMapAsync();
                 
-                // Add some demo drones for testing
-                await InitializeDemoDronesAsync();
-                
                 // Start tracking
                 _trackingService.StartTracking();
                 TrackingStatus = "Active";
@@ -131,59 +127,6 @@ namespace DroneSurveillanceSystem.Views
                 DrawMapGrid();
                 AddCoordinateMarkers();
             });
-        }
-
-        private async System.Threading.Tasks.Task InitializeDemoDronesAsync()
-        {
-            try
-            {
-                // Add some demo drones at different positions
-                var demoDrones = new[]
-                {
-                    new DronePosition 
-                    { 
-                        Id = "DRONE-001", 
-                        Name = "Surveillance Alpha", 
-                        Latitude = 37.7749, 
-                        Longitude = -122.4194, 
-                        Altitude = 50, 
-                        Status = DroneFlightStatus.Flying,
-                        BatteryLevel = 85,
-                        SignalStrength = 92
-                    },
-                    new DronePosition 
-                    { 
-                        Id = "DRONE-002", 
-                        Name = "Surveillance Beta", 
-                        Latitude = 37.7751, 
-                        Longitude = -122.4196, 
-                        Altitude = 45, 
-                        Status = DroneFlightStatus.Hovering,
-                        BatteryLevel = 72,
-                        SignalStrength = 88
-                    },
-                    new DronePosition 
-                    { 
-                        Id = "DRONE-003", 
-                        Name = "Surveillance Gamma", 
-                        Latitude = 37.7747, 
-                        Longitude = -122.4192, 
-                        Altitude = 55, 
-                        Status = DroneFlightStatus.Flying,
-                        BatteryLevel = 91,
-                        SignalStrength = 95
-                    }
-                };
-
-                foreach (var drone in demoDrones)
-                {
-                    await _trackingService.AddDroneToTrackingAsync(drone);
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error initializing demo drones: {ex.Message}");
-            }
         }
 
         private void DrawMapGrid()
@@ -270,39 +213,37 @@ namespace DroneSurveillanceSystem.Views
             {
                 var activeDrones = _trackingService.ActiveDronePositions;
                 
-                // Calculate total distance traveled (simplified)
-                TotalDistance = activeDrones.Sum(d => d.Altitude * 2.5 + _random.NextDouble() * 100);
-                
-                // Calculate average speed
-                AverageSpeed = activeDrones.Count > 0 ? 
-                    activeDrones.Average(d => 10 + _random.NextDouble() * 20) : 0;
-                
-                // Simulate drone movement for demo purposes
-                foreach (var drone in activeDrones.ToList())
+                // Calculate total distance traveled (with fallback for missing DistanceTraveled property)
+                TotalDistance = activeDrones.Sum(d => 
                 {
-                    // Randomly move drones slightly
-                    if (_random.NextDouble() < 0.4) // 40% chance of movement
+                    // Use reflection to check if DistanceTraveled property exists
+                    var property = d.GetType().GetProperty("DistanceTraveled");
+                    if (property != null && property.PropertyType == typeof(double))
                     {
-                        drone.Latitude += (_random.NextDouble() - 0.5) * 0.0005;
-                        drone.Longitude += (_random.NextDouble() - 0.5) * 0.0005;
-                        drone.Altitude += (_random.NextDouble() - 0.5) * 2;
-                        
-                        // Clamp altitude
-                        drone.Altitude = Math.Max(20, Math.Min(100, drone.Altitude));
-                        
-                        // Update battery level slightly
-                        drone.BatteryLevel -= _random.NextDouble() * 0.1;
-                        drone.BatteryLevel = Math.Max(10, drone.BatteryLevel);
-                        
-                        // Update signal strength
-                        drone.SignalStrength += (_random.NextDouble() - 0.5) * 5;
-                        drone.SignalStrength = Math.Max(20, Math.Min(100, drone.SignalStrength));
+                        return (double)property.GetValue(d);
                     }
-                }
+                    return 0.0; // Default value if property doesn't exist
+                });
+                
+                // Calculate average speed (with fallback for missing Speed property)
+                AverageSpeed = activeDrones.Count > 0 ? 
+                    activeDrones.Average(d => 
+                    {
+                        // Use reflection to check if Speed property exists
+                        var property = d.GetType().GetProperty("Speed");
+                        if (property != null && property.PropertyType == typeof(double))
+                        {
+                            return (double)property.GetValue(d);
+                        }
+                        return 0.0; // Default value if property doesn't exist
+                    }) : 0;
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Error updating statistics: {ex.Message}");
+                // Set default values to avoid UI errors
+                TotalDistance = 0;
+                AverageSpeed = 0;
             }
         }
 

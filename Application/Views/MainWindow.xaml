@@ -5,25 +5,53 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:DroneSurveillanceSystem.Views"
         mc:Ignorable="d"
-        Title="Drone AI Surveillance System - Advanced Monitoring" Height="900" Width="1400"
+        Title="Drone AI Surveillance System - Advanced Monitoring" 
+        Height="900" Width="1400"
         WindowStartupLocation="CenterScreen"
         WindowState="Maximized"
-        Background="#1a1a1a"
+        Background="#1A1A1A"
         FontFamily="Segoe UI">
 
     <Window.Resources>
         <local:ActiveStatusDotConverter x:Key="ActiveStatusDotConverter"/>
         <local:BoolStatusDotConverter x:Key="BoolStatusDotConverter"/>
-        <Style x:Key="DarkButton" TargetType="Button">
-            <Setter Property="Background" Value="#0078d4"/>
-            <Setter Property="Foreground" Value="White"/>
+        
+        <!-- Modern Grey Color Palette -->
+        <Color x:Key="DarkGrey">#1A1A1A</Color>
+        <Color x:Key="MediumGrey">#2D2D2D</Color>
+        <Color x:Key="LightGrey">#404040</Color>
+        <Color x:Key="LighterGrey">#555555</Color>
+        <Color x:Key="AccentBlue">#3B82F6</Color>
+        <Color x:Key="SuccessGreen">#10B981</Color>
+        <Color x:Key="WarningOrange">#F59E0B</Color>
+        <Color x:Key="ErrorRed">#EF4444</Color>
+        <Color x:Key="PurpleAccent">#8B5CF6</Color>
+        <Color x:Key="TextPrimary">#FFFFFF</Color>
+        <Color x:Key="TextSecondary">#CCCCCC</Color>
+        <Color x:Key="TextTertiary">#999999</Color>
+        
+        <SolidColorBrush x:Key="DarkGreyBrush" Color="{StaticResource DarkGrey}"/>
+        <SolidColorBrush x:Key="MediumGreyBrush" Color="{StaticResource MediumGrey}"/>
+        <SolidColorBrush x:Key="LightGreyBrush" Color="{StaticResource LightGrey}"/>
+        <SolidColorBrush x:Key="LighterGreyBrush" Color="{StaticResource LighterGrey}"/>
+        <SolidColorBrush x:Key="AccentBlueBrush" Color="{StaticResource AccentBlue}"/>
+        <SolidColorBrush x:Key="SuccessGreenBrush" Color="{StaticResource SuccessGreen}"/>
+        <SolidColorBrush x:Key="WarningOrangeBrush" Color="{StaticResource WarningOrange}"/>
+        <SolidColorBrush x:Key="ErrorRedBrush" Color="{StaticResource ErrorRed}"/>
+        <SolidColorBrush x:Key="PurpleAccentBrush" Color="{StaticResource PurpleAccent}"/>
+        <SolidColorBrush x:Key="TextPrimaryBrush" Color="{StaticResource TextPrimary}"/>
+        <SolidColorBrush x:Key="TextSecondaryBrush" Color="{StaticResource TextSecondary}"/>
+        <SolidColorBrush x:Key="TextTertiaryBrush" Color="{StaticResource TextTertiary}"/>
+        
+        <!-- Modern Button Style -->
+        <Style x:Key="ModernButton" TargetType="Button">
+            <Setter Property="Background" Value="{StaticResource LightGreyBrush}"/>
+            <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Padding" Value="16,10"/>
             <Setter Property="Margin" Value="5"/>
-            <Setter Property="FontWeight" Value="Medium"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="FontSize" Value="14"/>
-            <Setter Property="Width" Value="140"/>
-            <Setter Property="Height" Value="40"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Template">
                 <Setter.Value>
@@ -38,14 +66,14 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Background" Value="#106EBE"/>
+                                <Setter Property="Background" Value="#4D4D4D"/>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter Property="Background" Value="#005A9E"/>
+                                <Setter Property="Background" Value="#595959"/>
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
-                                <Setter Property="Background" Value="#666666"/>
-                                <Setter Property="Foreground" Value="#cccccc"/>
+                                <Setter Property="Background" Value="#333333"/>
+                                <Setter Property="Foreground" Value="#777777"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -53,42 +81,81 @@
             </Setter>
         </Style>
         
+        <!-- Primary Button Style -->
+        <Style x:Key="PrimaryButton" TargetType="Button" BasedOn="{StaticResource ModernButton}">
+            <Setter Property="Background" Value="{StaticResource AccentBlueBrush}"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#2563EB"/>
+                </Trigger>
+                <Trigger Property="IsPressed" Value="True">
+                    <Setter Property="Background" Value="#1D4ED8"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+        
+        <!-- Secondary Button Style -->
+        <Style x:Key="SecondaryButton" TargetType="Button" BasedOn="{StaticResource ModernButton}">
+            <Setter Property="Background" Value="{StaticResource LightGreyBrush}"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#4D4D4D"/>
+                </Trigger>
+                <Trigger Property="IsPressed" Value="True">
+                    <Setter Property="Background" Value="#595959"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+        
+        <!-- Danger Button Style -->
+        <Style x:Key="DangerButton" TargetType="Button" BasedOn="{StaticResource ModernButton}">
+            <Setter Property="Background" Value="{StaticResource ErrorRedBrush}"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#DC2626"/>
+                </Trigger>
+                <Trigger Property="IsPressed" Value="True">
+                    <Setter Property="Background" Value="#B91C1C"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+        
+        <!-- Success Button Style -->
+        <Style x:Key="SuccessButton" TargetType="Button" BasedOn="{StaticResource ModernButton}">
+            <Setter Property="Background" Value="{StaticResource SuccessGreenBrush}"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#059669"/>
+                </Trigger>
+                <Trigger Property="IsPressed" Value="True">
+                    <Setter Property="Background" Value="#047857"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+        
+        <!-- Status Text Styles -->
         <Style x:Key="StatusTextBlock" TargetType="TextBlock">
-            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
             <Setter Property="FontSize" Value="14"/>
             <Setter Property="Margin" Value="0,5"/>
         </Style>
         
         <Style x:Key="AlertTextBlock" TargetType="TextBlock">
-            <Setter Property="Foreground" Value="#ff4444"/>
+            <Setter Property="Foreground" Value="{StaticResource ErrorRedBrush}"/>
             <Setter Property="FontWeight" Value="Bold"/>
             <Setter Property="FontSize" Value="16"/>
         </Style>
         
-        <Style x:Key="DarkComboBox" TargetType="ComboBox">
-            <Setter Property="Background" Value="#333"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="BorderBrush" Value="#555"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Padding" Value="8,5"/>
-            <Setter Property="FontSize" Value="12"/>
-        </Style>
-        
-        <Style x:Key="DarkComboBoxItem" TargetType="ComboBoxItem">
-            <Setter Property="Background" Value="#333"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="Padding" Value="8,5"/>
-            <Setter Property="FontSize" Value="12"/>
-            <Style.Triggers>
-                <Trigger Property="IsHighlighted" Value="True">
-                    <Setter Property="Background" Value="#0078d4"/>
-                    <Setter Property="Foreground" Value="White"/>
-                </Trigger>
-                <Trigger Property="IsSelected" Value="True">
-                    <Setter Property="Background" Value="#005a9e"/>
-                    <Setter Property="Foreground" Value="White"/>
-                </Trigger>
-            </Style.Triggers>
+        <!-- Card Style -->
+        <Style x:Key="CardStyle" TargetType="Border">
+            <Setter Property="Background" Value="{StaticResource MediumGreyBrush}"/>
+            <Setter Property="CornerRadius" Value="12"/>
+            <Setter Property="Padding" Value="20"/>
+            <Setter Property="Effect">
+                <Setter.Value>
+                    <DropShadowEffect BlurRadius="15" Opacity="0.1" ShadowDepth="2" Color="Black"/>
+                </Setter.Value>
+            </Setter>
         </Style>
         
         <!-- Hidden Smooth ScrollViewer Style -->
@@ -98,82 +165,6 @@
             <Setter Property="CanContentScroll" Value="True"/>
             <Setter Property="PanningMode" Value="VerticalOnly"/>
             <Setter Property="Stylus.IsFlicksEnabled" Value="False"/>
-        </Style>
-        
-        <!-- Modern Button Style -->
-        <Style x:Key="ModernButton" TargetType="Button">
-            <Setter Property="Background" Value="#0078d4"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Padding" Value="16,10"/>
-            <Setter Property="Margin" Value="5"/>
-            <Setter Property="FontWeight" Value="Medium"/>
-            <Setter Property="FontSize" Value="14"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border Background="{TemplateBinding Background}" 
-                                CornerRadius="8"
-                                BorderThickness="{TemplateBinding BorderThickness}"
-                                BorderBrush="{TemplateBinding BorderBrush}">
-                            <ContentPresenter HorizontalAlignment="Center" 
-                                            VerticalAlignment="Center"
-                                            Margin="{TemplateBinding Padding}"/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Background" Value="#106EBE"/>
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter Property="Background" Value="#005A9E"/>
-                            </Trigger>
-                            <Trigger Property="IsEnabled" Value="False">
-                                <Setter Property="Background" Value="#666666"/>
-                                <Setter Property="Foreground" Value="#cccccc"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-        
-        <!-- Danger Button Style -->
-        <Style x:Key="DangerButton" TargetType="Button">
-            <Setter Property="Background" Value="#dc3545"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Padding" Value="16,10"/>
-            <Setter Property="Margin" Value="5"/>
-            <Setter Property="FontWeight" Value="Medium"/>
-            <Setter Property="FontSize" Value="14"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border Background="{TemplateBinding Background}" 
-                                CornerRadius="8"
-                                BorderThickness="{TemplateBinding BorderThickness}"
-                                BorderBrush="{TemplateBinding BorderBrush}">
-                            <ContentPresenter HorizontalAlignment="Center" 
-                                            VerticalAlignment="Center"
-                                            Margin="{TemplateBinding Padding}"/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Background" Value="#c82333"/>
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter Property="Background" Value="#bd2130"/>
-                            </Trigger>
-                            <Trigger Property="IsEnabled" Value="False">
-                                <Setter Property="Background" Value="#666666"/>
-                                <Setter Property="Foreground" Value="#cccccc"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
         </Style>
     </Window.Resources>
 
@@ -185,7 +176,7 @@
         </Grid.RowDefinitions>
 
         <!-- Header -->
-        <Border Background="#2d2d2d" Grid.Row="0">
+        <Border Background="{StaticResource MediumGreyBrush}" Grid.Row="0">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
@@ -193,10 +184,14 @@
                 </Grid.ColumnDefinitions>
                 
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="20,0">
-                    <Ellipse Width="45" Height="45" Fill="#2563EB" Margin="0,0,12,0"/>
-                    <TextBlock Text="🚁" FontSize="24" VerticalAlignment="Center" Margin="-50,0,15,0" Foreground="White"/>
-                    <TextBlock Text="Drone Surveillance System" 
-                              Foreground="White" 
+                    <Border Background="{StaticResource AccentBlueBrush}" 
+                            Width="45" Height="45" 
+                            CornerRadius="10"
+                            Margin="0,0,12,0">
+                        <TextBlock Text="🚁" FontSize="20" VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="White"/>
+                    </Border>
+                    <TextBlock Text="Vigilance and Rapid Alerts" 
+                              Foreground="{StaticResource TextPrimaryBrush}" 
                               FontWeight="Bold" 
                               FontSize="24" 
                               VerticalAlignment="Center"/>
@@ -204,7 +199,7 @@
                 
                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="20,0">
                     <Button Name="LostFindingButton" 
-                            Style="{StaticResource ModernButton}" 
+                            Style="{StaticResource PrimaryButton}" 
                             Click="LostFindingButton_Click"
                             Height="40" 
                             MinWidth="150" 
@@ -214,38 +209,49 @@
                             <TextBlock Text="Lost Finding" Foreground="White" VerticalAlignment="Center"/>
                         </StackPanel>
                     </Button>
-                    <Button Name="AdvancedControlButton" Content="🚀 Advanced Control" 
-                            Style="{StaticResource ModernButton}" 
+                    <Button Name="AdvancedControlButton" 
+                            Style="{StaticResource SecondaryButton}" 
                             Click="AdvancedControlButton_Click"
                             Height="40" 
                             MinWidth="150" 
-                            Margin="5,0"/>
-                    <Button Name="SettingsButton" Content="⚙️ Settings" 
-                            Style="{StaticResource ModernButton}" 
+                            Margin="5,0">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="🚀" FontSize="16" Foreground="white" Margin="0,0,5,0" VerticalAlignment="Center"/>
+                            <TextBlock Text="Device Controls" Foreground="White" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Name="SettingsButton" 
+                            Style="{StaticResource SecondaryButton}" 
                             Click="SettingsButton_Click"
                             Height="40" 
                             MinWidth="100" 
-                            Margin="5,0"/>
-                    <Button Name="LogoutButton" Content="🚪 Logout" 
+                            Margin="5,0">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="⚙️" FontSize="16" Foreground="white" Margin="0,0,5,0" VerticalAlignment="Center"/>
+                            <TextBlock Text="Settings" Foreground="White" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Name="LogoutButton" 
                             Style="{StaticResource DangerButton}" 
                             Click="LogoutButton_Click"
                             Height="40" 
                             MinWidth="90" 
-                            Margin="5,0"/>
+                            Margin="5,0">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="🚪" FontSize="16" Foreground="white" Margin="0,0,5,0" VerticalAlignment="Center"/>
+                            <TextBlock Text="Logout" Foreground="White" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
                 </StackPanel>
             </Grid>
         </Border>
 
         <!-- Main Dashboard Content -->
-        <Grid Grid.Row="1">
+        <Grid Grid.Row="1" Background="{StaticResource DarkGreyBrush}">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="4*" />
                 <ColumnDefinition Width="220" />
             </Grid.ColumnDefinitions>
-
-            <Grid.RowDefinitions>
-                    <RowDefinition Height="*" />
-                </Grid.RowDefinitions>
 
             <!-- Left Panel - Main Dashboard Sections -->
             <Grid Grid.Column="0" Margin="20,20,15,20">
@@ -262,7 +268,7 @@
                     </Grid.ColumnDefinitions>
                     
                     <!-- Connect Drone Section -->
-                    <Border Grid.Column="0" Background="#2d2d2d" CornerRadius="12" Margin="0,0,8,0" Padding="20">
+                    <Border Grid.Column="0" Style="{StaticResource CardStyle}" Margin="0,0,8,0">
                         <Grid>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto" />
@@ -271,26 +277,31 @@
                             </Grid.RowDefinitions>
                             
                             <TextBlock Grid.Row="0" Text="Connect Devices" 
-                                      Foreground="White" 
+                                      Foreground="{StaticResource TextPrimaryBrush}" 
                                       FontWeight="Bold" 
                                       FontSize="18" 
                                       HorizontalAlignment="Center" 
                                       Margin="0,0,0,15"/>
                             
                             <StackPanel Grid.Row="1" VerticalAlignment="Center">
-                                <Ellipse Width="80" Height="80" Fill="#4CAF50" HorizontalAlignment="Center" Margin="0,0,0,10"/>
-                                <TextBlock Text="🚁" FontSize="32" HorizontalAlignment="Center" Margin="0,-71,0,15" Foreground="White"/>
+                                <Border Width="80" Height="80" 
+                                        Background="{StaticResource SuccessGreenBrush}" 
+                                        CornerRadius="40"
+                                        HorizontalAlignment="Center" 
+                                        Margin="0,0,0,10">
+                                    <TextBlock Text="🚁" FontSize="32" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="White"/>
+                                </Border>
                             </StackPanel>
                             
                             <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center">
                                 <Button x:Name="ConnectDroneButton" 
                                        Content="Connect Devices" 
-                                       Style="{StaticResource DarkButton}" 
+                                       Style="{StaticResource SuccessButton}" 
                                        Click="ConnectDroneButton_Click" 
                                        Margin="0,0,5,0"/>
                                 <Button x:Name="AddNetworkButton" 
                                        Content="Add Network" 
-                                       Style="{StaticResource DarkButton}" 
+                                       Style="{StaticResource SecondaryButton}" 
                                        Click="AddNetworkButton_Click"
                                        Margin="5,0,0,0"/>
                             </StackPanel>
@@ -298,7 +309,7 @@
                     </Border>
                     
                     <!-- Monitor Drone Section -->
-                    <Border Grid.Column="1" Background="#2d2d2d" CornerRadius="12" Margin="8,0,0,0" Padding="20">
+                    <Border Grid.Column="1" Style="{StaticResource CardStyle}" Margin="8,0,0,0">
                         <Grid>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto" />
@@ -306,27 +317,32 @@
                                 <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
                             
-                            <TextBlock Grid.Row="0" Text="Monitor Drone" 
-                                      Foreground="White" 
+                            <TextBlock Grid.Row="0" Text="Monitor Devices" 
+                                      Foreground="{StaticResource TextPrimaryBrush}" 
                                       FontWeight="Bold" 
                                       FontSize="18" 
                                       HorizontalAlignment="Center" 
                                       Margin="0,0,0,15"/>
                             
                             <StackPanel Grid.Row="1" VerticalAlignment="Center">
-                                <Ellipse Width="80" Height="80" Fill="#2563EB" HorizontalAlignment="Center" Margin="0,0,0,10"/>
-                                <TextBlock Text="📈" FontSize="32" HorizontalAlignment="Center" Margin="0,-71,0,15" Foreground="White"/>
+                                <Border Width="80" Height="80" 
+                                        Background="{StaticResource AccentBlueBrush}" 
+                                        CornerRadius="40"
+                                        HorizontalAlignment="Center" 
+                                        Margin="0,0,0,10">
+                                    <TextBlock Text="📈" FontSize="32" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="White"/>
+                                </Border>
                             </StackPanel>
                             
                             <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center">
                                 <Button x:Name="NetworkButton" 
                                        Content="Network" 
-                                       Style="{StaticResource DarkButton}" 
+                                       Style="{StaticResource SecondaryButton}" 
                                        Click="NetworkButton_Click" 
                                        Margin="0,0,5,0"/>
                                 <Button Name="MonitoringButton" 
                                        Content="All Devices" 
-                                       Style="{StaticResource DarkButton}" 
+                                       Style="{StaticResource SecondaryButton}" 
                                        Click="MonitoringButton_Click" 
                                        Margin="5,0,0,0"/>
                             </StackPanel>
@@ -337,7 +353,7 @@
                 <!-- Bottom Row - Simulation -->
                 <Grid Grid.Row="1" Margin="0,10,0,0">
                     <!-- Single Large Simulation Container -->
-                    <Border Background="#2d2d2d" CornerRadius="12" Padding="20">
+                    <Border Style="{StaticResource CardStyle}">
                         <Grid>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="*" />
@@ -351,7 +367,7 @@
                                 </Grid.ColumnDefinitions>
                                 
                                 <!-- 3D Environment Section with Integrated Drone Tracking -->
-                                <Border Grid.Column="0" Background="#1e1e1e" CornerRadius="8" Margin="0,0,8,0" Padding="15">
+                                <Border Grid.Column="0" Background="{StaticResource LightGreyBrush}" CornerRadius="8" Margin="0,0,8,0" Padding="15">
                                     <Grid>
                                         <Grid.RowDefinitions>
                                             <RowDefinition Height="Auto" />
@@ -360,7 +376,7 @@
                                         
                                         <!-- Live Drone Tracking Title -->
                                         <TextBlock Grid.Row="0" Text="Live Drone Tracking" 
-                                                  Foreground="White" 
+                                                  Foreground="{StaticResource TextPrimaryBrush}" 
                                                   FontWeight="Bold" 
                                                   FontSize="18" 
                                                   HorizontalAlignment="Center" 
@@ -372,7 +388,7 @@
                                 </Border>
                                 
                                 <!-- Drone Tracking Section -->
-                                <Border Grid.Column="1" Background="#1e1e1e" CornerRadius="8" Margin="0,0,0,0" Padding="24">
+                                <Border Grid.Column="1" Background="{StaticResource LightGreyBrush}" CornerRadius="8" Margin="0,0,0,0" Padding="24">
                                     <Grid VerticalAlignment="Center">
                                         <Grid.RowDefinitions>
                                             <RowDefinition Height="Auto" />
@@ -381,7 +397,7 @@
                                         </Grid.RowDefinitions>
                                         
                                         <TextBlock Grid.Row="0" Text="Drone Tracking" 
-                                                  Foreground="White" 
+                                                  Foreground="{StaticResource TextPrimaryBrush}" 
                                                   FontWeight="Bold" 
                                                   FontSize="18" 
                                                   HorizontalAlignment="Center" 
@@ -389,7 +405,7 @@
                                         
                                         <StackPanel Grid.Row="1" VerticalAlignment="Center" HorizontalAlignment="Center">
                                             <!-- Improved circular icon design -->
-                                            <Border Background="#9C27B0" 
+                                            <Border Background="{StaticResource PurpleAccentBrush}" 
                                                     Width="80" Height="80" 
                                                     CornerRadius="40" 
                                                     HorizontalAlignment="Center" 
@@ -402,13 +418,13 @@
                                             </Border>
                                             
                                             <TextBlock Text="Real-time Location" 
-                                                      Foreground="#cccccc" 
+                                                      Foreground="{StaticResource TextSecondaryBrush}" 
                                                       FontSize="12" 
                                                       HorizontalAlignment="Center" 
                                                       TextAlignment="Center"
                                                       Margin="0,0,0,6"/>
                                             <TextBlock Text="Monitoring Active" 
-                                                      Foreground="#9C27B0" 
+                                                      Foreground="{StaticResource SuccessGreenBrush}" 
                                                       FontSize="11" 
                                                       FontWeight="Bold" 
                                                       HorizontalAlignment="Center"
@@ -417,7 +433,7 @@
                                         
                                         <Button Grid.Row="2" Name="DroneTrackingButton" 
                                                Content="🗺️ Open Map View" 
-                                               Style="{StaticResource DarkButton}" 
+                                               Style="{StaticResource PrimaryButton}" 
                                                Click="DroneTrackingButton_Click"
                                                HorizontalAlignment="Center"
                                                Margin="0,12,0,0"
@@ -433,8 +449,8 @@
                 </Grid>
             </Grid>
 
-            <!-- Right Panel - Active Drones Network (Attached to Navbar) -->
-            <Border Grid.Column="1" Background="#2d2d2d" Padding="20" Margin="0,0,0,0">
+            <!-- Right Panel - Active Drones Network -->
+            <Border Grid.Column="1" Background="{StaticResource MediumGreyBrush}" Padding="20" Margin="0,0,0,0">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
@@ -442,55 +458,53 @@
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
                     
-
-                    
                     <!-- Live Drone Tracking Status -->
                     <StackPanel Grid.Row="0" Margin="0,0,0,15">
-                        <TextBlock Text="Live Tracking Status" Foreground="#ccc" FontSize="14" FontWeight="Bold" Margin="0,0,0,10"/>
+                        <TextBlock Text="Live Tracking Status" Foreground="{StaticResource TextSecondaryBrush}" FontSize="14" FontWeight="Bold" Margin="0,0,0,10"/>
                         
                         <!-- Dynamic Active Drones Status -->
-                        <Border Background="#333" CornerRadius="6" Padding="10" Margin="0,5"
+                        <Border Background="{StaticResource LightGreyBrush}" CornerRadius="8" Padding="12" Margin="0,5"
                                 MouseLeftButtonUp="ActiveDronesCard_Click" Cursor="Hand">
                             <StackPanel>
                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,5">
-                                    <TextBlock Text="🚁" FontSize="16" Margin="0,0,5,0" Foreground="#4CAF50"/>
-                                    <TextBlock Text="Active Drones" Foreground="White" FontSize="12" FontWeight="Bold"/>
+                                    <TextBlock Text="🚁" FontSize="16" Margin="0,0,5,0" Foreground="{StaticResource SuccessGreenBrush}"/>
+                                    <TextBlock Text="Active Drones" Foreground="{StaticResource TextPrimaryBrush}" FontSize="12" FontWeight="Bold"/>
                                 </StackPanel>
                                 <!-- Active Drones count with colored parts -->
                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                  <TextBlock Text="{Binding NetworkActiveDronesCount}" Foreground="#4CAF50" FontSize="20" FontWeight="Bold"/>
-                                  <TextBlock Text="/" Foreground="White" FontSize="20" FontWeight="Bold"/>
-                                  <TextBlock Text="{Binding TotalDronesCount}" Foreground="#FF4444" FontSize="20" FontWeight="Bold"/>
+                                  <TextBlock Text="{Binding NetworkActiveDronesCount}" Foreground="{StaticResource SuccessGreenBrush}" FontSize="20" FontWeight="Bold"/>
+                                  <TextBlock Text="/" Foreground="{StaticResource TextPrimaryBrush}" FontSize="20" FontWeight="Bold"/>
+                                  <TextBlock Text="{Binding TotalDronesCount}" Foreground="{StaticResource ErrorRedBrush}" FontSize="20" FontWeight="Bold"/>
                                 </StackPanel>
                             </StackPanel>
                         </Border>
 
                          <!-- Dynamic Active CCTVs Status -->
-                         <Border Background="#333" CornerRadius="6" Padding="10" Margin="0,5"
+                         <Border Background="{StaticResource LightGreyBrush}" CornerRadius="8" Padding="12" Margin="0,5"
                                  MouseLeftButtonUp="ActiveCctvsCard_Click" Cursor="Hand">
                              <StackPanel>
                                  <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,5">
-                                     <TextBlock Text="📷" FontSize="16" Margin="0,0,5,0" Foreground="#FF9800"/>
-                                     <TextBlock Text="Active CCTVs" Foreground="White" FontSize="12" FontWeight="Bold"/>
+                                     <TextBlock Text="📷" FontSize="16" Margin="0,0,5,0" Foreground="{StaticResource WarningOrangeBrush}"/>
+                                     <TextBlock Text="Active CCTVs" Foreground="{StaticResource TextPrimaryBrush}" FontSize="12" FontWeight="Bold"/>
                                  </StackPanel>
                                  <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                     <TextBlock Text="{Binding NetworkActiveCctvsCount}" Foreground="#4CAF50" FontSize="20" FontWeight="Bold"/>
-                                     <TextBlock Text="/" Foreground="White" FontSize="20" FontWeight="Bold"/>
-                                     <TextBlock Text="{Binding TotalCctvsCount}" Foreground="#FF4444" FontSize="20" FontWeight="Bold"/>
+                                     <TextBlock Text="{Binding NetworkActiveCctvsCount}" Foreground="{StaticResource SuccessGreenBrush}" FontSize="20" FontWeight="Bold"/>
+                                     <TextBlock Text="/" Foreground="{StaticResource TextPrimaryBrush}" FontSize="20" FontWeight="Bold"/>
+                                     <TextBlock Text="{Binding TotalCctvsCount}" Foreground="{StaticResource ErrorRedBrush}" FontSize="20" FontWeight="Bold"/>
                                  </StackPanel>
                              </StackPanel>
                          </Border>
                         
                         <!-- Active Alerts Status -->
-                        <Border Background="#4a1a1a" CornerRadius="6" Padding="10" Margin="0,5"
+                        <Border Background="#4a1a1a" CornerRadius="8" Padding="12" Margin="0,5"
                                 MouseLeftButtonUp="ActiveAlertsCard_Click" Cursor="Hand">
                             <StackPanel>
                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,5">
-                                    <TextBlock Text="🚨" FontSize="16" Margin="0,0,5,0" Foreground="#ff4444"/>
-                                    <TextBlock Text="Active Alerts" Foreground="White" FontSize="12" FontWeight="Bold"/>
+                                    <TextBlock Text="🚨" FontSize="16" Margin="0,0,5,0" Foreground="{StaticResource ErrorRedBrush}"/>
+                                    <TextBlock Text="Active Alerts" Foreground="{StaticResource TextPrimaryBrush}" FontSize="12" FontWeight="Bold"/>
                                 </StackPanel>
                                 <TextBlock Text="{Binding ActiveAlertsCount}" 
-                                          Foreground="#ff4444" 
+                                          Foreground="{StaticResource ErrorRedBrush}" 
                                           FontSize="20" 
                                           FontWeight="Bold" 
                                           HorizontalAlignment="Center"/>
@@ -498,18 +512,18 @@
                         </Border>
                         
                         <!-- Networks Section -->
-                        <Border Background="#333" CornerRadius="6" Padding="10" Margin="0,15,0,5">
+                        <Border Background="{StaticResource LightGreyBrush}" CornerRadius="8" Padding="12" Margin="0,15,0,5">
                             <ScrollViewer Style="{StaticResource HiddenSmoothScrollViewer}" MaxHeight="600">
                             <StackPanel>
-                                    <TextBlock Text="NETWORKS" Foreground="#ccc" FontSize="12" FontWeight="Bold" Margin="0,0,0,8"/>
+                                    <TextBlock Text="NETWORKS" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" FontWeight="Bold" Margin="0,0,0,8"/>
                                     <ItemsControl ItemsSource="{Binding Networks}">
                                         <ItemsControl.ItemTemplate>
                                             <DataTemplate>
-                                                <Expander Background="#2a2a2a" 
-                                                          BorderBrush="#444" 
+                                                <Expander Background="{StaticResource MediumGreyBrush}" 
+                                                          BorderBrush="#555555" 
                                                           BorderThickness="1"
-                                                          Margin="0,2"
-                                                          Foreground="White"
+                                                          Margin="0,4"
+                                                          Foreground="{StaticResource TextPrimaryBrush}"
                                                           FontSize="11"
                                                           FontWeight="Bold"
                                                           IsExpanded="True">
@@ -517,9 +531,9 @@
                                                         <DataTemplate>
                                                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                                                 <!-- Network Icon -->
-                                                                <TextBlock Text="🌐" FontSize="14" Foreground="#4CAF50" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                                                <TextBlock Text="🌐" FontSize="14" Foreground="{StaticResource SuccessGreenBrush}" VerticalAlignment="Center" Margin="0,0,8,0"/>
                                                                 <!-- Network Name -->
-                                                                <TextBlock Text="{Binding Name}" Foreground="White" FontSize="12" FontWeight="Bold" VerticalAlignment="Center"/>
+                                                                <TextBlock Text="{Binding Name}" Foreground="{StaticResource TextPrimaryBrush}" FontSize="12" FontWeight="Bold" VerticalAlignment="Center"/>
                                                             </StackPanel>
                                                         </DataTemplate>
                                                     </Expander.HeaderTemplate>
@@ -529,7 +543,7 @@
                                                         <ItemsControl ItemsSource="{Binding Drones}">
                                                             <ItemsControl.ItemTemplate>
                                                                 <DataTemplate>
-                                                                    <Border Background="#1a1a1a" CornerRadius="3" Padding="6" Margin="0,1">
+                                                                    <Border Background="{StaticResource DarkGreyBrush}" CornerRadius="6" Padding="8" Margin="0,2">
                                                                         <Grid>
                                                                             <Grid.ColumnDefinitions>
                                                                                 <ColumnDefinition Width="Auto"/>
@@ -537,14 +551,14 @@
                                                                                 <ColumnDefinition Width="Auto"/>
                                                                             </Grid.ColumnDefinitions>
                                                                             <!-- Drone Icon -->
-                                                                            <TextBlock Grid.Column="0" Text="🚁" FontSize="12" Foreground="#4CAF50" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                                                            <TextBlock Grid.Column="0" Text="🚁" FontSize="12" Foreground="{StaticResource SuccessGreenBrush}" VerticalAlignment="Center" Margin="0,0,6,0"/>
                                                                             <!-- Drone Info -->
                                                                             <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                                                                <TextBlock Text="{Binding Name}" Foreground="White" FontSize="10" FontWeight="Bold"/>
-                                                                                <TextBlock Text="{Binding StatusText}" Foreground="#ccc" FontSize="8"/>
+                                                                                <TextBlock Text="{Binding Name}" Foreground="{StaticResource TextPrimaryBrush}" FontSize="10" FontWeight="Bold"/>
+                                                                                <TextBlock Text="{Binding StatusText}" Foreground="{StaticResource TextTertiaryBrush}" FontSize="8"/>
                                                                             </StackPanel>
                                                                             <!-- Status Indicator -->
-                                                                            <Ellipse Grid.Column="2" Width="4" Height="4" Fill="{Binding StatusText, Converter={StaticResource ActiveStatusDotConverter}}" VerticalAlignment="Center"/>
+                                                                            <Ellipse Grid.Column="2" Width="6" Height="6" Fill="{Binding StatusText, Converter={StaticResource ActiveStatusDotConverter}}" VerticalAlignment="Center"/>
                                                                         </Grid>
                                                                     </Border>
                                                                 </DataTemplate>
@@ -555,7 +569,7 @@
                                                         <ItemsControl ItemsSource="{Binding Cctvs}" Margin="0,6,0,0">
                                                             <ItemsControl.ItemTemplate>
                                                                 <DataTemplate>
-                                                                    <Border Background="#1a1a1a" CornerRadius="3" Padding="6" Margin="0,1">
+                                                                    <Border Background="{StaticResource DarkGreyBrush}" CornerRadius="6" Padding="8" Margin="0,2">
                                                                         <Grid>
                                                                             <Grid.ColumnDefinitions>
                                                                                 <ColumnDefinition Width="Auto"/>
@@ -563,14 +577,14 @@
                                                                                 <ColumnDefinition Width="Auto"/>
                                                                             </Grid.ColumnDefinitions>
                                                                             <!-- CCTV Icon -->
-                                                                            <TextBlock Grid.Column="0" Text="📷" FontSize="12" Foreground="#FF9800" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                                                            <TextBlock Grid.Column="0" Text="📷" FontSize="12" Foreground="{StaticResource WarningOrangeBrush}" VerticalAlignment="Center" Margin="0,0,6,0"/>
                                                                             <!-- CCTV Info -->
                                                                             <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                                                                <TextBlock Text="{Binding Name}" Foreground="White" FontSize="10" FontWeight="Bold"/>
-                                                                                <TextBlock Text="CCTV" Foreground="#ccc" FontSize="8"/>
+                                                                                <TextBlock Text="{Binding Name}" Foreground="{StaticResource TextPrimaryBrush}" FontSize="10" FontWeight="Bold"/>
+                                                                                <TextBlock Text="CCTV" Foreground="{StaticResource TextTertiaryBrush}" FontSize="8"/>
                                                                             </StackPanel>
                                                                             <!-- Status Dot -->
-                                                                            <Ellipse Grid.Column="2" Width="4" Height="4" Fill="{Binding IsOnline, Converter={StaticResource BoolStatusDotConverter}}" VerticalAlignment="Center"/>
+                                                                            <Ellipse Grid.Column="2" Width="6" Height="6" Fill="{Binding IsOnline, Converter={StaticResource BoolStatusDotConverter}}" VerticalAlignment="Center"/>
                                                                         </Grid>
                                                                     </Border>
                                                                 </DataTemplate>
@@ -588,15 +602,15 @@
                     
                     <!-- System Status at Bottom -->
                     <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,10">
-                            <TextBlock Text="System Status:" Foreground="#ccc" FontSize="12" Margin="0,0,8,0"/>
-                        <TextBlock Text="System Ready" Foreground="#4CAF50" FontSize="12" FontWeight="Bold"/>
+                            <TextBlock Text="System Status:" Foreground="{StaticResource TextTertiaryBrush}" FontSize="12" Margin="0,0,8,0"/>
+                        <TextBlock Text="System Ready" Foreground="{StaticResource SuccessGreenBrush}" FontSize="12" FontWeight="Bold"/>
                     </StackPanel>
                 </Grid>
             </Border>
         </Grid>
 
         <!-- Footer Status Bar -->
-        <Border Grid.Row="2" Background="#2d2d2d">
+        <Border Grid.Row="2" Background="{StaticResource MediumGreyBrush}">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
@@ -605,21 +619,20 @@
                 
                 <TextBlock x:Name="StatusBarText" 
                           Text="{Binding SystemStatusMessage}" 
-                          Foreground="#00ff00" 
+                          Foreground="{StaticResource SuccessGreenBrush}" 
                           VerticalAlignment="Center" 
                           Margin="15,0"/>
                 
                 <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="15,0">
-                    <TextBlock Text="AI Detection:" Foreground="White" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                    <TextBlock Text="AI Detection:" Foreground="{StaticResource TextSecondaryBrush}" VerticalAlignment="Center" Margin="0,0,5,0"/>
                     <Ellipse Width="8" Height="8" Fill="{Binding AiStatusColor}" VerticalAlignment="Center" Margin="0,0,15,0"/>
                     <TextBlock x:Name="TimeDisplay" 
                               Text="{Binding CurrentTime}" 
-                              Foreground="White" 
+                              Foreground="{StaticResource TextSecondaryBrush}" 
                               VerticalAlignment="Center" 
                               FontFamily="Consolas"/>
                 </StackPanel>
             </Grid>
         </Border>
     </Grid>
-
 </Window>
