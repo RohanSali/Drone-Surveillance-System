@@ -16,7 +16,6 @@ namespace DroneSurveillanceSystem.Views
             InitializeComponent();
             _surveillanceService = new SurveillanceService();
             LoadCurrentSettings();
-            SetupEventHandlers();
         }
 
         private void LoadCurrentSettings()
@@ -27,55 +26,11 @@ namespace DroneSurveillanceSystem.Views
 
             // Load saved settings or use defaults
             // In a real application, these would be loaded from a settings file
-            AiDetectionToggle.IsChecked = true;
-            VoiceAlertsToggle.IsChecked = false;
-            SensitivitySlider.Value = 5;
-            DefaultCameraCombo.SelectedIndex = 3; // 360° View
-            FrameRateCombo.SelectedIndex = 2; // 30 FPS
             DroneIdTextBox.Text = "Drone-001";
-            AltitudeSlider.Value = 50;
-            AutoSaveToggle.IsChecked = true;
-            RetentionCombo.SelectedIndex = 1; // 30 days
 
-            UpdateSliderLabels();
         }
 
-        private void SetupEventHandlers()
-        {
-            SensitivitySlider.ValueChanged += SensitivitySlider_ValueChanged;
-            AltitudeSlider.ValueChanged += AltitudeSlider_ValueChanged;
-        }
-
-        private void SensitivitySlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
-        {
-            if (SensitivityValue != null)
-            {
-                string level = e.NewValue switch
-                {
-                    <= 2 => "Very Low",
-                    <= 4 => "Low",
-                    <= 6 => "Medium",
-                    <= 8 => "High",
-                    _ => "Very High"
-                };
-                SensitivityValue.Text = $"{level} ({(int)e.NewValue})";
-            }
-        }
-
-        private void AltitudeSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
-        {
-            if (AltitudeValue != null)
-            {
-                AltitudeValue.Text = $"{(int)e.NewValue} meters";
-            }
-        }
-
-        private void UpdateSliderLabels()
-        {
-            SensitivitySlider_ValueChanged(SensitivitySlider, new RoutedPropertyChangedEventArgs<double>(0, SensitivitySlider.Value));
-            AltitudeSlider_ValueChanged(AltitudeSlider, new RoutedPropertyChangedEventArgs<double>(0, AltitudeSlider.Value));
-        }
-
+    
         private async void ExportDataButton_Click(object sender, RoutedEventArgs e)
         {
             try
@@ -176,15 +131,7 @@ namespace DroneSurveillanceSystem.Views
             if (result == MessageBoxResult.Yes)
             {
                 // Reset all controls to default values
-                AiDetectionToggle.IsChecked = true;
-                VoiceAlertsToggle.IsChecked = false;
-                SensitivitySlider.Value = 5;
-                DefaultCameraCombo.SelectedIndex = 3; // 360° View
-                FrameRateCombo.SelectedIndex = 2; // 30 FPS
                 DroneIdTextBox.Text = "Drone-001";
-                AltitudeSlider.Value = 50;
-                AutoSaveToggle.IsChecked = true;
-                RetentionCombo.SelectedIndex = 1; // 30 days
 
                 MessageBox.Show("Settings have been reset to defaults.", 
                               "Settings Reset", 
@@ -241,15 +188,7 @@ namespace DroneSurveillanceSystem.Views
                 
                 var settings = new
                 {
-                    AiDetectionEnabled = AiDetectionToggle.IsChecked ?? true,
-                    VoiceAlertsEnabled = VoiceAlertsToggle.IsChecked ?? false,
-                    DetectionSensitivity = (int)SensitivitySlider.Value,
-                    DefaultCamera = ((ComboBoxItem)DefaultCameraCombo.SelectedItem)?.Content?.ToString() ?? "360° View",
-                    FrameRate = ((ComboBoxItem)FrameRateCombo.SelectedItem)?.Content?.ToString() ?? "30 FPS",
                     DroneId = DroneIdTextBox.Text,
-                    FlightAltitude = (int)AltitudeSlider.Value,
-                    AutoSave = AutoSaveToggle.IsChecked ?? true,
-                    LogRetention = ((ComboBoxItem)RetentionCombo.SelectedItem)?.Content?.ToString() ?? "30 days",
                     LastUpdated = DateTime.Now
                 };
 

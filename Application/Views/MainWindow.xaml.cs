@@ -18,6 +18,8 @@ using DroneSurveillanceSystem.Services;
 using DroneSurveillanceSystem.Views;
 using Microsoft.Win32;
 using System.Linq;
+using System.Windows.Controls; 
+using System.Windows.Input;  
 
 namespace DroneSurveillanceSystem.Views
 {
@@ -207,7 +209,62 @@ namespace DroneSurveillanceSystem.Views
 
         // CCTV aggregates
         public int NetworkActiveCctvsCount => DeviceDataManager.GetAllCctvs().Count(c => c.IsConnected);
+        // Window control button handlers
+        private void MinimizeButton_Click(object sender, RoutedEventArgs e)
+        {
+            WindowState = WindowState.Minimized;
+        }
 
+         private void SettingsButton_Click(object sender, RoutedEventArgs e)
+        {
+            var settingsWindow = new SettingsWindow();
+            settingsWindow.Owner = this;
+            settingsWindow.ShowDialog();
+        }
+
+        private void SignOutButton_Click(object sender, RoutedEventArgs e)
+        {
+            // Handle sign out button click
+        }
+        private void MaximizeButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (WindowState == WindowState.Maximized)
+            {
+                WindowState = WindowState.Normal;
+                MaximizeIcon.Text = "□"; // Square icon for normal state
+            }
+            else
+            {
+                WindowState = WindowState.Maximized;
+                MaximizeIcon.Text = "❐"; // Two squares icon for maximized state
+            }
+        }
+
+        private void CloseButton_Click(object sender, RoutedEventArgs e)
+        {
+            Close();
+        }
+
+        // Optional: Add drag functionality to move the window
+        protected override void OnMouseLeftButtonDown(MouseButtonEventArgs e)
+        {
+            base.OnMouseLeftButtonDown(e);
+            
+            // Drag window when clicking on the header area
+            if (e.LeftButton == MouseButtonState.Pressed && e.OriginalSource is FrameworkElement element)
+            {
+                // Check if we're clicking on the header area (not on buttons)
+                if (element.Name != "MinimizeButton" && 
+                    element.Name != "MaximizeButton" && 
+                    element.Name != "CloseButton" &&
+                    !(element is TextBlock && (element.Parent as Button)?.Name == "MinimizeButton") &&
+                    !(element is TextBlock && (element.Parent as Button)?.Name == "MaximizeButton") &&
+                    !(element is TextBlock && (element.Parent as Button)?.Name == "CloseButton"))
+                {
+                    DragMove();
+                }
+            }
+        }
         public int TotalCctvsCount => DeviceDataManager.GetAllCctvs().Count;
         
         public string ActiveDronesDisplayText => $"{NetworkActiveDronesCount}/{TotalDronesCount}";
@@ -222,14 +279,28 @@ namespace DroneSurveillanceSystem.Views
 
         public MainWindow()
         {
+            {
+                // Set window properties before initialization
+                this.WindowState = WindowState.Maximized;
+                this.WindowStyle = WindowStyle.None;
+                this.ResizeMode = ResizeMode.CanResizeWithGrip;
+                
+                // Prevent covering the taskbar
+                this.MaxHeight = SystemParameters.MaximizedPrimaryScreenHeight;
+                this.MaxWidth = SystemParameters.MaximizedPrimaryScreenWidth;
+                
+                InitializeComponent();
+                
+                // Rest of your constructor code...
+            }
             try
             {
                 Console.WriteLine("MainWindow constructor started");
-                
+
                 // CRITICAL: Initialize XAML components first
                 InitializeComponent();
                 Console.WriteLine("InitializeComponent completed");
-                
+
                 DataContext = this;
                 Console.WriteLine("DataContext set");
 
@@ -240,14 +311,14 @@ namespace DroneSurveillanceSystem.Views
 
                 // Initialize basic services to prevent null reference exceptions
                 Console.WriteLine("Initializing basic services...");
-                try 
+                try
                 {
                     _surveillanceService = new SurveillanceService();
                     Console.WriteLine("SurveillanceService initialized");
-                    
+
                     _droneTrackingService = new DroneTrackingService();
                     Console.WriteLine("DroneTrackingService initialized");
-                    
+
                     _networkService = new NetworkService();
                     Console.WriteLine("NetworkService initialized");
                 }
@@ -257,7 +328,7 @@ namespace DroneSurveillanceSystem.Views
                     // Create minimal fallback services
                     _networkService = new NetworkService();
                 }
-                
+
                 // Subscribe to drone tracking events (only if service is available)
                 if (_droneTrackingService != null)
                 {
@@ -265,7 +336,7 @@ namespace DroneSurveillanceSystem.Views
                     _droneTrackingService.TrackingAlert += OnDroneAlert;
                     Console.WriteLine("Event subscriptions set");
                 }
-                
+
                 // Subscribe to AlertManager's ActiveAlerts collection changes
                 AlertManager.Instance.ActiveAlerts.CollectionChanged += (s, e) =>
                 {
@@ -274,7 +345,7 @@ namespace DroneSurveillanceSystem.Views
                         OnPropertyChanged(nameof(ActiveAlertsCount));
                     });
                 };
-                
+
                 // Subscribe to NetworkService's Networks collection changes
                 if (_networkService != null)
                 {
@@ -287,7 +358,7 @@ namespace DroneSurveillanceSystem.Views
                         OnPropertyChanged(nameof(TotalCctvsCount));
                         OnPropertyChanged(nameof(ActiveDronesDisplayText));
                     };
-                    
+
                     // Manually trigger property change after initialization
                     OnPropertyChanged(nameof(Networks));
                     OnPropertyChanged(nameof(NetworkActiveDronesCount));
@@ -316,13 +387,13 @@ namespace DroneSurveillanceSystem.Views
                         OnPropertyChanged(nameof(TotalCctvsCount));
                     });
                 };
-                
+
                 // Initialize some drones for demonstration (only if service is available)
                 if (_droneTrackingService != null)
                 {
                     Console.WriteLine("Initializing demo data...");
                     _ = InitializeDemoData();
-                    
+
                     // Start drone tracking
                     _droneTrackingService.StartTracking();
                 }
@@ -332,17 +403,17 @@ namespace DroneSurveillanceSystem.Views
 
                 // Load initial scene
                 LoadDefaultScene();
-                
+
                 // Add some initial log entries
                 AddInitialLogEntries();
-                
+
                 Console.WriteLine("MainWindow constructor completed successfully");
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Error in MainWindow constructor: {ex.Message}");
                 Console.WriteLine($"StackTrace: {ex.StackTrace}");
-                MessageBox.Show($"Error initializing MainWindow: {ex.Message}", "Initialization Error", 
+                MessageBox.Show($"Error initializing MainWindow: {ex.Message}", "Initialization Error",
                     MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
@@ -553,12 +624,6 @@ namespace DroneSurveillanceSystem.Views
             }
         }
 
-        private void SettingsButton_Click(object sender, RoutedEventArgs e)
-        {
-            var settingsWindow = new SettingsWindow();
-            settingsWindow.Owner = this;
-            settingsWindow.ShowDialog();
-        }
 
         private void DroneTrackingButton_Click(object sender, RoutedEventArgs e)
         {

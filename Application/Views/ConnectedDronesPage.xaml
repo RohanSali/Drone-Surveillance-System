@@ -16,9 +16,62 @@
     <Window.Resources>
         <local:DroneColorConverter x:Key="DroneColorConverter"/>
         
-        <Style x:Key="DarkButton" TargetType="Button" BasedOn="{StaticResource ModernButton}">
+        <!-- Modern Card Style -->
+        <Style x:Key="ModernCard" TargetType="Border">
+            <Setter Property="Background" Value="#2d2d2d"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Padding" Value="15"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderBrush" Value="#404040"/>
         </Style>
         
+        <!-- Section Header Style -->
+        <Style x:Key="SectionHeader" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="Margin" Value="0,0,0,15"/>
+        </Style>
+        
+        <!-- Device Status Indicator Style -->
+        <Style x:Key="StatusIndicator" TargetType="Border">
+            <Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="Padding" Value="6,2"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Margin" Value="0,0,10,0"/>
+        </Style>
+        
+        <!-- Dark Button Style -->
+        <Style x:Key="DarkButton" TargetType="Button" BasedOn="{StaticResource ModernButton}">
+            <Setter Property="Background" Value="#3a3a3a"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="12,8"/>
+            <Setter Property="Margin" Value="0,0,10,0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" 
+                                CornerRadius="4"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                BorderBrush="{TemplateBinding BorderBrush}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#4a4a4a"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter Property="Background" Value="#2a2a2a"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        
+        <!-- Red Back Button Style -->
         <Style x:Key="RedBackButton" TargetType="Button">
             <Setter Property="Background" Value="#FFDC3545"/>
             <Setter Property="Foreground" Value="White"/>
@@ -54,12 +107,62 @@
             </Setter>
         </Style>
         
+        <!-- Drone ListBox Item Style -->
         <Style x:Key="DroneListBoxItem" TargetType="ListBoxItem" BasedOn="{StaticResource ModernListBoxItem}">
+            <Setter Property="Margin" Value="0,0,0,8"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ListBoxItem">
+                        <Border x:Name="Bd" 
+                                Background="{TemplateBinding Background}" 
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="6"
+                                Padding="12">
+                            <ContentPresenter />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="#2d2d2d"/>
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="#FF00BCD4"/>
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="#253c3f"/>
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="#FF00BCD4"/>
+                                <Setter TargetName="Bd" Property="BorderThickness" Value="1"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        
+        <!-- Delete Button Style -->
+        <Style x:Key="DeleteButton" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="#aaa"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Width" Value="24"/>
+            <Setter Property="Height" Value="24"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" 
+                                CornerRadius="12"
+                                BorderThickness="0">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
     </Window.Resources>
 
     <Grid>
-            <Grid.RowDefinitions>
+        <Grid.RowDefinitions>
             <RowDefinition Height="110" />
             <RowDefinition Height="*" />
             <RowDefinition Height="60" />
@@ -74,12 +177,22 @@
                 </Grid.ColumnDefinitions>
                 
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="20,0">
-                    <TextBlock Text="🔌" FontSize="50" VerticalAlignment="Center" Margin="0,0,15,0" Foreground="#FF00BCD4"/>
-                    <TextBlock Text="USB Connected Devices" 
-                              Foreground="White" 
-                              FontWeight="Bold" 
-                              FontSize="24" 
-                              VerticalAlignment="Center"/>
+                    <Viewbox Width="40" Height="40" Margin="0,0,15,0">
+                        <Canvas Width="24" Height="24">
+                            <Path Fill="#FF00BCD4" Data="M7,2C5.9,2 5,2.9 5,4V6H3V12H9V6H7V4H12V6H10V12H16V6H14V4H19V6H17V12H21V14H17V16H19V20H14V18H10V20H5V16H7V14H3V12H7V6H5V4C5,2.9 5.9,2 7,2M9,14V16H15V14H9Z"/>
+                        </Canvas>
+                    </Viewbox>
+                    <StackPanel>
+                        <TextBlock Text="USB CONNECTED DEVICES" 
+                                  Foreground="#ccc" 
+                                  FontSize="12"
+                                  Margin="0,0,0,2"/>
+                        <TextBlock Text="Device Management &amp; Module Installation" 
+                                  Foreground="White" 
+                                  FontWeight="Bold" 
+                                  FontSize="20" 
+                                  VerticalAlignment="Center"/>
+                    </StackPanel>
                 </StackPanel>
                 
                 <Button Grid.Column="1" Name="BackButton" Content="← Back to Main" 
@@ -97,32 +210,38 @@
             </Grid.RowDefinitions>
             
             <!-- Info Section -->
-            <Border Grid.Row="0" Background="#2d2d2d" CornerRadius="8" Padding="15" Margin="0,0,0,15">
-                <StackPanel>
-                    <TextBlock Text="📋 Available USB Connected Devices" 
-                              FontWeight="Bold" 
-                              FontSize="16" 
-                              Margin="0,0,0,10">
-                        <TextBlock.Foreground>
-                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                                <GradientStop Color="#FF4CAF50" Offset="0"/>
-                                <GradientStop Color="#FF8BC34A" Offset="1"/>
-                            </LinearGradientBrush>
-                        </TextBlock.Foreground>
-                    </TextBlock>
-                    <TextBlock Text="Select a drone or CCTV to manage via USB connection" 
-                              Foreground="#ccc" 
-                              FontSize="12"/>
-
+            <Border Style="{StaticResource ModernCard}" Grid.Row="0" Margin="0,0,0,15">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    
+                    <StackPanel>
+                        <TextBlock Text="📋 Available USB Connected Devices" 
+                                  Style="{StaticResource SectionHeader}">
+                            <TextBlock.Foreground>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                    <GradientStop Color="#FF4CAF50" Offset="0"/>
+                                    <GradientStop Color="#FF8BC34A" Offset="1"/>
+                                </LinearGradientBrush>
+                            </TextBlock.Foreground>
+                        </TextBlock>
+                        <TextBlock Text="Select a drone or CCTV to manage via USB connection. Install modules, configure settings, and monitor device status." 
+                                  Foreground="#ccc" 
+                                  FontSize="12"
+                                  TextWrapping="Wrap"
+                                  MaxWidth="700"/>
+                    </StackPanel>
+                    
                     <!-- Quick Actions -->
-                    <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
                         <Button x:Name="AddDummyDroneButton"
                                 Content="➕ Add Dummy Drone"
                                 Style="{StaticResource DarkButton}"
                                 Click="AddDummyDroneButton_Click"
                                 MinWidth="170"
-                                Height="36"
-                                Margin="0,0,10,0"/>
+                                Height="36"/>
                         <Button x:Name="AddDummyCctvButton"
                                 Content="➕ Add Dummy CCTV"
                                 Style="{StaticResource DarkButton}"
@@ -130,156 +249,203 @@
                                 MinWidth="170"
                                 Height="36"/>
                     </StackPanel>
-                </StackPanel>
+                </Grid>
             </Border>
             
             <!-- Devices Lists -->
-            <Border Grid.Row="1" Background="#1a1a1a" CornerRadius="8" Padding="15">
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="*" />
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="*" />
-                    </Grid.RowDefinitions>
+            <Grid Grid.Row="1">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="10"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                
+                <!-- Drones Panel -->
+                <Border Style="{StaticResource ModernCard}" Grid.Column="0">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
 
-                    <TextBlock Grid.Row="0" Text="Connected Drones:" 
-                              Foreground="White" 
-                              FontWeight="Bold" 
-                              FontSize="14" 
-                              Margin="0,0,0,15"/>
+                        <StackPanel Orientation="Horizontal" Grid.Row="0">
+                            <TextBlock Text="🚁 Connected Drones" 
+                                      Style="{StaticResource SectionHeader}" Margin="0,0,10,15"/>
+                            <Border Style="{StaticResource StatusIndicator}" Background="#253c3f">
+                                <TextBlock Text="{Binding Items.Count, ElementName=DronesList}" 
+                                          Foreground="#FF00BCD4" 
+                                          FontSize="10"
+                                          FontWeight="Bold"/>
+                            </Border>
+                        </StackPanel>
 
-                    <ListBox Grid.Row="1" x:Name="DronesList" 
-                            Background="Transparent" 
-                            BorderThickness="0"
-                            ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                            ScrollViewer.VerticalScrollBarVisibility="Hidden"
-                            SelectionChanged="DronesList_SelectionChanged">
-                        <ListBox.ItemContainerStyle>
-                            <Style TargetType="ListBoxItem" BasedOn="{StaticResource DroneListBoxItem}">
-                                <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
-                            </Style>
-                        </ListBox.ItemContainerStyle>
-                        
-                        <ListBox.ItemTemplate>
-                            <DataTemplate>
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto" />
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="Auto" />
-                                    </Grid.ColumnDefinitions>
-                                    
-                                    <Border Grid.Column="0" Background="#1a1a1a" CornerRadius="8" Padding="8" Margin="0,0,15,0">
-                                        <TextBlock Text="🚁" FontSize="24" Foreground="{Binding Name, Converter={StaticResource DroneColorConverter}}"/>
-                                    </Border>
-                                    
-                                    <StackPanel Grid.Column="1">
-                                        <TextBlock Text="{Binding Name}" 
-                                                  Foreground="White" 
-                                                  FontWeight="Bold" 
-                                                  FontSize="14"/>
-                                        <TextBlock Text="{Binding Status}" 
-                                                  Foreground="#4CAF50" 
-                                                  FontSize="12"/>
-                                        <TextBlock Text="{Binding UsbPort}" 
-                                                  Foreground="#ccc" 
-                                                  FontSize="10"/>
-                                        <TextBlock Text="{Binding DroneType}" 
-                                                  Foreground="#FF9800" 
-                                                  FontSize="10"/>
-                                    </StackPanel>
-                                    
-                                    <StackPanel Grid.Column="2" Orientation="Horizontal">
-                                        <Ellipse Width="12" Height="12" Fill="#4CAF50" Margin="0,0,5,0"/>
-                                        <TextBlock Text="USB Connected" 
-                                                  Foreground="#4CAF50" 
-                                                  FontSize="10" 
-                                                  VerticalAlignment="Center"/>
-                                        <Button Content="✖"
-                                                Background="#DC3545"
-                                                Foreground="White"
-                                                BorderThickness="0"
-                                                Width="18" Height="18"
-                                                Padding="0"
-                                                Margin="8,0,0,0"
-                                                Click="DeleteDrone_Click"
-                                                Tag="{Binding}"/>
-                                    </StackPanel>
-                                </Grid>
-                            </DataTemplate>
-                        </ListBox.ItemTemplate>
-                        
+                        <ListBox Grid.Row="1" x:Name="DronesList" 
+                                Background="Transparent" 
+                                BorderThickness="0"
+                                ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                SelectionChanged="DronesList_SelectionChanged">
+                            <ListBox.ItemContainerStyle>
+                                <Style TargetType="ListBoxItem" BasedOn="{StaticResource DroneListBoxItem}">
+                                    <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                </Style>
+                            </ListBox.ItemContainerStyle>
+                            
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        
+                                        <Border Grid.Column="0" Background="#1a1a1a" CornerRadius="8" Padding="8" Margin="0,0,15,0">
+                                            <Viewbox Width="24" Height="24">
+                                                <Canvas Width="24" Height="24">
+                                                    <Path Fill="{Binding Name, Converter={StaticResource DroneColorConverter}}" Data="M12,3L7,9H10V15H14V9H17L12,3M10,9H14V10H10V9M10,11H14V12H10V11M10,13H14V14H10V13M6,22H18A1,1 0 0,0 19,21V19A1,1 0 0,0 18,18H6A1,1 0 0,0 5,19V21A1,1 0 0,0 6,22Z"/>
+                                                </Canvas>
+                                            </Viewbox>
+                                        </Border>
+                                        
+                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding Name}" 
+                                                      Foreground="White" 
+                                                      FontWeight="Bold" 
+                                                      FontSize="14"
+                                                      Margin="0,0,0,2"/>
+                                            <StackPanel Orientation="Horizontal" Margin="0,0,0,2">
+                                                <Border Style="{StaticResource StatusIndicator}" Background="#1e3a1e">
+                                                    <TextBlock Text="{Binding Status}" 
+                                                              Foreground="#4CAF50" 
+                                                              FontSize="10"
+                                                              FontWeight="SemiBold"/>
+                                                </Border>
+                                                <TextBlock Text="{Binding DroneType}" 
+                                                          Foreground="#FF9800" 
+                                                          FontSize="10"/>
+                                            </StackPanel>
+                                            <TextBlock Text="{Binding UsbPort}" 
+                                                      Foreground="#888" 
+                                                      FontSize="10"/>
+                                        </StackPanel>
+                                        
+                                        <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                                            <Border Style="{StaticResource StatusIndicator}" Background="#1e3a1e">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <Ellipse Width="6" Height="6" Fill="#4CAF50" Margin="0,0,4,0" VerticalAlignment="Center"/>
+                                                    <TextBlock Text="USB" 
+                                                              Foreground="#4CAF50" 
+                                                              FontSize="9" 
+                                                              VerticalAlignment="Center"/>
+                                                </StackPanel>
+                                            </Border>
+                                            <Button Content="✕"
+                                                    Style="{StaticResource DeleteButton}"
+                                                    Click="DeleteDrone_Click"
+                                                    Tag="{Binding}"
+                                                    ToolTip="Remove device"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                    </Grid>
+                </Border>
+                
+                <!-- Separator -->
+                <Rectangle Grid.Column="1" Fill="#404040" HorizontalAlignment="Stretch" Height="1" VerticalAlignment="Center"/>
+                
+                <!-- CCTV Panel -->
+                <Border Style="{StaticResource ModernCard}" Grid.Column="2">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
 
-                    </ListBox>
+                        <StackPanel Orientation="Horizontal" Grid.Row="0">
+                            <TextBlock Text="📷 Connected CCTVs" 
+                                      Style="{StaticResource SectionHeader}" Margin="0,0,10,15"/>
+                            <Border Style="{StaticResource StatusIndicator}" Background="#3f3125">
+                                <TextBlock Text="{Binding Items.Count, ElementName=CctvList}" 
+                                          Foreground="#FF9800" 
+                                          FontSize="10"
+                                          FontWeight="Bold"/>
+                            </Border>
+                        </StackPanel>
 
-                    <TextBlock Grid.Row="2" Text="Connected CCTVs:" 
-                              Foreground="White" 
-                              FontWeight="Bold" 
-                              FontSize="14" 
-                              Margin="0,15,0,15"/>
+                        <ListBox Grid.Row="1" x:Name="CctvList"
+                                Background="Transparent"
+                                BorderThickness="0"
+                                ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                SelectionChanged="CctvList_SelectionChanged">
+                            <ListBox.ItemContainerStyle>
+                                <Style TargetType="ListBoxItem" BasedOn="{StaticResource DroneListBoxItem}">
+                                    <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                </Style>
+                            </ListBox.ItemContainerStyle>
 
-                    <ListBox Grid.Row="3" x:Name="CctvList"
-                            Background="Transparent"
-                            BorderThickness="0"
-                            ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                            ScrollViewer.VerticalScrollBarVisibility="Hidden"
-                            SelectionChanged="CctvList_SelectionChanged">
-                        <ListBox.ItemContainerStyle>
-                            <Style TargetType="ListBoxItem" BasedOn="{StaticResource DroneListBoxItem}">
-                                <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
-                            </Style>
-                        </ListBox.ItemContainerStyle>
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
 
-                        <ListBox.ItemTemplate>
-                            <DataTemplate>
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto" />
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="Auto" />
-                                    </Grid.ColumnDefinitions>
+                                        <Border Grid.Column="0" Background="#1a1a1a" CornerRadius="8" Padding="8" Margin="0,0,15,0">
+                                            <Viewbox Width="24" Height="24">
+                                                <Canvas Width="24" Height="24">
+                                                    <Path Fill="#FF9800" Data="M4,4H7L9,2H15L17,4H20A2,2 0 0,1 22,6V18A2,2 0 0,1 20,20H4A2,2 0 0,1 2,18V6A2,2 0 0,1 4,4M12,7A5,5 0 0,0 7,12A5,5 0 0,0 12,17A5,5 0 0,0 17,12A5,5 0 0,0 12,7M12,9A3,3 0 0,1 15,12A3,3 0 0,1 12,15A3,3 0 0,1 9,12A3,3 0 0,1 12,9Z"/>
+                                                </Canvas>
+                                            </Viewbox>
+                                        </Border>
 
-                                    <Border Grid.Column="0" Background="#1a1a1a" CornerRadius="8" Padding="8" Margin="0,0,15,0">
-                                        <TextBlock Text="📷" FontSize="24" Foreground="#FF9800"/>
-                                    </Border>
+                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding Name}"
+                                                      Foreground="White"
+                                                      FontWeight="Bold"
+                                                      FontSize="14"
+                                                      Margin="0,0,0,2"/>
+                                            <StackPanel Orientation="Horizontal" Margin="0,0,0,2">
+                                                <Border Style="{StaticResource StatusIndicator}" Background="#1e3a1e">
+                                                    <TextBlock Text="CCTV"
+                                                              Foreground="#4CAF50"
+                                                              FontSize="10"
+                                                              FontWeight="SemiBold"/>
+                                                </Border>
+                                            </StackPanel>
+                                            <TextBlock Text="{Binding DeviceId}"
+                                                      Foreground="#888"
+                                                      FontSize="10"/>
+                                        </StackPanel>
 
-                                    <StackPanel Grid.Column="1">
-                                        <TextBlock Text="{Binding Name}"
-                                                  Foreground="White"
-                                                  FontWeight="Bold"
-                                                  FontSize="14"/>
-                                        <TextBlock Text="CCTV"
-                                                  Foreground="#4CAF50"
-                                                  FontSize="12"/>
-                                        <TextBlock Text="{Binding DeviceId}"
-                                                  Foreground="#ccc"
-                                                  FontSize="10"/>
-                                    </StackPanel>
-
-                                    <StackPanel Grid.Column="2" Orientation="Horizontal">
-                                        <Ellipse Width="12" Height="12" Fill="#4CAF50" Margin="0,0,5,0"/>
-                                        <TextBlock Text="USB Connected"
-                                                  Foreground="#4CAF50"
-                                                  FontSize="10"
-                                                  VerticalAlignment="Center"/>
-                                        <Button Content="✖"
-                                                Background="#DC3545"
-                                                Foreground="White"
-                                                BorderThickness="0"
-                                                Width="18" Height="18"
-                                                Padding="0"
-                                                Margin="8,0,0,0"
-                                                Click="DeleteCctv_Click"
-                                                Tag="{Binding}"/>
-                                    </StackPanel>
-                                </Grid>
-                            </DataTemplate>
-                        </ListBox.ItemTemplate>
-
-                    </ListBox>
-                </Grid>
-            </Border>
+                                        <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                                            <Border Style="{StaticResource StatusIndicator}" Background="#1e3a1e">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <Ellipse Width="6" Height="6" Fill="#4CAF50" Margin="0,0,4,0" VerticalAlignment="Center"/>
+                                                    <TextBlock Text="USB"
+                                                              Foreground="#4CAF50"
+                                                              FontSize="9"
+                                                              VerticalAlignment="Center"/>
+                                                </StackPanel>
+                                            </Border>
+                                            <Button Content="✕"
+                                                    Style="{StaticResource DeleteButton}"
+                                                    Click="DeleteCctv_Click"
+                                                    Tag="{Binding}"
+                                                    ToolTip="Remove device"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                    </Grid>
+                </Border>
+            </Grid>
         </Grid>
 
         <!-- Footer -->

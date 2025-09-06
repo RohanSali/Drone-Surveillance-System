@@ -4,13 +4,38 @@
         Title="Network Profile Manager" Height="900" Width="1400"
         WindowStartupLocation="CenterScreen"
         WindowState="Maximized"
-        Background="#FF0A0A0A"
+        Background="#FF0F0F0F"
         FontFamily="Segoe UI">
     
     <Window.Resources>
+        <!-- Color Resources -->
+        <Color x:Key="DarkBackground">#FF0F0F0F</Color>
+        <Color x:Key="MediumBackground">#FF1E1E1E</Color>
+        <Color x:Key="LightBackground">#FF2D2D2D</Color>
+        <Color x:Key="AccentBlue">#FF0078D4</Color>
+        <Color x:Key="AccentGreen">#FF28A745</Color>
+        <Color x:Key="AccentRed">#FFDC3545</Color>
+        <Color x:Key="AccentYellow">#FFFFC107</Color>
+        <Color x:Key="AccentPurple">#FF8B5CF6</Color>
+        <Color x:Key="TextPrimary">#FFFFFFFF</Color>
+        <Color x:Key="TextSecondary">#FFCCCCCC</Color>
+        <Color x:Key="TextTertiary">#FF888888</Color>
+        
+        <SolidColorBrush x:Key="DarkBackgroundBrush" Color="{StaticResource DarkBackground}"/>
+        <SolidColorBrush x:Key="MediumBackgroundBrush" Color="{StaticResource MediumBackground}"/>
+        <SolidColorBrush x:Key="LightBackgroundBrush" Color="{StaticResource LightBackground}"/>
+        <SolidColorBrush x:Key="AccentBlueBrush" Color="{StaticResource AccentBlue}"/>
+        <SolidColorBrush x:Key="AccentGreenBrush" Color="{StaticResource AccentGreen}"/>
+        <SolidColorBrush x:Key="AccentRedBrush" Color="{StaticResource AccentRed}"/>
+        <SolidColorBrush x:Key="AccentYellowBrush" Color="{StaticResource AccentYellow}"/>
+        <SolidColorBrush x:Key="AccentPurpleBrush" Color="{StaticResource AccentPurple}"/>
+        <SolidColorBrush x:Key="TextPrimaryBrush" Color="{StaticResource TextPrimary}"/>
+        <SolidColorBrush x:Key="TextSecondaryBrush" Color="{StaticResource TextSecondary}"/>
+        <SolidColorBrush x:Key="TextTertiaryBrush" Color="{StaticResource TextTertiary}"/>
+
         <!-- Modern Button Style -->
         <Style x:Key="ModernButton" TargetType="Button">
-            <Setter Property="Background" Value="#FF0078D4"/>
+            <Setter Property="Background" Value="{StaticResource AccentBlueBrush}"/>
             <Setter Property="Foreground" Value="White"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Padding" Value="16,10"/>
@@ -44,167 +69,74 @@
             </Setter>
         </Style>
 
-        <Style x:Key="SuccessButton" TargetType="Button" BasedOn="{StaticResource ModernButton}">
-            <Setter Property="Background" Value="#FF28A745"/>
-            <Style.Triggers>
-                <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="#FF218838"/>
-                    <Setter Property="ScaleTransform.ScaleX" Value="1.05"/>
-                    <Setter Property="ScaleTransform.ScaleY" Value="1.05"/>
-                </Trigger>
-            </Style.Triggers>
-            <Style.Resources>
-                <Storyboard x:Key="PulseAnimation">
-                    <DoubleAnimation Storyboard.TargetProperty="Opacity"
-                                    From="1.0" To="0.7" Duration="0:0:1"
-                                    AutoReverse="True" RepeatBehavior="Forever"/>
-                </Storyboard>
-            </Style.Resources>
-        </Style>
-
-        <Style x:Key="DangerButton" TargetType="Button" BasedOn="{StaticResource ModernButton}">
-            <Setter Property="Background" Value="#FFDC3545"/>
-            <Style.Triggers>
-                <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="#FFC82333"/>
-                </Trigger>
-            </Style.Triggers>
-        </Style>
-
-        <Style x:Key="WarningButton" TargetType="Button" BasedOn="{StaticResource ModernButton}">
-            <Setter Property="Background" Value="#FFFFC107"/>
-            <Setter Property="Foreground" Value="#FF212529"/>
-            <Style.Triggers>
-                <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="#FFE0A800"/>
-                </Trigger>
-            </Style.Triggers>
-        </Style>
-
-        <!-- Text Styles -->
-        <Style x:Key="HeaderStyle" TargetType="TextBlock">
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="FontSize" Value="18"/>
-            <Setter Property="FontWeight" Value="Bold"/>
-            <Setter Property="Margin" Value="10,5"/>
-        </Style>
-
-        <Style x:Key="SubHeaderStyle" TargetType="TextBlock">
-            <Setter Property="Foreground" Value="#FFCCCCCC"/>
-            <Setter Property="FontSize" Value="14"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Margin" Value="10,5"/>
-        </Style>
-
-        <Style x:Key="DataTextStyle" TargetType="TextBlock">
-            <Setter Property="Foreground" Value="#FFCCCCCC"/>
-            <Setter Property="FontSize" Value="12"/>
-            <Setter Property="Margin" Value="5,2"/>
-        </Style>
-
-        <!-- Input Styles -->
-        <Style x:Key="ModernTextBox" TargetType="TextBox">
-            <Setter Property="Background" Value="#FF2A2A2A"/>
-            <Setter Property="Foreground" Value="#FFFFFF"/>
-            <Setter Property="BorderBrush" Value="#FF808080"/>
-            <Setter Property="BorderThickness" Value="3"/>
-            <Setter Property="Padding" Value="12,8"/>
-            <Setter Property="FontSize" Value="15"/>
-            <Setter Property="Height" Value="45"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="CaretBrush" Value="#FFFFFF"/>
-            <Setter Property="SelectionBrush" Value="#FF0078D4"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="TextBox">
-                        <Border Background="{TemplateBinding Background}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="6">
-                            <ScrollViewer x:Name="PART_ContentHost"
-                                          Margin="{TemplateBinding Padding}"
-                                          VerticalAlignment="Center"
-                                          Foreground="{TemplateBinding Foreground}"
-                                          FontSize="{TemplateBinding FontSize}"
-                                          FontWeight="{TemplateBinding FontWeight}"/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsFocused" Value="True">
-                                <Setter Property="BorderBrush" Value="#FF0078D4"/>
-                                <Setter Property="BorderThickness" Value="3"/>
-                                <Setter Property="Background" Value="#FF1A1A1A"/>
-                            </Trigger>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="BorderBrush" Value="#FF909090"/>
-                                <Setter Property="Background" Value="#FF1F1F1F"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
         <Style x:Key="ModernComboBox" TargetType="ComboBox">
-            <Setter Property="Background" Value="#FF404045"/>
-            <Setter Property="Foreground" Value="#FFFFFF"/>
-            <Setter Property="BorderBrush" Value="#FF606060"/>
-            <Setter Property="BorderThickness" Value="2"/>
+            <Setter Property="Background" Value="{StaticResource LightBackgroundBrush}"/>
+            <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
+            <Setter Property="BorderBrush" Value="#FF555555"/>
+            <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="Padding" Value="12,8"/>
             <Setter Property="FontSize" Value="14"/>
-            <Setter Property="FontWeight" Value="Normal"/>
             <Setter Property="Height" Value="40"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="ComboBox">
                         <Grid>
                             <ToggleButton x:Name="ToggleButton" 
-                                          Background="{TemplateBinding Background}"
-                                          BorderBrush="{TemplateBinding BorderBrush}"
-                                          BorderThickness="{TemplateBinding BorderThickness}"
-                                          Foreground="{TemplateBinding Foreground}"
-                                          IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"
-                                          ClickMode="Press">
+                                        Grid.Column="2" 
+                                        Focusable="false"
+                                        IsChecked="{Binding Path=IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"
+                                        ClickMode="Press">
                                 <ToggleButton.Template>
                                     <ControlTemplate TargetType="ToggleButton">
                                         <Border Background="{TemplateBinding Background}"
                                                 BorderBrush="{TemplateBinding BorderBrush}"
                                                 BorderThickness="{TemplateBinding BorderThickness}"
-                                                CornerRadius="6">
+                                                CornerRadius="4">
                                             <Grid>
                                                 <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition/>
                                                     <ColumnDefinition Width="20"/>
                                                 </Grid.ColumnDefinitions>
+                                                <ContentPresenter HorizontalAlignment="Left" VerticalAlignment="Center" Margin="5,0,0,0"/>
                                                 <Path x:Name="Arrow" Grid.Column="1" Fill="White" HorizontalAlignment="Center" VerticalAlignment="Center" Data="M 0 0 L 4 4 L 8 0 Z"/>
                                             </Grid>
                                         </Border>
-                                        <ControlTemplate.Triggers>
-                                            <Trigger Property="IsMouseOver" Value="True">
-                                                <Setter Property="BorderBrush" Value="#FF808080"/>
-                                            </Trigger>
-                                            <Trigger Property="IsChecked" Value="True">
-                                                <Setter Property="BorderBrush" Value="#FF0078D4"/>
-                                            </Trigger>
-                                        </ControlTemplate.Triggers>
                                     </ControlTemplate>
                                 </ToggleButton.Template>
                             </ToggleButton>
-                            <ContentPresenter x:Name="ContentSite" IsHitTestVisible="False" Content="{TemplateBinding SelectionBoxItem}"
-                                              ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
-                                              ContentTemplateSelector="{TemplateBinding ItemTemplateSelector}"
-                                              Margin="12,3,30,3" VerticalAlignment="Center" HorizontalAlignment="Left"
-                                              TextElement.Foreground="White"/>
+                            <ContentPresenter x:Name="ContentSite" IsHitTestVisible="False" 
+                                            Content="{TemplateBinding SelectionBoxItem}"
+                                            ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+                                            ContentTemplateSelector="{TemplateBinding ItemTemplateSelector}"
+                                            Margin="12,0,30,0" VerticalAlignment="Center" HorizontalAlignment="Left"/>
+                            <TextBox x:Name="PART_EditableTextBox" Style="{x:Null}" 
+                                    HorizontalAlignment="Left" VerticalAlignment="Center" 
+                                    Margin="12,0,0,0" Focusable="True" Background="Transparent" 
+                                    Visibility="Hidden" IsReadOnly="{TemplateBinding IsReadOnly}"/>
                             <Popup x:Name="Popup" Placement="Bottom" IsOpen="{TemplateBinding IsDropDownOpen}"
-                                   AllowsTransparency="True" Focusable="False" PopupAnimation="Slide">
-                                <Grid x:Name="DropDown" SnapsToDevicePixels="True" MinWidth="{TemplateBinding ActualWidth}" MaxHeight="200">
-                                    <Border x:Name="DropDownBorder" Background="#FF404045" BorderThickness="2" BorderBrush="#FF606060" CornerRadius="6">
-                                        <ScrollViewer Margin="4,6,4,6" SnapsToDevicePixels="True">
+                                AllowsTransparency="True" Focusable="False" PopupAnimation="Slide">
+                                <Grid x:Name="DropDown" SnapsToDevicePixels="True" 
+                                    MinWidth="{TemplateBinding ActualWidth}" MaxHeight="{TemplateBinding MaxDropDownHeight}">
+                                    <Border x:Name="DropDownBorder" 
+                                            Background="{StaticResource LightBackgroundBrush}" 
+                                            BorderThickness="1" 
+                                            BorderBrush="#FF555555"
+                                            CornerRadius="4">
+                                        <ScrollViewer SnapsToDevicePixels="True">
                                             <StackPanel IsItemsHost="True" KeyboardNavigation.DirectionalNavigation="Contained"/>
                                         </ScrollViewer>
                                     </Border>
                                 </Grid>
                             </Popup>
                         </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="BorderBrush" Value="#FF808080"/>
+                            </Trigger>
+                            <Trigger Property="IsFocused" Value="True">
+                                <Setter Property="BorderBrush" Value="{StaticResource AccentBlueBrush}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
@@ -212,22 +144,22 @@
                 <Setter.Value>
                     <Style TargetType="ComboBoxItem">
                         <Setter Property="Background" Value="Transparent"/>
-                        <Setter Property="Foreground" Value="White"/>
+                        <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
                         <Setter Property="Padding" Value="12,8"/>
                         <Setter Property="FontSize" Value="14"/>
                         <Setter Property="Template">
                             <Setter.Value>
                                 <ControlTemplate TargetType="ComboBoxItem">
                                     <Border Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}">
-                                        <ContentPresenter TextElement.Foreground="{TemplateBinding Foreground}"/>
+                                        <ContentPresenter/>
                                     </Border>
                                     <ControlTemplate.Triggers>
                                         <Trigger Property="IsHighlighted" Value="True">
-                                            <Setter Property="Background" Value="#FF0078D4"/>
+                                            <Setter Property="Background" Value="{StaticResource AccentBlueBrush}"/>
                                             <Setter Property="Foreground" Value="White"/>
                                         </Trigger>
                                         <Trigger Property="IsSelected" Value="True">
-                                            <Setter Property="Background" Value="#FF005A9E"/>
+                                            <Setter Property="Background" Value="{StaticResource AccentBlueBrush}"/>
                                             <Setter Property="Foreground" Value="White"/>
                                         </Trigger>
                                     </ControlTemplate.Triggers>
@@ -238,15 +170,119 @@
                 </Setter.Value>
             </Setter>
         </Style>
+        <Style x:Key="SuccessButton" TargetType="Button" BasedOn="{StaticResource ModernButton}">
+            <Setter Property="Background" Value="{StaticResource AccentGreenBrush}"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#FF218838"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="DangerButton" TargetType="Button" BasedOn="{StaticResource ModernButton}">
+            <Setter Property="Background" Value="{StaticResource AccentRedBrush}"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#FFC82333"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="WarningButton" TargetType="Button" BasedOn="{StaticResource ModernButton}">
+            <Setter Property="Background" Value="{StaticResource AccentYellowBrush}"/>
+            <Setter Property="Foreground" Value="#FF212529"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#FFE0A800"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- Text Styles -->
+        <Style x:Key="HeaderStyle" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
+            <Setter Property="FontSize" Value="24"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Margin" Value="0,0,0,10"/>
+        </Style>
+
+        <Style x:Key="SubHeaderStyle" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}"/>
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Margin" Value="0,0,0,15"/>
+        </Style>
+
+        <Style x:Key="SectionHeader" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{StaticResource AccentBlueBrush}"/>
+            <Setter Property="FontSize" Value="18"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Margin" Value="0,0,0,15"/>
+        </Style>
+
+        <Style x:Key="DataTextStyle" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="Margin" Value="0,0,0,5"/>
+        </Style>
+
+        <!-- Input Styles -->
+        <Style x:Key="ModernTextBox" TargetType="TextBox">
+            <Setter Property="Background" Value="{StaticResource LightBackgroundBrush}"/>
+            <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
+            <Setter Property="BorderBrush" Value="#FF555555"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="12,10"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="Height" Value="40"/>
+            <Setter Property="CaretBrush" Value="#FFFFFF"/>
+            <Setter Property="SelectionBrush" Value="{StaticResource AccentBlueBrush}"/>
+        </Style>
+
+        <Style x:Key="ModernComboBoxAlt" TargetType="ComboBox">
+            <Setter Property="Background" Value="{StaticResource LightBackgroundBrush}"/>
+            <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
+            <Setter Property="BorderBrush" Value="#FF555555"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="12,8"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="Height" Value="40"/>
+        </Style>
 
         <!-- Card Style -->
         <Style x:Key="CardStyle" TargetType="Border">
-            <Setter Property="Background" Value="#FF2D2D30"/>
+            <Setter Property="Background" Value="{StaticResource MediumBackgroundBrush}"/>
             <Setter Property="BorderBrush" Value="#FF404040"/>
             <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="CornerRadius" Value="12"/>
             <Setter Property="Padding" Value="20"/>
             <Setter Property="Margin" Value="10"/>
+            <Setter Property="Effect">
+                <Setter.Value>
+                    <DropShadowEffect Color="Black" Opacity="0.2" BlurRadius="10" ShadowDepth="2"/>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Network Item Style -->
+        <Style x:Key="NetworkItemStyle" TargetType="Border">
+            <Setter Property="Background" Value="{StaticResource LightBackgroundBrush}"/>
+            <Setter Property="BorderBrush" Value="#FF404040"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Padding" Value="15"/>
+            <Setter Property="Margin" Value="0,0,0,10"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+
+        <!-- Device Item Style -->
+        <Style x:Key="DeviceItemStyle" TargetType="Border">
+            <Setter Property="Background" Value="{StaticResource LightBackgroundBrush}"/>
+            <Setter Property="BorderBrush" Value="#FF404040"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="Padding" Value="10"/>
+            <Setter Property="Margin" Value="0,0,0,5"/>
         </Style>
     </Window.Resources>
 
@@ -258,7 +294,7 @@
         </Grid.RowDefinitions>
 
         <!-- Header -->
-        <Border Grid.Row="0" Background="#FF1E1E1E" BorderBrush="#FF404040" BorderThickness="0,0,0,2">
+        <Border Grid.Row="0" Background="{StaticResource MediumBackgroundBrush}" BorderBrush="#FF404040" BorderThickness="0,0,0,1">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
@@ -266,16 +302,17 @@
                 </Grid.ColumnDefinitions>
                 
                 <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="20,0">
-                    <Ellipse Width="50" Height="50" Fill="#FFFFFF" Margin="0,0,15,0"/>
-                    <TextBlock Text="🌐" FontSize="35" VerticalAlignment="Center" Margin="-64,0,20,0" Foreground="#4CAF50"/>
+                    <Border Width="50" Height="50" Background="{StaticResource AccentBlueBrush}" CornerRadius="25" Margin="0,0,15,0">
+                        <TextBlock Text="🌐" FontSize="24" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="White"/>
+                    </Border>
                     <StackPanel VerticalAlignment="Center">
                         <TextBlock Text="NETWORK PROFILE MANAGER" 
-                                  Foreground="White" 
+                                  Foreground="{StaticResource TextPrimaryBrush}" 
                                   FontWeight="Bold" 
-                                  FontSize="24"/>
-                        <TextBlock Text="Create, Edit, and Manage Network Profiles" 
-                                  Foreground="#FF888888" 
-                                  FontSize="14"/>
+                                  FontSize="20"/>
+                        <TextBlock Text="Create, manage and deploy surveillance networks" 
+                                  Foreground="{StaticResource TextTertiaryBrush}" 
+                                  FontSize="12"/>
                     </StackPanel>
                 </StackPanel>
 
@@ -292,7 +329,7 @@
         <Grid Grid.Row="1" Margin="20">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="450"/>
+                <ColumnDefinition Width="500"/>
             </Grid.ColumnDefinitions>
 
             <!-- Left Panel - Network List -->
@@ -305,42 +342,59 @@
 
                     <!-- Network List Header -->
                     <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,20">
-                        <TextBlock Text="📋 Network Profiles" Style="{StaticResource HeaderStyle}" Foreground="#FFD700"/>
+                        <TextBlock Text="📋 Network Profiles" Style="{StaticResource SectionHeader}"/>
                         <Button Name="CreateNetworkButton" 
                                 Content="➕ Create New Network" 
                                 Style="{StaticResource SuccessButton}"
                                 Click="CreateNetworkButton_Click"
                                 Margin="20,0,0,0"
-                                FontWeight="Bold"
-                                FontSize="15">
-                            <Button.Triggers>
-                                <EventTrigger RoutedEvent="Button.Loaded">
-                                    <BeginStoryboard>
-                                        <Storyboard>
-                                            <DoubleAnimation Storyboard.TargetProperty="Opacity"
-                                                            From="1.0" To="0.8" Duration="0:0:1.5"
-                                                            AutoReverse="True" RepeatBehavior="Forever"/>
-                                        </Storyboard>
-                                    </BeginStoryboard>
-                                </EventTrigger>
-                            </Button.Triggers>
-                        </Button>
+                                FontWeight="Bold"/>
                     </StackPanel>
 
                     <!-- Network List -->
-                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Hidden" HorizontalScrollBarVisibility="Disabled">
+                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
                         <StackPanel Name="NetworkListPanel">
-                            <!-- Network profiles will be added programmatically -->
+                            <!-- Sample Network Item -->
+                            <Border Style="{StaticResource NetworkItemStyle}">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel>
+                                        <TextBlock Text="Urban Surveillance Network" Foreground="{StaticResource TextPrimaryBrush}" FontWeight="Bold" FontSize="16"/>
+                                        <TextBlock Text="Primary city surveillance coverage" Foreground="{StaticResource TextTertiaryBrush}" FontSize="12" Margin="0,5,0,0"/>
+                                        <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                                            <TextBlock Text="🚁 3 Drones" Foreground="{StaticResource TextSecondaryBrush}" FontSize="11" Margin="0,0,10,0"/>
+                                            <TextBlock Text="📷 5 CCTVs" Foreground="{StaticResource TextSecondaryBrush}" FontSize="11"/>
+                                        </StackPanel>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                        <Border Background="#FF28A745" CornerRadius="4" Padding="5,2" Margin="0,0,10,0">
+                                            <TextBlock Text="ACTIVE" Foreground="White" FontSize="10" FontWeight="Bold"/>
+                                        </Border>
+                                        <Button Content="⚙️ Edit" Style="{StaticResource ModernButton}" Width="80" Height="30" FontSize="12"/>
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
                         </StackPanel>
                     </ScrollViewer>
                 </Grid>
             </Border>
 
-            <!-- Right Panel - Network Details/Editor -->
-            <Border Grid.Column="1" Name="NetworkEditorBorder" Style="{StaticResource CardStyle}" Margin="10,0,0,0" Visibility="Collapsed" Opacity="0">
+            <!-- Right Panel - Network Editor -->
+            <Border Grid.Column="1" 
+                    Name="NetworkEditorBorder" 
+                    Style="{StaticResource CardStyle}" 
+                    Margin="10,0,0,0"
+                    Visibility="Collapsed"
+                    Background="{StaticResource MediumBackgroundBrush}"
+                    Opacity="0">
+
                 <Border.RenderTransform>
                     <TranslateTransform x:Name="NetworkEditorTransform" X="50"/>
                 </Border.RenderTransform>
+
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -349,64 +403,72 @@
                     </Grid.RowDefinitions>
 
                     <!-- Editor Header -->
-                    <TextBlock Grid.Row="0" 
-                               Name="EditorHeaderText"
-                               Text="⚙️ Network Configuration" 
-                               Style="{StaticResource HeaderStyle}"
-                               Margin="0,0,0,20"/>
+                    <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,20">
+                        <TextBlock Text="⚙️" FontSize="24" VerticalAlignment="Center" Margin="0,0,10,0" Foreground="{StaticResource AccentBlueBrush}"/>
+                        <TextBlock Name="EditorHeaderText" Text="Create New Network" Style="{StaticResource HeaderStyle}"/>
+                    </StackPanel>
 
                     <!-- Network Editor -->
-                    <ScrollViewer Grid.Row="1" Style="{StaticResource HiddenSmoothScrollViewer}">
-                        <StackPanel Name="NetworkEditorPanel">
+                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                        <StackPanel>
                             <!-- Basic Information -->
                             <TextBlock Text="Basic Information" Style="{StaticResource SubHeaderStyle}"/>
                             
                             <TextBlock Text="Network Name" Style="{StaticResource DataTextStyle}"/>
                             <TextBox Name="NetworkNameTextBox" 
                                      Style="{StaticResource ModernTextBox}"
-                                     Height="60"
-                                     FontSize="16"
                                      Margin="0,0,0,15"/>
                             
                             <TextBlock Text="Description" Style="{StaticResource DataTextStyle}"/>
                             <TextBox Name="NetworkDescriptionTextBox" 
                                      Style="{StaticResource ModernTextBox}"
-                                     Height="80"
+                                     Height="60"
                                      TextWrapping="Wrap"
                                      AcceptsReturn="True"
                                      VerticalScrollBarVisibility="Auto"
+                                     HorizontalScrollBarVisibility="Disabled" 
+                                     MaxLength="500" 
                                      Margin="0,0,0,15"/>
                             
-                            <TextBlock Text="Coverage Region" Style="{StaticResource DataTextStyle}"/>
-                            <ComboBox Name="CoverageRegionComboBox" 
-                                      Style="{StaticResource ModernComboBox}"
-                                      Margin="0,0,0,15">
-                                <ComboBoxItem Content="Urban Zone"/>
-                                <ComboBoxItem Content="Industrial Area"/>
-                                <ComboBoxItem Content="Residential District"/>
-                                <ComboBoxItem Content="Commercial Center"/>
-                                <ComboBoxItem Content="Border Perimeter"/>
-                                <ComboBoxItem Content="Emergency Route"/>
-                            </ComboBox>
-                            
-                            <TextBlock Text="Priority Level" Style="{StaticResource DataTextStyle}"/>
-                            <ComboBox Name="PriorityLevelComboBox" 
-                                      Style="{StaticResource ModernComboBox}"
-                                      Margin="0,0,0,15">
-                                <ComboBoxItem Content="High Priority"/>
-                                <ComboBoxItem Content="Medium Priority" IsSelected="True"/>
-                                <ComboBoxItem Content="Low Priority"/>
-                            </ComboBox>
-
-                            <Separator Background="#FF404040" Height="1" Margin="0,20"/>
-
-                            <!-- Device Assignment -->
-                            <TextBlock Text="Assigned Drones" Style="{StaticResource SubHeaderStyle}"/>
-                            
-                            <Grid Margin="0,10">
+                            <Grid Margin="0,0,0,15">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="100"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                                    <TextBlock Text="Coverage Region" Style="{StaticResource DataTextStyle}"/>
+                                    <ComboBox Name="CoverageRegionComboBox" 
+                                              Style="{StaticResource ModernComboBox}">
+                                        <ComboBoxItem Content="Urban Zone"/>
+                                        <ComboBoxItem Content="Industrial Area"/>
+                                        <ComboBoxItem Content="Residential District"/>
+                                        <ComboBoxItem Content="Commercial Center"/>
+                                        <ComboBoxItem Content="Border Perimeter"/>
+                                        <ComboBoxItem Content="Emergency Route"/>
+                                    </ComboBox>
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" Margin="10,0,0,0">
+                                    <TextBlock Text="Priority Level" Style="{StaticResource DataTextStyle}"/>
+                                    <ComboBox Name="PriorityLevelComboBox" 
+                                              Style="{StaticResource ModernComboBox}">
+                                        <ComboBoxItem Content="High Priority"/>
+                                        <ComboBoxItem Content="Medium Priority" IsSelected="True"/>
+                                        <ComboBoxItem Content="Low Priority"/>
+                                    </ComboBox>
+                                </StackPanel>
+                            </Grid>
+
+                            <Separator Background="#FF404040" Margin="0,0,0,20"/>
+
+                            <!-- Device Assignment -->
+                            <TextBlock Text="Device Assignment" Style="{StaticResource SubHeaderStyle}"/>
+                            
+                            <!-- Drones Section -->
+                            <TextBlock Text="Assigned Drones" Style="{StaticResource DataTextStyle}" Margin="0,0,0,10"/>
+                            <Grid Margin="0,0,0,10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
                                 
                                 <ComboBox Grid.Column="0" 
@@ -418,41 +480,25 @@
                                         Name="AddDroneButton"
                                         Content="➕ Add"
                                         Style="{StaticResource SuccessButton}"
-                                        Width="110"
-                                        Height="42"
-                                        Margin="0"
-                                        Click="AddDroneButton_Click">
-                                    <Button.Template>
-                                        <ControlTemplate TargetType="Button">
-                                            <Border Background="{TemplateBinding Background}" CornerRadius="8">
-                                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                            </Border>
-                                        </ControlTemplate>
-                                    </Button.Template>
-                                </Button>
+                                        Click="AddDroneButton_Click"/>
                             </Grid>
 
                             <!-- Assigned Drones List -->
-                            <Border Background="#FF1A1A1A" 
-                                    CornerRadius="6" 
+                            <Border Background="{StaticResource LightBackgroundBrush}" 
+                                    CornerRadius="8" 
                                     Padding="10" 
-                                    Margin="0,10,0,15">
-                                <ScrollViewer MaxHeight="200" 
-                                            Style="{StaticResource HiddenSmoothScrollViewer}"
-                                            Margin="0,0,0,0"
-                                            Padding="0,0,5,0">
-                                    <StackPanel Name="AssignedDronesPanel" Margin="0,0,5,0">
-                                        <!-- Assigned drones will be added programmatically -->
-                                    </StackPanel>
-                                </ScrollViewer>
+                                    Margin="0,0,0,15">
+                                <StackPanel Name="AssignedDronesPanel">
+                                    <TextBlock Text="No drones assigned" Foreground="{StaticResource TextTertiaryBrush}" FontStyle="Italic" HorizontalAlignment="Center" Margin="10"/>
+                                </StackPanel>
                             </Border>
 
-                            <!-- CCTV Assignment -->
-                            <TextBlock Text="Assigned CCTVs" Style="{StaticResource SubHeaderStyle}"/>
-                            <Grid Margin="0,10">
+                            <!-- CCTVs Section -->
+                            <TextBlock Text="Assigned CCTVs" Style="{StaticResource DataTextStyle}" Margin="0,0,0,10"/>
+                            <Grid Margin="0,0,0,10">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="100"/>
+                                    <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
 
                                 <ComboBox Grid.Column="0"
@@ -464,36 +510,20 @@
                                         Name="AddCctvButton"
                                         Content="➕ Add"
                                         Style="{StaticResource SuccessButton}"
-                                        Width="110"
-                                        Height="42"
-                                        Margin="0"
-                                        Click="AddCctvButton_Click">
-                                    <Button.Template>
-                                        <ControlTemplate TargetType="Button">
-                                            <Border Background="{TemplateBinding Background}" CornerRadius="8">
-                                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                            </Border>
-                                        </ControlTemplate>
-                                    </Button.Template>
-                                </Button>
+                                        Click="AddCctvButton_Click"/>
                             </Grid>
 
                             <!-- Assigned CCTVs List -->
-                            <Border Background="#FF1A1A1A"
-                                    CornerRadius="6"
+                            <Border Background="{StaticResource LightBackgroundBrush}"
+                                    CornerRadius="8"
                                     Padding="10"
-                                    Margin="0,10,0,15">
-                                <ScrollViewer MaxHeight="200"
-                                              Style="{StaticResource HiddenSmoothScrollViewer}"
-                                              Margin="0,0,0,0"
-                                              Padding="0,0,5,0">
-                                    <StackPanel Name="AssignedCctvsPanel" Margin="0,0,5,0">
-                                        <!-- Assigned CCTVs will be added programmatically -->
-                                    </StackPanel>
-                                </ScrollViewer>
+                                    Margin="0,0,0,20">
+                                <StackPanel Name="AssignedCctvsPanel">
+                                    <TextBlock Text="No CCTVs assigned" Foreground="{StaticResource TextTertiaryBrush}" FontStyle="Italic" HorizontalAlignment="Center" Margin="10"/>
+                                </StackPanel>
                             </Border>
 
-                            <Separator Background="#FF404040" Height="1" Margin="0,20"/>
+                            <Separator Background="#FF404040" Margin="0,0,0,20"/>
 
                             <!-- Network Configuration -->
                             <TextBlock Text="Network Configuration" Style="{StaticResource SubHeaderStyle}"/>
@@ -508,18 +538,18 @@
                                 <ComboBoxItem Content="Search &amp; Rescue"/>
                             </ComboBox>
                             
-                            <CheckBox Name="AutoActivateCheckBox"
-                                      Content="Auto-activate on detection"
-                                      Foreground="White"
-                                      FontSize="14"
-                                      Margin="0,0,0,15"/>
-                            
-                            <CheckBox Name="AlertNotificationCheckBox"
-                                      Content="Enable alert notifications"
-                                      Foreground="White"
-                                      FontSize="14"
-                                      IsChecked="True"
-                                      Margin="0,0,0,15"/>
+                            <StackPanel Orientation="Vertical" Margin="0,0,0,15">
+                                <CheckBox Name="AutoActivateCheckBox"
+                                          Content="Auto-activate on detection"
+                                          Foreground="{StaticResource TextSecondaryBrush}"
+                                          FontSize="14"/>
+                                <CheckBox Name="AlertNotificationCheckBox"
+                                          Content="Enable alert notifications"
+                                          Foreground="{StaticResource TextSecondaryBrush}"
+                                          FontSize="14"
+                                          IsChecked="True"
+                                          Margin="0,10,0,0"/>
+                            </StackPanel>
                         </StackPanel>
                     </ScrollViewer>
 
@@ -534,20 +564,21 @@
                                 Content="❌ Cancel" 
                                 Style="{StaticResource WarningButton}"
                                 Click="CancelEditButton_Click"
-                                MinWidth="100"/>
+                                MinWidth="100"
+                                Margin="10,0,0,0"/>
                         <Button Name="DeleteNetworkButton" 
                                 Content="🗑️ Delete" 
                                 Style="{StaticResource DangerButton}"
                                 Click="DeleteNetworkButton_Click"
                                 MinWidth="100"
-                                ToolTip="Delete the selected network"/>
+                                Margin="10,0,0,0"/>
                     </StackPanel>
                 </Grid>
             </Border>
         </Grid>
 
         <!-- Footer Status Bar -->
-        <Border Grid.Row="2" Background="#FF1E1E1E">
+        <Border Grid.Row="2" Background="{StaticResource MediumBackgroundBrush}">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
@@ -557,15 +588,15 @@
                 <TextBlock Grid.Column="0" 
                           Name="StatusText"
                           Text="Ready - Select a network to edit or create a new one"
-                          Foreground="#FF00FF00" 
+                          Foreground="{StaticResource AccentGreenBrush}" 
                           VerticalAlignment="Center" 
                           Margin="15,0"/>
                 
                 <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="15,0">
-                    <TextBlock Text="Total Networks: " Foreground="White" VerticalAlignment="Center"/>
-                    <TextBlock Name="TotalNetworksText" Text="0" Foreground="#FF00FF00" FontWeight="Bold" VerticalAlignment="Center" Margin="0,0,15,0"/>
-                    <TextBlock Text="Active: " Foreground="White" VerticalAlignment="Center"/>
-                    <TextBlock Name="ActiveNetworksText" Text="0" Foreground="#FF00FF00" FontWeight="Bold" VerticalAlignment="Center"/>
+                    <TextBlock Text="Total Networks: " Foreground="{StaticResource TextSecondaryBrush}" VerticalAlignment="Center"/>
+                    <TextBlock Name="TotalNetworksText" Text="0" Foreground="{StaticResource TextPrimaryBrush}" FontWeight="Bold" VerticalAlignment="Center" Margin="0,0,15,0"/>
+                    <TextBlock Text="Active: " Foreground="{StaticResource TextSecondaryBrush}" VerticalAlignment="Center"/>
+                    <TextBlock Name="ActiveNetworksText" Text="0" Foreground="{StaticResource TextPrimaryBrush}" FontWeight="Bold" VerticalAlignment="Center"/>
                 </StackPanel>
             </Grid>
         </Border>
