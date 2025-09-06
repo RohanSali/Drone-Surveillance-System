@@ -22,6 +22,7 @@ networks_9905singhrahul@gmail.com.json
 #Files Specified by me 
 networks.json
 networks_guest.json
+/assets
 
 # Mono auto generated files
 mono_crash.*
