@@ -20,6 +20,7 @@ using Microsoft.Win32;
 using System.Linq;
 using System.Windows.Controls; 
 using System.Windows.Input;  
+using System.Windows.Controls.Primitives;
 
 namespace DroneSurveillanceSystem.Views
 {
@@ -407,6 +408,9 @@ namespace DroneSurveillanceSystem.Views
                 // Add some initial log entries
                 AddInitialLogEntries();
 
+                // Ensure default page is visible on startup
+                HideOverlay();
+
                 Console.WriteLine("MainWindow constructor completed successfully");
             }
             catch (Exception ex)
@@ -415,6 +419,24 @@ namespace DroneSurveillanceSystem.Views
                 Console.WriteLine($"StackTrace: {ex.StackTrace}");
                 MessageBox.Show($"Error initializing MainWindow: {ex.Message}", "Initialization Error",
                     MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        public void ShowOverlay(UserControl control)
+        {
+            if (OverlayContentHost != null)
+            {
+                OverlayContentHost.Content = control;
+                OverlayContentHost.Visibility = Visibility.Visible;
+            }
+        }
+
+        public void HideOverlay()
+        {
+            if (OverlayContentHost != null)
+            {
+                OverlayContentHost.Content = null;
+                OverlayContentHost.Visibility = Visibility.Collapsed;
             }
         }
 
@@ -676,10 +698,9 @@ namespace DroneSurveillanceSystem.Views
 
         private void LostFindingButton_Click(object sender, RoutedEventArgs e)
         {
-            var lostFindingWindow = new LostFindingPage();
-            lostFindingWindow.Owner = this;
-            lostFindingWindow.WindowState = WindowState.Maximized;
-            lostFindingWindow.Show();
+            var control = new LostFindingPage();
+            control.CloseRequested += (s, _) => HideOverlay();
+            ShowOverlay(control);
         }
 
         private void AdvancedControlButton_Click(object sender, RoutedEventArgs e)
@@ -750,19 +771,24 @@ namespace DroneSurveillanceSystem.Views
         // New dashboard event handlers
         private void ConnectDroneButton_Click(object sender, RoutedEventArgs e)
         {
-            // Navigate to Connected Drones Page to show USB connected drones in full screen
-            ConnectedDronesPage connectedDronesPage = new ConnectedDronesPage();
-            connectedDronesPage.WindowState = WindowState.Maximized;
-            connectedDronesPage.Show();
-            // Keep main window visible or minimize it
+            var connected = new ConnectedDronesPage();
+            connected.CloseRequested += (s, _) =>
+            {
+                if (s is ConnectedDronesPage c)
+                {
+                    c.Cleanup();
+                }
+                HideOverlay();
+            };
+            ShowOverlay(connected);
         }
 
         private void AddNetworkButton_Click(object sender, RoutedEventArgs e)
         {
-            // Open Network Profile Manager for creating/managing networks
+            // Open Network Profile Manager inside overlay
             var networkProfileManager = new NetworkProfileManager(_networkService, _droneTrackingService);
-            networkProfileManager.Owner = this;
-            networkProfileManager.Show();
+            networkProfileManager.CloseRequested += (s, _) => HideOverlay();
+            ShowOverlay(networkProfileManager);
         }
         
         private void MonitorDroneButton_Click(object sender, RoutedEventArgs e)

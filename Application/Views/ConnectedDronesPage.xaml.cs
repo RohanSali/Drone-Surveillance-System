@@ -8,7 +8,7 @@ using DroneSurveillanceSystem.Services;
 
 namespace DroneSurveillanceSystem.Views
 {
-    public partial class ConnectedDronesPage : Window
+    public partial class ConnectedDronesPage : UserControl
     {
         private readonly UsbDroneService _usbDroneService;
         private readonly UsbCctvService _usbCctvService;
@@ -30,23 +30,12 @@ namespace DroneSurveillanceSystem.Views
             LoadConnectedDrones();
             LoadConnectedCctvs();
             
-            // Ensure window opens in full screen
-            this.WindowState = WindowState.Maximized;
+            // No window sizing needed in UserControl
         }
 
         private void BackButton_Click(object sender, RoutedEventArgs e)
         {
-            // Find the existing MainWindow and show it
-            foreach (Window window in Application.Current.Windows)
-            {
-                if (window is MainWindow mainWindow)
-                {
-                    mainWindow.Show();
-                    mainWindow.Activate();
-                    break;
-                }
-            }
-            this.Close();
+            CloseRequested?.Invoke(this, EventArgs.Empty);
         }
 
         private void LoadConnectedDrones()
@@ -130,7 +119,11 @@ namespace DroneSurveillanceSystem.Views
         private void AddDummyDroneButton_Click(object sender, RoutedEventArgs e)
         {
             var popup = new AddDronePopup();
-            popup.Owner = this;
+            var ownerWindow = Application.Current.Windows.OfType<Window>().FirstOrDefault(w => w.IsActive) ?? Application.Current.MainWindow;
+            if (ownerWindow != null)
+            {
+                popup.Owner = ownerWindow;
+            }
             
             if (popup.ShowDialog() == true && popup.NewDrone != null)
             {
@@ -159,7 +152,11 @@ namespace DroneSurveillanceSystem.Views
         private void AddDummyCctvButton_Click(object sender, RoutedEventArgs e)
         {
             var popup = new AddCctvPopup();
-            popup.Owner = this;
+            var ownerWindow = Application.Current.Windows.OfType<Window>().FirstOrDefault(w => w.IsActive) ?? Application.Current.MainWindow;
+            if (ownerWindow != null)
+            {
+                popup.Owner = ownerWindow;
+            }
             
             if (popup.ShowDialog() == true && popup.NewCctv != null)
             {
@@ -239,7 +236,7 @@ namespace DroneSurveillanceSystem.Views
                 DroneDetailsPage droneDetailsPage = new DroneDetailsPage(selectedDrone);
                 droneDetailsPage.WindowState = WindowState.Maximized;
                 droneDetailsPage.Show();
-                this.Close();
+                CloseRequested?.Invoke(this, EventArgs.Empty);
             }
         }
 
@@ -250,22 +247,20 @@ namespace DroneSurveillanceSystem.Views
                 var details = new CctvDetailsPage(selectedCam, _usbCctvService);
                 details.WindowState = WindowState.Maximized;
                 details.Show();
-                this.Close();
+                CloseRequested?.Invoke(this, EventArgs.Empty);
             }
         }
 
-        protected override void OnClosed(EventArgs e)
+        public event EventHandler? CloseRequested;
+
+        public void Cleanup()
         {
-            // Unsubscribe from events to prevent memory leaks
             if (_usbDroneService != null)
                 _usbDroneService.DronesListChanged -= OnDronesListChanged;
             if (_usbCctvService != null)
                 _usbCctvService.CctvListChanged -= OnCctvListChanged;
-            
             DeviceDataManager.DronesChanged -= OnPersistentDronesChanged;
             DeviceDataManager.CctvsChanged -= OnPersistentCctvsChanged;
-            
-            base.OnClosed(e);
         }
     }
 }

@@ -14,7 +14,7 @@ using Newtonsoft.Json;
 
 namespace DroneSurveillanceSystem.Views
 {
-    public partial class LostFindingPage : Window, INotifyPropertyChanged
+    public partial class LostFindingPage : UserControl, INotifyPropertyChanged
     {
         private string _selectedImagePath;
         private string _selectedImageBase64;
@@ -464,15 +464,10 @@ namespace DroneSurveillanceSystem.Views
         {
             // Unsubscribe from WebSocket messages
             ApiService.Instance.MessageReceived -= OnWebSocketMessageReceived;
-            this.Close();
+            CloseRequested?.Invoke(this, EventArgs.Empty);
         }
 
-        protected override void OnClosed(EventArgs e)
-        {
-            // Unsubscribe from WebSocket messages
-            ApiService.Instance.MessageReceived -= OnWebSocketMessageReceived;
-            base.OnClosed(e);
-        }
+        public event EventHandler? CloseRequested;
     }
 
     // Data model for pending requests

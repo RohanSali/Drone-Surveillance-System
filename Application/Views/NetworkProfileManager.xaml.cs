@@ -10,7 +10,7 @@ using DroneSurveillanceSystem.Services;
 
 namespace DroneSurveillanceSystem.Views
 {
-    public partial class NetworkProfileManager : Window
+    public partial class NetworkProfileManager : UserControl
     {
         private readonly NetworkService _networkService;
         private readonly DroneTrackingService _droneTrackingService;
@@ -683,7 +683,7 @@ namespace DroneSurveillanceSystem.Views
 
         private void CloseButton_Click(object sender, RoutedEventArgs e)
         {
-            this.Close();
+            CloseRequested?.Invoke(this, EventArgs.Empty);
         }
 
         private void ShowNetworkEditor()
@@ -744,5 +744,6 @@ namespace DroneSurveillanceSystem.Views
             };
             timer.Start();
         }
+        public event EventHandler? CloseRequested;
     }
 }

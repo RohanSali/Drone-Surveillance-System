@@ -852,5 +852,11 @@
                 </StackPanel>
             </Grid>
         </Border>
+        
+        <!-- Fullscreen overlay host for in-window navigation. When visible, covers header, content and footer. -->
+        <ContentControl x:Name="OverlayContentHost"
+                        Grid.Row="0"
+                        Grid.RowSpan="3"
+                        Visibility="Collapsed"/>
     </Grid>
 </Window> 

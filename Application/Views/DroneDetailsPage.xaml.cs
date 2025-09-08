@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using DroneSurveillanceSystem.Services;
@@ -58,10 +59,12 @@ namespace DroneSurveillanceSystem.Views
 
         private void BackToDronesListButton_Click(object sender, RoutedEventArgs e)
         {
-            // Navigate back to Connected Drones Page in full screen
-            ConnectedDronesPage connectedDronesPage = new ConnectedDronesPage();
-            connectedDronesPage.WindowState = WindowState.Maximized;
-            connectedDronesPage.Show();
+            // Show Connected Drones inside MainWindow overlay
+            var main = Application.Current.Windows.OfType<MainWindow>().FirstOrDefault();
+            if (main != null)
+            {
+                main.ShowOverlay(new ConnectedDronesPage());
+            }
             this.Close();
         }
 
@@ -157,10 +160,12 @@ namespace DroneSurveillanceSystem.Views
                                   MessageBoxImage.Error);
                 }
                 
-                // Navigate back to Connected Drones Page in full screen
-                ConnectedDronesPage connectedDronesPage = new ConnectedDronesPage();
-                connectedDronesPage.WindowState = WindowState.Maximized;
-                connectedDronesPage.Show();
+                // Show Connected Drones inside MainWindow overlay
+                var main = Application.Current.Windows.OfType<MainWindow>().FirstOrDefault();
+                if (main != null)
+                {
+                    main.ShowOverlay(new ConnectedDronesPage());
+                }
                 this.Close();
             }
         }

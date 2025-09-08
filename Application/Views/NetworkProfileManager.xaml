@@ -1,13 +1,10 @@
-<Window x:Class="DroneSurveillanceSystem.Views.NetworkProfileManager"
+<UserControl x:Class="DroneSurveillanceSystem.Views.NetworkProfileManager"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Network Profile Manager" Height="900" Width="1400"
-        WindowStartupLocation="CenterScreen"
-        WindowState="Maximized"
         Background="#FF0F0F0F"
         FontFamily="Segoe UI">
     
-    <Window.Resources>
+    <UserControl.Resources>
         <!-- Color Resources -->
         <Color x:Key="DarkBackground">#FF0F0F0F</Color>
         <Color x:Key="MediumBackground">#FF1E1E1E</Color>
@@ -284,7 +281,7 @@
             <Setter Property="Padding" Value="10"/>
             <Setter Property="Margin" Value="0,0,0,5"/>
         </Style>
-    </Window.Resources>
+    </UserControl.Resources>
 
     <Grid>
         <Grid.RowDefinitions>
@@ -601,4 +598,4 @@
             </Grid>
         </Border>
     </Grid>
-</Window>
+</UserControl>

@@ -1,19 +1,14 @@
-<Window x:Class="DroneSurveillanceSystem.Views.ConnectedDronesPage"
+<UserControl x:Class="DroneSurveillanceSystem.Views.ConnectedDronesPage"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:DroneSurveillanceSystem.Services"
         mc:Ignorable="d"
-        Title="USB Connected Drones - Module Installation" Height="900" Width="1400"
-        WindowStartupLocation="CenterScreen"
-        WindowState="Maximized"
         Background="{StaticResource DarkBackgroundBrush}"
-        FontFamily="Segoe UI"
-        ResizeMode="CanResize"
-        WindowStyle="SingleBorderWindow">
+        FontFamily="Segoe UI">
 
-    <Window.Resources>
+    <UserControl.Resources>
         <local:DroneColorConverter x:Key="DroneColorConverter"/>
         
         <!-- Modern Card Style -->
@@ -159,7 +154,7 @@
                 </Setter.Value>
             </Setter>
         </Style>
-    </Window.Resources>
+    </UserControl.Resources>
 
     <Grid>
         <Grid.RowDefinitions>
@@ -463,4 +458,4 @@
             </StackPanel>
         </Border>
     </Grid>
-</Window>
+</UserControl>
