@@ -22,7 +22,7 @@
         </Style>
 
         <Style x:Key="NetworkMonitorButton" TargetType="Button">
-            <Setter Property="Background" Value="#00d4ff"/>
+            <Setter Property="Background" Value="#00B4D8"/>
             <Setter Property="Foreground" Value="#1a1a1a"/>
             <Setter Property="BorderThickness" Value="2"/>
             <Setter Property="BorderBrush" Value="#00b8e6"/>

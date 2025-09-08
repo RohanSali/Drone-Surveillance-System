@@ -122,8 +122,8 @@
                 <!-- Application Logo -->
                 <Grid>
                     <!-- Try to load the actual logo -->
-                    <Image Source="pack://Application:,,,/Images/logo.jpg" 
-                           Height="120" Width="120" Margin="0,0,0,30"
+                    <Image Source="pack://Application:,,,/Images/logo.png" 
+                           Height="150" Width="150" Margin="0,0,0,0"
                            HorizontalAlignment="Center"
                            Visibility="Visible" x:Name="LogoImage"/>
                     
@@ -141,6 +141,10 @@
                     </Border>
                 </Grid>
                 
+                <TextBlock Text="VIRA" 
+                           Style="{StaticResource TitleTextStyle}"
+                           FontSize="36" Margin="0,0,0,10"/>
+
                 <TextBlock Text="VIGILANCE AND RAPID ALERTS" 
                            Style="{StaticResource TitleTextStyle}"
                            FontSize="26" Margin="0,0,0,10"/>

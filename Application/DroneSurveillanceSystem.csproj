@@ -25,9 +25,7 @@
     <Folder Include="Data\" />
   </ItemGroup>
   <ItemGroup>
-  <Resource Include="Images\image_1.png" />
-  <Resource Include="Images\image_2.png" />
-  <Resource Include="Images\logo.jpg" />
+  <Resource Include="Images\logo.png" />
   </ItemGroup>
 
   <ItemGroup>

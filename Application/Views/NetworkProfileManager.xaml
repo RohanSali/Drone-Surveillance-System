@@ -12,8 +12,8 @@
         <Color x:Key="DarkBackground">#FF0F0F0F</Color>
         <Color x:Key="MediumBackground">#FF1E1E1E</Color>
         <Color x:Key="LightBackground">#FF2D2D2D</Color>
-        <Color x:Key="AccentBlue">#FF0078D4</Color>
-        <Color x:Key="AccentGreen">#FF28A745</Color>
+        <Color x:Key="NeonBlueColor">#00B4D8</Color>
+        <Color x:Key="AccentGreen">#10B981</Color>
         <Color x:Key="AccentRed">#FFDC3545</Color>
         <Color x:Key="AccentYellow">#FFFFC107</Color>
         <Color x:Key="AccentPurple">#FF8B5CF6</Color>
@@ -24,7 +24,7 @@
         <SolidColorBrush x:Key="DarkBackgroundBrush" Color="{StaticResource DarkBackground}"/>
         <SolidColorBrush x:Key="MediumBackgroundBrush" Color="{StaticResource MediumBackground}"/>
         <SolidColorBrush x:Key="LightBackgroundBrush" Color="{StaticResource LightBackground}"/>
-        <SolidColorBrush x:Key="AccentBlueBrush" Color="{StaticResource AccentBlue}"/>
+        <SolidColorBrush x:Key="AccentBlueBrush" Color="{StaticResource NeonBlueColor}"/>
         <SolidColorBrush x:Key="AccentGreenBrush" Color="{StaticResource AccentGreen}"/>
         <SolidColorBrush x:Key="AccentRedBrush" Color="{StaticResource AccentRed}"/>
         <SolidColorBrush x:Key="AccentYellowBrush" Color="{StaticResource AccentYellow}"/>
