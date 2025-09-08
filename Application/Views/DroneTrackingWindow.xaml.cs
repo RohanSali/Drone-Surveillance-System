@@ -12,7 +12,7 @@ using System.Runtime.CompilerServices;
 
 namespace DroneSurveillanceSystem.Views
 {
-    public partial class DroneTrackingWindow : Window, INotifyPropertyChanged
+    public partial class DroneTrackingWindow : UserControl, INotifyPropertyChanged
     {
         private readonly DroneTrackingService _trackingService;
         private readonly DispatcherTimer _uiUpdateTimer;
@@ -23,6 +23,7 @@ namespace DroneSurveillanceSystem.Views
         private int _dataPointsCounter = 0;
 
         public event PropertyChangedEventHandler? PropertyChanged;
+        public event EventHandler? CloseRequested;
 
         public DroneTrackingWindow()
         {
@@ -343,15 +344,14 @@ namespace DroneSurveillanceSystem.Views
 
         private void CloseButton_Click(object sender, RoutedEventArgs e)
         {
-            Close();
+            CloseRequested?.Invoke(this, EventArgs.Empty);
         }
 
-        protected override void OnClosed(EventArgs e)
+        public void Cleanup()
         {
             _uiUpdateTimer?.Stop();
             _sessionTimer?.Stop();
             _trackingService?.Dispose();
-            base.OnClosed(e);
         }
 
         protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)

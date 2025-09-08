@@ -18,7 +18,7 @@ using DroneSurveillanceSystem.Models;
 
 namespace DroneSurveillanceSystem.Views
 {
-    public partial class MonitoringAlertsPage : Window, INotifyPropertyChanged
+    public partial class MonitoringAlertsPage : UserControl, INotifyPropertyChanged
     {
         // Show only alerts from user-added devices (not hardcoded ones)
         public ObservableCollection<AlertData> ActiveAlerts => new ObservableCollection<AlertData>(AlertManager.Instance.GetAllDeviceAlerts());
@@ -37,7 +37,7 @@ namespace DroneSurveillanceSystem.Views
         public MonitoringAlertsPage()
         {
             InitializeComponent();
-            Console.WriteLine($"[MonitoringAlertsPage] 🏗️ MonitoringAlertsPage constructor called - Window created");
+            Console.WriteLine($"[MonitoringAlertsPage] 🏗️ MonitoringAlertsPage constructor called - Control created");
             
             // Set up data context
             DataContext = this;
@@ -59,34 +59,11 @@ namespace DroneSurveillanceSystem.Views
             ApplyFilter();
         }
 
-        protected override void OnSourceInitialized(EventArgs e)
-        {
-            base.OnSourceInitialized(e);
-            Console.WriteLine($"[MonitoringAlertsPage] 📱 Window source initialized - Window is now active");
-        }
-
-        protected override void OnActivated(EventArgs e)
-        {
-            base.OnActivated(e);
-            Console.WriteLine($"[MonitoringAlertsPage] 🎯 Window activated - Page is now in focus");
-        }
-
-        protected override void OnDeactivated(EventArgs e)
-        {
-            base.OnDeactivated(e);
-            Console.WriteLine($"[MonitoringAlertsPage] 🔄 Window deactivated - Page lost focus");
-        }
+        // Window lifecycle events removed for UserControl
 
         public static bool IsMonitoringAlertsPageOpen()
         {
-            foreach (Window window in System.Windows.Application.Current.Windows)
-            {
-                if (window is MonitoringAlertsPage)
-                {
-                    Console.WriteLine($"[MonitoringAlertsPage] ✅ MonitoringAlertsPage is currently open and available");
-                    return true;
-                }
-            }
+            // Not applicable for UserControl
             Console.WriteLine($"[MonitoringAlertsPage] ❌ MonitoringAlertsPage is not currently open");
             return false;
         }
@@ -100,7 +77,11 @@ namespace DroneSurveillanceSystem.Views
                 if (alert != null)
                 {
                     var alertPopup = new AlertInfoPopup(alert);
-                    alertPopup.Owner = this;
+                    var ownerWindow = Application.Current.Windows.OfType<Window>().FirstOrDefault(w => w.IsActive) ?? Application.Current.MainWindow;
+                    if (ownerWindow != null)
+                    {
+                        alertPopup.Owner = ownerWindow;
+                    }
                     alertPopup.ShowDialog();
                 }
             }
@@ -108,7 +89,7 @@ namespace DroneSurveillanceSystem.Views
 
         private void CloseButton_Click(object sender, RoutedEventArgs e)
         {
-            this.Close();
+            CloseRequested?.Invoke(this, EventArgs.Empty);
         }
 
         private void FilterButton_Click(object sender, RoutedEventArgs e)
@@ -250,6 +231,10 @@ namespace DroneSurveillanceSystem.Views
                               MessageBoxImage.Error);
             }
         }
+    }
+    public partial class MonitoringAlertsPage
+    {
+        public event EventHandler? CloseRequested;
     }
 
     public enum DeviceFilterType

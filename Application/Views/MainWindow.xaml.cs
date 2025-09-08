@@ -649,51 +649,48 @@ namespace DroneSurveillanceSystem.Views
 
         private void DroneTrackingButton_Click(object sender, RoutedEventArgs e)
         {
-            var droneTrackingWindow = new DroneTrackingWindow();
-            droneTrackingWindow.Owner = this;
-            droneTrackingWindow.Show();
+            var droneTrackingPage = new DroneTrackingWindow();
+            droneTrackingPage.CloseRequested += (s, args) => 
+            {
+                droneTrackingPage.Cleanup();
+                HideOverlay();
+            };
+            ShowOverlay(droneTrackingPage);
         }
 
         private void NetworkButton_Click(object sender, RoutedEventArgs e)
         {
-            var networkMonitoringPage = new NetworkMonitoringPage(_networkService)
-            {
-                Owner = this,
-                WindowState = WindowState.Maximized
-            };
-            networkMonitoringPage.Show();
+            var page = new NetworkMonitoringPage(_networkService);
+            page.CloseRequested += (s, _) => HideOverlay();
+            ShowOverlay(page);
         }
 
         private void MonitoringButton_Click(object sender, RoutedEventArgs e)
         {
-            var monitoringWindow = new MonitoringAlertsPage();
-            monitoringWindow.Owner = this;
-            monitoringWindow.WindowState = WindowState.Maximized;
-            monitoringWindow.Show();
+            var page = new MonitoringAlertsPage();
+            page.CloseRequested += (s, _) => HideOverlay();
+            ShowOverlay(page);
         }
 
         private void ActiveAlertsCard_Click(object sender, MouseButtonEventArgs e)
         {
-            var monitoringWindow = new MonitoringAlertsPage();
-            monitoringWindow.Owner = this;
-            monitoringWindow.WindowState = WindowState.Maximized;
-            monitoringWindow.Show();
+            var page = new MonitoringAlertsPage();
+            page.CloseRequested += (s, _) => HideOverlay();
+            ShowOverlay(page);
         }
 
         private void ActiveDronesCard_Click(object sender, MouseButtonEventArgs e)
         {
-            var monitoringWindow = new MonitoringAlertsPage();
-            monitoringWindow.Owner = this;
-            monitoringWindow.WindowState = WindowState.Maximized;
-            monitoringWindow.Show();
+            var page = new MonitoringAlertsPage();
+            page.CloseRequested += (s, _) => HideOverlay();
+            ShowOverlay(page);
         }
 
         private void ActiveCctvsCard_Click(object sender, MouseButtonEventArgs e)
         {
-            var monitoringWindow = new MonitoringAlertsPage();
-            monitoringWindow.Owner = this;
-            monitoringWindow.WindowState = WindowState.Maximized;
-            monitoringWindow.Show();
+            var page = new MonitoringAlertsPage();
+            page.CloseRequested += (s, _) => HideOverlay();
+            ShowOverlay(page);
         }
 
         private void LostFindingButton_Click(object sender, RoutedEventArgs e)
@@ -735,30 +732,28 @@ namespace DroneSurveillanceSystem.Views
                     var authService = new AuthService();
                     await authService.SignOutAsync();
                     
-                    // Show login window again
+                    // Hide this window (keep app alive) and show LoginWindow
+                    this.Hide();
+                    var oldMainWindow = this;
                     var loginWindow = new LoginWindow(authService);
-                    loginWindow.ShowDialog();
-                    
-                    if (loginWindow.IsAuthenticated || loginWindow.IsGuestMode)
+
+                    // Switch MainWindow to the LoginWindow so closing the old one doesn't exit the app
+                    Application.Current.MainWindow = loginWindow;
+
+                    // When login window closes (after successful login it will create/show a new MainWindow),
+                    // clean up and close the old hidden MainWindow instance to avoid duplicates
+                    loginWindow.Closed += (s, args) =>
                     {
-                        // Reinitialize realtime connection for the new session
                         try
                         {
-                            await DroneSurveillanceSystem.Services.ApiService.Instance.StartWebSocketAsync();
+                            // Ensure the hidden window is closed and resources are released
+                            oldMainWindow.Close();
                         }
                         catch { }
-                        
-                        // User signed in again, refresh the main window
-                        this.Close();
-                        var newMainWindow = new MainWindow();
-                        newMainWindow.Show();
-                    }
-                    else
-                    {
-                        // User cancelled, exit application
-                        _updateTimer?.Dispose();
-                        Application.Current.Shutdown();
-                    }
+                    };
+
+                    // Show login as the active window (non-modal)
+                    loginWindow.Show();
                 }
                 catch (Exception ex)
                 {

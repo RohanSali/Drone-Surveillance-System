@@ -14,7 +14,7 @@ using System.Net.Http;
 
 namespace DroneSurveillanceSystem.Views
 {
-    public partial class NetworkMonitoringPage : Window, INotifyPropertyChanged
+    public partial class NetworkMonitoringPage : UserControl, INotifyPropertyChanged
     {
         private readonly NetworkService _networkService;
 
@@ -170,11 +170,9 @@ namespace DroneSurveillanceSystem.Views
 
         private void MonitorNetwork(Network network)
         {
-            var networkDetailsWindow = new NetworkDetailsPage(network)
-            {
-                Owner = this,
-                WindowState = WindowState.Maximized
-            };
+            var networkDetailsWindow = new NetworkDetailsPage(network);
+            networkDetailsWindow.Owner = Window.GetWindow(this);
+            networkDetailsWindow.WindowState = WindowState.Maximized;
             networkDetailsWindow.Show();
         }
 
@@ -184,8 +182,8 @@ namespace DroneSurveillanceSystem.Views
             if (network != null)
             {
                 var networkDetailsWindow = new NetworkDetailsPage(network);
-            networkDetailsWindow.Owner = this;
-            networkDetailsWindow.Show();
+                networkDetailsWindow.Owner = Window.GetWindow(this);
+                networkDetailsWindow.Show();
             }
         }
 
@@ -195,8 +193,8 @@ namespace DroneSurveillanceSystem.Views
             if (network != null)
             {
                 var networkDetailsWindow = new NetworkDetailsPage(network);
-            networkDetailsWindow.Owner = this;
-            networkDetailsWindow.Show();
+                networkDetailsWindow.Owner = Window.GetWindow(this);
+                networkDetailsWindow.Show();
             }
         }
 
@@ -206,8 +204,8 @@ namespace DroneSurveillanceSystem.Views
             if (network != null)
             {
                 var networkDetailsWindow = new NetworkDetailsPage(network);
-            networkDetailsWindow.Owner = this;
-            networkDetailsWindow.Show();
+                networkDetailsWindow.Owner = Window.GetWindow(this);
+                networkDetailsWindow.Show();
             }
         }
 
@@ -217,7 +215,7 @@ namespace DroneSurveillanceSystem.Views
             if (network != null)
             {
                 var networkDetailsWindow = new NetworkDetailsPage(network);
-            networkDetailsWindow.Owner = this;
+                networkDetailsWindow.Owner = Window.GetWindow(this);
             networkDetailsWindow.Show();
             }
         }
@@ -226,7 +224,7 @@ namespace DroneSurveillanceSystem.Views
 
         private void CloseButton_Click(object sender, RoutedEventArgs e)
         {
-            this.Close();
+            CloseRequested?.Invoke(this, EventArgs.Empty);
         }
 
 
@@ -309,5 +307,9 @@ namespace DroneSurveillanceSystem.Views
                 _networkService.Networks.Remove(networkToRemove);
             }
         }
+    }
+    public partial class NetworkMonitoringPage
+    {
+        public event EventHandler? CloseRequested;
     }
 }
