@@ -15,7 +15,7 @@ using System.Collections.ObjectModel;
 
 namespace DroneSurveillanceSystem.Views
 {
-    public partial class NetworkDetailsPage : Window, INotifyPropertyChanged
+    public partial class NetworkDetailsPage : UserControl, INotifyPropertyChanged
     {
         private readonly Network _network;
         private readonly NetworkService _networkService;
@@ -327,22 +327,22 @@ namespace DroneSurveillanceSystem.Views
             TotalAlertsCount = FilteredAlerts.Count;
         }
 
-
-
-
-
-
-
         private void Alert_Click(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
             if (sender is FrameworkElement element && element.Tag is string alertTag)
             {
-                // Find the alert by tag (assume tag is alert id)
                 var alert = AlertManager.Instance.ActiveAlerts.FirstOrDefault(a => a.Timestamp == alertTag);
                 if (alert != null)
                 {
                     var alertPopup = new AlertInfoPopup(alert);
-                    alertPopup.Owner = this;
+                    
+                    // Get the parent window instead of using 'this'
+                    var parentWindow = Window.GetWindow(this);
+                    if (parentWindow != null)
+                    {
+                        alertPopup.Owner = parentWindow;
+                    }
+                    
                     alertPopup.ShowDialog();
                 }
             }
@@ -356,12 +356,6 @@ namespace DroneSurveillanceSystem.Views
             UpdateNetworkSummary();
         }
 
-        private void CloseButton_Click(object sender, RoutedEventArgs e)
-        {
-            _updateTimer?.Stop();
-            this.Close();
-        }
-        
         private void AcknowledgeAlerts_Click(object sender, RoutedEventArgs e)
         {
             try
@@ -401,11 +395,14 @@ namespace DroneSurveillanceSystem.Views
             }
         }
 
-        protected override void OnClosed(EventArgs e)
+        private void CloseButton_Click(object sender, RoutedEventArgs e)
         {
-            _updateTimer?.Stop();
-            base.OnClosed(e);
+            // Raise the event to notify the parent (NetworkMonitoringPage) to close this page
+            CloseRequested?.Invoke(this, EventArgs.Empty);
         }
+
+        // Event to notify when the network details page should be closed
+        public event EventHandler? CloseRequested;
     }
 
     // Data models for network monitoring

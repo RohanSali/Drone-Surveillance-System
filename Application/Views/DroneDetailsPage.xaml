@@ -5,12 +5,10 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:DroneSurveillanceSystem.Services"
         mc:Ignorable="d"
-        Title="Drone Details - Module Installation" Height="800" Width="1100"
+        Title="Drone Details - Module Installation" Height="200" Width="200"
         WindowStartupLocation="CenterScreen"
-        WindowState="Maximized"
         Background="#0a0a0a"
         FontFamily="Segoe UI"
-        ResizeMode="CanResize"
         WindowStyle="SingleBorderWindow">
 
     <Window.Resources>

@@ -170,10 +170,16 @@ namespace DroneSurveillanceSystem.Views
 
         private void MonitorNetwork(Network network)
         {
-            var networkDetailsWindow = new NetworkDetailsPage(network);
-            networkDetailsWindow.Owner = Window.GetWindow(this);
-            networkDetailsWindow.WindowState = WindowState.Maximized;
-            networkDetailsWindow.Show();
+            // Show the network details overlay
+            NetworkDetailsOverlay.Visibility = Visibility.Visible;
+            
+            // Create the network details page and subscribe to the close event
+            var networkDetailsPage = new NetworkDetailsPage(network);
+            networkDetailsPage.CloseRequested += OnNetworkDetailsCloseRequested;
+            
+            // Clear any existing content and add the new network details page
+            NetworkDetailsContentHost.Children.Clear();
+            NetworkDetailsContentHost.Children.Add(networkDetailsPage);
         }
 
         private void Network1Button_Click(object sender, RoutedEventArgs e)
@@ -181,9 +187,7 @@ namespace DroneSurveillanceSystem.Views
             var network = _networkService.Networks.FirstOrDefault(n => n.Name == "Network 1");
             if (network != null)
             {
-                var networkDetailsWindow = new NetworkDetailsPage(network);
-                networkDetailsWindow.Owner = Window.GetWindow(this);
-                networkDetailsWindow.Show();
+                MonitorNetwork(network); // Use the updated MonitorNetwork method
             }
         }
 
@@ -192,9 +196,45 @@ namespace DroneSurveillanceSystem.Views
             var network = _networkService.Networks.FirstOrDefault(n => n.Name == "Network 2");
             if (network != null)
             {
-                var networkDetailsWindow = new NetworkDetailsPage(network);
-                networkDetailsWindow.Owner = Window.GetWindow(this);
-                networkDetailsWindow.Show();
+                MonitorNetwork(network); // Use the updated MonitorNetwork method
+            }
+        }
+
+        private void NetworkDetailsButton_Click(object sender, RoutedEventArgs e)
+        {
+            // Get a specific network - you need to decide which one to show
+            // For example, get the first network or prompt the user to select one
+            var network = _networkService.Networks.FirstOrDefault();
+            
+            if (network != null)
+            {
+                // Show the network details overlay
+                NetworkDetailsOverlay.Visibility = Visibility.Visible;
+                
+                // Create the network details page with the actual network object
+                var networkDetailsPage = new NetworkDetailsPage(network);
+                networkDetailsPage.CloseRequested += OnNetworkDetailsCloseRequested;
+                
+                // Clear any existing content and add the new network details page
+                NetworkDetailsContentHost.Children.Clear();
+                NetworkDetailsContentHost.Children.Add(networkDetailsPage);
+            }
+            else
+            {
+                MessageBox.Show("No networks available to display.", "Information", 
+                    MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+        }
+
+        private void OnNetworkDetailsCloseRequested(object sender, EventArgs e)
+        {
+            // Hide the network details overlay when close is requested
+            NetworkDetailsOverlay.Visibility = Visibility.Collapsed;
+            
+            // Optional: Unsubscribe from the event
+            if (sender is NetworkDetailsPage networkDetailsPage)
+            {
+                networkDetailsPage.CloseRequested -= OnNetworkDetailsCloseRequested;
             }
         }
 
@@ -203,9 +243,7 @@ namespace DroneSurveillanceSystem.Views
             var network = _networkService.Networks.FirstOrDefault(n => n.Name == "Network 3");
             if (network != null)
             {
-                var networkDetailsWindow = new NetworkDetailsPage(network);
-                networkDetailsWindow.Owner = Window.GetWindow(this);
-                networkDetailsWindow.Show();
+                MonitorNetwork(network); // Use the updated MonitorNetwork method
             }
         }
 
@@ -214,9 +252,7 @@ namespace DroneSurveillanceSystem.Views
             var network = _networkService.Networks.FirstOrDefault(n => n.Name == "Network 4");
             if (network != null)
             {
-                var networkDetailsWindow = new NetworkDetailsPage(network);
-                networkDetailsWindow.Owner = Window.GetWindow(this);
-            networkDetailsWindow.Show();
+                MonitorNetwork(network); // Use the updated MonitorNetwork method
             }
         }
 
