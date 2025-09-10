@@ -216,11 +216,33 @@ namespace DroneSurveillanceSystem.Views
             WindowState = WindowState.Minimized;
         }
 
-         private void SettingsButton_Click(object sender, RoutedEventArgs e)
+        private void SettingsButton_Click(object sender, RoutedEventArgs e)
         {
-            var settingsWindow = new SettingsWindow();
-            settingsWindow.Owner = this;
-            settingsWindow.ShowDialog();
+            // Close the user profile dropdown
+            UserProfileToggle.IsChecked = false;
+            
+            // Show the settings overlay and navigate to settings page
+            SettingsOverlay.Visibility = Visibility.Visible;
+            
+            // Create the settings page and subscribe to the close event
+            var settingsPage = new SettingsPage();
+            settingsPage.CloseRequested += OnSettingsCloseRequested;
+            
+            // Clear any existing content and add the new settings page
+            SettingsContentHost.Children.Clear();
+            SettingsContentHost.Children.Add(settingsPage);
+        }
+
+        private void OnSettingsCloseRequested(object sender, EventArgs e)
+        {
+            // Hide the settings overlay when close is requested
+            SettingsOverlay.Visibility = Visibility.Collapsed;
+            
+            // Optional: Unsubscribe from the event
+            if (sender is SettingsPage settingsPage)
+            {
+                settingsPage.CloseRequested -= OnSettingsCloseRequested;
+            }
         }
 
         private void SignOutButton_Click(object sender, RoutedEventArgs e)
@@ -429,6 +451,11 @@ namespace DroneSurveillanceSystem.Views
                 OverlayContentHost.Content = control;
                 OverlayContentHost.Visibility = Visibility.Visible;
             }
+        }
+
+        public void HideSettingsOverlay()
+        {
+            SettingsOverlay.Visibility = Visibility.Collapsed;
         }
 
         public void HideOverlay()

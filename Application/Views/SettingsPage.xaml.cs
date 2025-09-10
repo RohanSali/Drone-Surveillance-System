@@ -7,11 +7,11 @@ using Microsoft.Win32;
 
 namespace DroneSurveillanceSystem.Views
 {
-    public partial class SettingsWindow : Window
+    public partial class SettingsPage : UserControl
     {
         private readonly SurveillanceService _surveillanceService;
 
-        public SettingsWindow()
+        public SettingsPage()
         {
             InitializeComponent();
             _surveillanceService = new SurveillanceService();
@@ -27,10 +27,8 @@ namespace DroneSurveillanceSystem.Views
             // Load saved settings or use defaults
             // In a real application, these would be loaded from a settings file
             DroneIdTextBox.Text = "Drone-001";
-
         }
 
-    
         private async void ExportDataButton_Click(object sender, RoutedEventArgs e)
         {
             try
@@ -45,46 +43,46 @@ namespace DroneSurveillanceSystem.Views
                 if (saveFileDialog.ShowDialog() == true)
                 {
                     string format = Path.GetExtension(saveFileDialog.FileName).ToLower() == ".csv" ? "csv" : "json";
-                    
+
                     // Export data from the last 30 days
                     DateTime fromDate = DateTime.Now.AddDays(-30);
                     DateTime toDate = DateTime.Now;
 
                     string? exportPath = await _surveillanceService.ExportDetectionDataAsync(fromDate, toDate, format);
-                    
+
                     if (!string.IsNullOrEmpty(exportPath))
                     {
                         // Copy to user-selected location
                         File.Copy(exportPath, saveFileDialog.FileName, true);
-                        
-                        MessageBox.Show($"Data exported successfully to:\n{saveFileDialog.FileName}", 
-                                      "Export Complete", 
-                                      MessageBoxButton.OK, 
+
+                        MessageBox.Show($"Data exported successfully to:\n{saveFileDialog.FileName}",
+                                      "Export Complete",
+                                      MessageBoxButton.OK,
                                       MessageBoxImage.Information);
                     }
                     else
                     {
-                        MessageBox.Show("Failed to export data. Please try again.", 
-                                      "Export Error", 
-                                      MessageBoxButton.OK, 
+                        MessageBox.Show("Failed to export data. Please try again.",
+                                      "Export Error",
+                                      MessageBoxButton.OK,
                                       MessageBoxImage.Error);
                     }
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error exporting data: {ex.Message}", 
-                              "Export Error", 
-                              MessageBoxButton.OK, 
+                MessageBox.Show($"Error exporting data: {ex.Message}",
+                              "Export Error",
+                              MessageBoxButton.OK,
                               MessageBoxImage.Error);
             }
         }
 
         private void ClearLogsButton_Click(object sender, RoutedEventArgs e)
         {
-            var result = MessageBox.Show("Are you sure you want to clear all surveillance logs?\nThis action cannot be undone.", 
-                                       "Confirm Clear Logs", 
-                                       MessageBoxButton.YesNo, 
+            var result = MessageBox.Show("Are you sure you want to clear all surveillance logs?\nThis action cannot be undone.",
+                                       "Confirm Clear Logs",
+                                       MessageBoxButton.YesNo,
                                        MessageBoxImage.Warning);
 
             if (result == MessageBoxResult.Yes)
@@ -106,16 +104,16 @@ namespace DroneSurveillanceSystem.Views
                         File.Delete(databasePath);
                     }
 
-                    MessageBox.Show("All surveillance logs have been cleared.", 
-                                  "Logs Cleared", 
-                                  MessageBoxButton.OK, 
+                    MessageBox.Show("All surveillance logs have been cleared.",
+                                  "Logs Cleared",
+                                  MessageBoxButton.OK,
                                   MessageBoxImage.Information);
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show($"Error clearing logs: {ex.Message}", 
-                                  "Clear Error", 
-                                  MessageBoxButton.OK, 
+                    MessageBox.Show($"Error clearing logs: {ex.Message}",
+                                  "Clear Error",
+                                  MessageBoxButton.OK,
                                   MessageBoxImage.Error);
                 }
             }
@@ -123,9 +121,9 @@ namespace DroneSurveillanceSystem.Views
 
         private void ResetButton_Click(object sender, RoutedEventArgs e)
         {
-            var result = MessageBox.Show("Reset all settings to default values?", 
-                                       "Confirm Reset", 
-                                       MessageBoxButton.YesNo, 
+            var result = MessageBox.Show("Reset all settings to default values?",
+                                       "Confirm Reset",
+                                       MessageBoxButton.YesNo,
                                        MessageBoxImage.Question);
 
             if (result == MessageBoxResult.Yes)
@@ -133,9 +131,9 @@ namespace DroneSurveillanceSystem.Views
                 // Reset all controls to default values
                 DroneIdTextBox.Text = "Drone-001";
 
-                MessageBox.Show("Settings have been reset to defaults.", 
-                              "Settings Reset", 
-                              MessageBoxButton.OK, 
+                MessageBox.Show("Settings have been reset to defaults.",
+                              "Settings Reset",
+                              MessageBoxButton.OK,
                               MessageBoxImage.Information);
             }
         }
@@ -145,31 +143,31 @@ namespace DroneSurveillanceSystem.Views
             try
             {
                 // Validate settings
-                if (string.IsNullOrWhiteSpace(DroneIdTextBox.Text))
-                {
-                    MessageBox.Show("Drone ID cannot be empty.", 
-                                  "Validation Error", 
-                                  MessageBoxButton.OK, 
-                                  MessageBoxImage.Warning);
-                    return;
-                }
+                // if (string.IsNullOrWhiteSpace(DroneIdTextBox.Text))
+                // {
+                //     MessageBox.Show("Drone ID cannot be empty.", 
+                //                   "Validation Error", 
+                //                   MessageBoxButton.OK, 
+                //                   MessageBoxImage.Warning);
+                //     return;
+                // }
 
-                // In a real application, save settings to configuration file
-                SaveSettingsToFile();
+                // // In a real application, save settings to configuration file
+                // SaveSettingsToFile();
 
-                MessageBox.Show("Settings saved successfully!", 
-                              "Settings Saved", 
-                              MessageBoxButton.OK, 
-                              MessageBoxImage.Information);
+                // MessageBox.Show("Settings saved successfully!", 
+                //               "Settings Saved", 
+                //               MessageBoxButton.OK, 
+                //               MessageBoxImage.Information);
 
-                DialogResult = true;
-                Close();
+                // // Navigate back to main window instead of closing
+                // NavigateBackToMain();
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error saving settings: {ex.Message}", 
-                              "Save Error", 
-                              MessageBoxButton.OK, 
+                MessageBox.Show($"Error saving settings: {ex.Message}",
+                              "Save Error",
+                              MessageBoxButton.OK,
                               MessageBoxImage.Error);
             }
         }
@@ -185,7 +183,7 @@ namespace DroneSurveillanceSystem.Views
                 }
 
                 string settingsPath = Path.Combine(dataPath, "settings.json");
-                
+
                 var settings = new
                 {
                     DroneId = DroneIdTextBox.Text,
@@ -200,17 +198,13 @@ namespace DroneSurveillanceSystem.Views
                 throw new Exception($"Failed to save settings: {ex.Message}");
             }
         }
-
-        private void CancelButton_Click(object sender, RoutedEventArgs e)
+        private void BackButton_Click(object sender, RoutedEventArgs e)
         {
-            DialogResult = false;
-            Close();
+            // Raise the event to notify the parent (MainWindow) to close this settings page
+            CloseRequested?.Invoke(this, EventArgs.Empty);
         }
 
-        protected override void OnSourceInitialized(EventArgs e)
-        {
-            base.OnSourceInitialized(e);
-            // Additional initialization if needed
-        }
+        // Event to notify when the settings page should be closed
+        public event EventHandler? CloseRequested;
     }
 }

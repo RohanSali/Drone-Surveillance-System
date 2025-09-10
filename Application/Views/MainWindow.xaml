@@ -218,6 +218,17 @@
             <RowDefinition Height="30" />
         </Grid.RowDefinitions>
 
+        <!-- Add this to your MainWindow.xaml where you want the settings to appear -->
+        <Border x:Name="SettingsOverlay" 
+                Grid.Row="0" Grid.RowSpan="3"
+                Background="{StaticResource DarkGreyBrush}"
+                Visibility="Collapsed"
+                Panel.ZIndex="10">
+            <Grid x:Name="SettingsContentHost">
+                <!-- SettingsPage will be added here programmatically -->
+            </Grid>
+        </Border>
+
         <!-- Header -->
         <Border Background="{StaticResource MediumGreyBrush}" Grid.Row="0">
             <Grid>
