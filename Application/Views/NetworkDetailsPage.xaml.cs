@@ -397,7 +397,10 @@ namespace DroneSurveillanceSystem.Views
 
         private void CloseButton_Click(object sender, RoutedEventArgs e)
         {
-            // Raise the event to notify the parent (NetworkMonitoringPage) to close this page
+            // Stop the timer to prevent memory leaks
+            _updateTimer?.Stop();
+            
+            // Raise the event to notify the parent to close this page
             CloseRequested?.Invoke(this, EventArgs.Empty);
         }
 

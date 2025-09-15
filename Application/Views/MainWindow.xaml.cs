@@ -13,13 +13,13 @@ using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using System.Windows.Media.Effects;
 using System.Windows.Media.Animation;
+using System.Reflection;
 using DroneSurveillanceSystem.Models;
 using DroneSurveillanceSystem.Services;
 using DroneSurveillanceSystem.Views;
 using Microsoft.Win32;
 using System.Linq;
-using System.Windows.Controls; 
-using System.Windows.Input;  
+using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 
 namespace DroneSurveillanceSystem.Views
@@ -448,6 +448,7 @@ namespace DroneSurveillanceSystem.Views
         {
             if (OverlayContentHost != null)
             {
+                // Store the previous content if there is one, for potential future use
                 OverlayContentHost.Content = control;
                 OverlayContentHost.Visibility = Visibility.Visible;
             }
@@ -462,6 +463,33 @@ namespace DroneSurveillanceSystem.Views
         {
             if (OverlayContentHost != null)
             {
+                // Clean up the current overlay content
+                if (OverlayContentHost.Content is IDisposable disposableContent)
+                {
+                    disposableContent.Dispose();
+                }
+                
+                // Stop any timers in the overlay content
+                if (OverlayContentHost.Content is UserControl userControl)
+                {
+                    // Look for timer fields and stop them
+                    var timerFields = userControl.GetType().GetFields(System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
+                        .Where(f => f.FieldType == typeof(DispatcherTimer) || f.FieldType == typeof(Timer));
+                    
+                    foreach (var field in timerFields)
+                    {
+                        var timer = field.GetValue(userControl);
+                        if (timer is DispatcherTimer dispatcherTimer)
+                        {
+                            dispatcherTimer.Stop();
+                        }
+                        else if (timer is Timer systemTimer)
+                        {
+                            systemTimer.Change(Timeout.Infinite, Timeout.Infinite);
+                        }
+                    }
+                }
+                
                 OverlayContentHost.Content = null;
                 OverlayContentHost.Visibility = Visibility.Collapsed;
             }
@@ -687,7 +715,7 @@ namespace DroneSurveillanceSystem.Views
 
         private void NetworkButton_Click(object sender, RoutedEventArgs e)
         {
-            var page = new NetworkMonitoringPage(_networkService);
+            var page = new NetworkMonitoringPage(_networkService, this);
             page.CloseRequested += (s, _) => HideOverlay();
             ShowOverlay(page);
         }
