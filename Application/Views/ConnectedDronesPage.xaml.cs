@@ -230,24 +230,148 @@ namespace DroneSurveillanceSystem.Views
 
         private void DronesList_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
         {
-            if (DronesList.SelectedItem is UsbDrone selectedDrone)
-            {
-                // Open drone details page with the selected drone in full screen
-                DroneDetailsPage droneDetailsPage = new DroneDetailsPage(selectedDrone);
-                droneDetailsPage.WindowState = WindowState.Maximized;
-                droneDetailsPage.Show();
-                CloseRequested?.Invoke(this, EventArgs.Empty);
-            }
+            // Prevent navigation; selection is not used for navigation anymore
+            DronesList.SelectedItem = null;
         }
 
         private async void CctvList_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
         {
-            if (CctvList.SelectedItem is UsbCctv selectedCam)
+            // Prevent navigation; selection is not used for navigation anymore
+            CctvList.SelectedItem = null;
+        }
+
+        private void DroneItem_Click(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            // Ignore if click originated from a Button inside the item
+            if (e.OriginalSource is DependencyObject dep &&
+                (FindAncestor<Button>(dep) != null))
             {
-                var details = new CctvDetailsPage(selectedCam, _usbCctvService);
-                details.WindowState = WindowState.Maximized;
-                details.Show();
-                CloseRequested?.Invoke(this, EventArgs.Empty);
+                return;
+            }
+
+            if (sender is ListBoxItem item && item.DataContext is UsbDrone drone)
+            {
+                drone.IsExpanded = !drone.IsExpanded;
+                // Force UI refresh
+                DronesList.Items.Refresh();
+            }
+        }
+
+        private void CctvItem_Click(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            if (e.OriginalSource is DependencyObject dep &&
+                (FindAncestor<Button>(dep) != null))
+            {
+                return;
+            }
+
+            if (sender is ListBoxItem item && item.DataContext is UsbCctv cam)
+            {
+                cam.IsExpanded = !cam.IsExpanded;
+                CctvList.Items.Refresh();
+            }
+        }
+
+        private static T? FindAncestor<T>(DependencyObject current) where T : DependencyObject
+        {
+            while (current != null)
+            {
+                if (current is T)
+                {
+                    return (T)current;
+                }
+                current = System.Windows.Media.VisualTreeHelper.GetParent(current);
+            }
+            return null;
+        }
+
+        private async void DroneConnect_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button btn && btn.Tag is UsbDrone drone)
+            {
+                var success = await _usbDroneService.ConnectToDroneAsync(drone.Name);
+                if (success)
+                {
+                    drone.Status = "Connected - Ready for Operations";
+                    DronesList.Items.Refresh();
+                }
+                else
+                {
+                    MessageBox.Show($"Failed to connect to {drone.Name}.", "Connection Failed", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+        }
+
+        private async void DroneFetch_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button btn && btn.Tag is UsbDrone drone)
+            {
+                var success = await _usbDroneService.FetchDataAsync(drone.Name);
+                if (success)
+                {
+                    MessageBox.Show($"Data fetched successfully from {drone.Name}.", "Data Fetch Successful", MessageBoxButton.OK, MessageBoxImage.Information);
+                    DronesList.Items.Refresh();
+                }
+                else
+                {
+                    MessageBox.Show($"Failed to fetch data from {drone.Name}.", "Fetch Failed", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+        }
+
+        private void DroneInstall_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button btn && btn.Tag is UsbDrone drone)
+            {
+                try
+                {
+                    ModuleSelectionPopup moduleSelectionPopup = new ModuleSelectionPopup(drone.Name);
+                    var ownerWindow = Application.Current.Windows.OfType<Window>().FirstOrDefault(w => w.IsActive) ?? Application.Current.MainWindow;
+                    if (ownerWindow != null)
+                    {
+                        moduleSelectionPopup.Owner = ownerWindow;
+                    }
+                    moduleSelectionPopup.ShowDialog();
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Error opening module selection: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+        }
+
+        private async void CctvConnect_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button btn && btn.Tag is UsbCctv cam)
+            {
+                if (await _usbCctvService.ConnectAsync(cam.Name))
+                {
+                    cam.Status = "Connected - Ready";
+                    CctvList.Items.Refresh();
+                }
+            }
+        }
+
+        private async void CctvFetch_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button btn && btn.Tag is UsbCctv cam)
+            {
+                try
+                {
+                    // Simulate fetch then open inline config dialog as in details page
+                    await System.Threading.Tasks.Task.Delay(500);
+                    var configForm = new CctvDetailsForm(cam);
+                    var ownerWindow = Application.Current.Windows.OfType<Window>().FirstOrDefault(w => w.IsActive) ?? Application.Current.MainWindow;
+                    if (ownerWindow != null)
+                    {
+                        configForm.Owner = ownerWindow;
+                    }
+                    configForm.ShowDialog();
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Error fetching CCTV details: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
             }
         }
 
