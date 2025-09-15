@@ -17,6 +17,7 @@ namespace DroneSurveillanceSystem.Views
     public partial class NetworkMonitoringPage : UserControl, INotifyPropertyChanged
     {
         private readonly NetworkService _networkService;
+        private readonly MainWindow? _mainWindow;
 
         public int TotalDronesCount => _networkService.Networks.Sum(n => n.Drones?.Count ?? 0);
         public int ActiveAlertsCount => AlertManager.Instance.GetAllDeviceAlerts().Count();
@@ -57,6 +58,11 @@ namespace DroneSurveillanceSystem.Views
             // Subscribe to collection changes
             _networkService.Networks.CollectionChanged += (s, e) => OnPropertyChanged(nameof(TotalDronesCount));
             AlertManager.Instance.ActiveAlerts.CollectionChanged += (s, e) => OnPropertyChanged(nameof(ActiveAlertsCount));
+        }
+        
+        public NetworkMonitoringPage(NetworkService networkService, MainWindow mainWindow) : this(networkService)
+        {
+            _mainWindow = mainWindow;
         }
 
         private void LoadNetworks()
@@ -170,16 +176,61 @@ namespace DroneSurveillanceSystem.Views
 
         private void MonitorNetwork(Network network)
         {
-            // Show the network details overlay
-            NetworkDetailsOverlay.Visibility = Visibility.Visible;
+            // Try multiple ways to find the MainWindow
+            MainWindow? mainWindow = null;
+            string debugInfo = "Debug Info:\n";
             
-            // Create the network details page and subscribe to the close event
-            var networkDetailsPage = new NetworkDetailsPage(network);
-            networkDetailsPage.CloseRequested += OnNetworkDetailsCloseRequested;
+            // Method 1: Use stored MainWindow reference (most reliable)
+            mainWindow = _mainWindow;
+            debugInfo += $"Method 1 (stored reference): {(mainWindow != null ? "Found" : "Not found")}\n";
             
-            // Clear any existing content and add the new network details page
-            NetworkDetailsContentHost.Children.Clear();
-            NetworkDetailsContentHost.Children.Add(networkDetailsPage);
+            // Method 2: Try Application.Current.MainWindow
+            if (mainWindow == null)
+            {
+                mainWindow = Application.Current.MainWindow as MainWindow;
+                debugInfo += $"Method 2 (Application.Current.MainWindow): {(mainWindow != null ? "Found" : "Not found")}\n";
+            }
+            
+            // Method 3: If not found, traverse up the visual tree to find MainWindow
+            if (mainWindow == null)
+            {
+                var parentWindow = Window.GetWindow(this);
+                mainWindow = parentWindow as MainWindow;
+                debugInfo += $"Method 3 (Window.GetWindow): {(mainWindow != null ? "Found" : "Not found")}\n";
+            }
+            
+            // Method 4: If still not found, search all open windows
+            if (mainWindow == null)
+            {
+                int windowCount = Application.Current.Windows.Count;
+                debugInfo += $"Method 4 (search all windows): Searching {windowCount} windows...\n";
+                foreach (Window window in Application.Current.Windows)
+                {
+                    debugInfo += $"  - Found window: {window.GetType().Name}\n";
+                    if (window is MainWindow mw)
+                    {
+                        mainWindow = mw;
+                        debugInfo += "  - MainWindow found!\n";
+                        break;
+                    }
+                }
+            }
+            
+            if (mainWindow != null)
+            {
+                // Create the network details page and subscribe to the close event
+                var networkDetailsPage = new NetworkDetailsPage(network);
+                networkDetailsPage.CloseRequested += OnNetworkDetailsCloseRequested;
+                
+                // Show the network details page in the MainWindow overlay
+                mainWindow.ShowOverlay(networkDetailsPage);
+            }
+            else
+            {
+                // Show detailed debug information
+                MessageBox.Show($"Unable to open network details - MainWindow not available.\n\n{debugInfo}", "Error", 
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         private void Network1Button_Click(object sender, RoutedEventArgs e)
@@ -208,16 +259,7 @@ namespace DroneSurveillanceSystem.Views
             
             if (network != null)
             {
-                // Show the network details overlay
-                NetworkDetailsOverlay.Visibility = Visibility.Visible;
-                
-                // Create the network details page with the actual network object
-                var networkDetailsPage = new NetworkDetailsPage(network);
-                networkDetailsPage.CloseRequested += OnNetworkDetailsCloseRequested;
-                
-                // Clear any existing content and add the new network details page
-                NetworkDetailsContentHost.Children.Clear();
-                NetworkDetailsContentHost.Children.Add(networkDetailsPage);
+                MonitorNetwork(network); // Use the updated MonitorNetwork method
             }
             else
             {
@@ -228,10 +270,45 @@ namespace DroneSurveillanceSystem.Views
 
         private void OnNetworkDetailsCloseRequested(object sender, EventArgs e)
         {
-            // Hide the network details overlay when close is requested
-            NetworkDetailsOverlay.Visibility = Visibility.Collapsed;
+            // Find the MainWindow to hide its overlay using the same methods
+            MainWindow? mainWindow = null;
             
-            // Optional: Unsubscribe from the event
+            // Method 1: Use stored MainWindow reference (most reliable)
+            mainWindow = _mainWindow;
+            
+            // Method 2: Try Application.Current.MainWindow
+            if (mainWindow == null)
+            {
+                mainWindow = Application.Current.MainWindow as MainWindow;
+            }
+            
+            // Method 3: If not found, traverse up the visual tree to find MainWindow
+            if (mainWindow == null)
+            {
+                var parentWindow = Window.GetWindow(this);
+                mainWindow = parentWindow as MainWindow;
+            }
+            
+            // Method 4: If still not found, search all open windows
+            if (mainWindow == null)
+            {
+                foreach (Window window in Application.Current.Windows)
+                {
+                    if (window is MainWindow mw)
+                    {
+                        mainWindow = mw;
+                        break;
+                    }
+                }
+            }
+            
+            if (mainWindow != null)
+            {
+                // Hide the MainWindow overlay (this will go back to main page)
+                mainWindow.HideOverlay();
+            }
+            
+            // Unsubscribe from the event
             if (sender is NetworkDetailsPage networkDetailsPage)
             {
                 networkDetailsPage.CloseRequested -= OnNetworkDetailsCloseRequested;

@@ -13,13 +13,13 @@ using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using System.Windows.Media.Effects;
 using System.Windows.Media.Animation;
+using System.Reflection;
 using DroneSurveillanceSystem.Models;
 using DroneSurveillanceSystem.Services;
 using DroneSurveillanceSystem.Views;
 using Microsoft.Win32;
 using System.Linq;
-using System.Windows.Controls; 
-using System.Windows.Input;  
+using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 
 namespace DroneSurveillanceSystem.Views
@@ -65,6 +65,9 @@ namespace DroneSurveillanceSystem.Views
 
         public ObservableCollection<DetectionEvent> ActiveAlerts { get; set; }
         public ObservableCollection<DetectionEvent> ActivityLog { get; set; }
+        
+        // User Profile Service for dynamic profile data
+        public UserProfileService UserProfile => UserProfileService.Instance;
 
         // Properties for data binding
         public string CurrentFeedImage
@@ -322,10 +325,14 @@ namespace DroneSurveillanceSystem.Views
 
                 // CRITICAL: Initialize XAML components first
                 InitializeComponent();
+                
                 Console.WriteLine("InitializeComponent completed");
 
                 DataContext = this;
                 Console.WriteLine("DataContext set");
+                
+                // UserProfile is already initialized by LoginWindow - just verify it's ready
+                Console.WriteLine($"UserProfile Status - Name: {UserProfile.UserName}, Provider: {UserProfile.LoginProvider}");
 
                 // Initialize collections
                 ActiveAlerts = new ObservableCollection<DetectionEvent>();
@@ -448,6 +455,7 @@ namespace DroneSurveillanceSystem.Views
         {
             if (OverlayContentHost != null)
             {
+                // Store the previous content if there is one, for potential future use
                 OverlayContentHost.Content = control;
                 OverlayContentHost.Visibility = Visibility.Visible;
             }
@@ -457,11 +465,39 @@ namespace DroneSurveillanceSystem.Views
         {
             SettingsOverlay.Visibility = Visibility.Collapsed;
         }
+        
 
         public void HideOverlay()
         {
             if (OverlayContentHost != null)
             {
+                // Clean up the current overlay content
+                if (OverlayContentHost.Content is IDisposable disposableContent)
+                {
+                    disposableContent.Dispose();
+                }
+                
+                // Stop any timers in the overlay content
+                if (OverlayContentHost.Content is UserControl userControl)
+                {
+                    // Look for timer fields and stop them
+                    var timerFields = userControl.GetType().GetFields(System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
+                        .Where(f => f.FieldType == typeof(DispatcherTimer) || f.FieldType == typeof(Timer));
+                    
+                    foreach (var field in timerFields)
+                    {
+                        var timer = field.GetValue(userControl);
+                        if (timer is DispatcherTimer dispatcherTimer)
+                        {
+                            dispatcherTimer.Stop();
+                        }
+                        else if (timer is Timer systemTimer)
+                        {
+                            systemTimer.Change(Timeout.Infinite, Timeout.Infinite);
+                        }
+                    }
+                }
+                
                 OverlayContentHost.Content = null;
                 OverlayContentHost.Visibility = Visibility.Collapsed;
             }
@@ -687,7 +723,7 @@ namespace DroneSurveillanceSystem.Views
 
         private void NetworkButton_Click(object sender, RoutedEventArgs e)
         {
-            var page = new NetworkMonitoringPage(_networkService);
+            var page = new NetworkMonitoringPage(_networkService, this);
             page.CloseRequested += (s, _) => HideOverlay();
             ShowOverlay(page);
         }
@@ -758,6 +794,9 @@ namespace DroneSurveillanceSystem.Views
                     // Sign out from authentication service
                     var authService = new AuthService();
                     await authService.SignOutAsync();
+                    
+                    // Update user profile to guest mode
+                    UserProfile.SetGuestMode();
                     
                     // Hide this window (keep app alive) and show LoginWindow
                     this.Hide();

@@ -3,10 +3,12 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:services="clr-namespace:DroneSurveillanceSystem.Services"
         mc:Ignorable="d"
         Background="#1A1A1A">
 
     <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
         <!-- Color Resources -->
         <Color x:Key="DarkBackground">#1A1A1A</Color>
         <Color x:Key="MediumBackground">#2D2D2D</Color>
@@ -186,17 +188,10 @@
 
         <!-- Settings Content -->
         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="*"/>
-                </Grid.ColumnDefinitions>
-
-                <!-- Left Column - Profile Section -->
-                <StackPanel Grid.Column="0" Margin="0,0,10,0">
-                    <!-- User Profile -->
-                    <Border Style="{StaticResource SettingsCard}">
-                        <StackPanel>
+            <StackPanel>
+                <!-- User Profile Section -->
+                <Border Style="{StaticResource SettingsCard}">
+                    <StackPanel>
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
                                 <TextBlock Text="👤" FontSize="20" VerticalAlignment="Center" Margin="0,0,10,0" Foreground="{StaticResource AccentPurpleBrush}"/>
                                 <TextBlock Text="User Profile" Style="{StaticResource SectionHeader}"/>
@@ -210,151 +205,175 @@
                                 
                                 <!-- Profile Avatar -->
                                 <Border Grid.Column="0" Width="60" Height="60" Background="{StaticResource AccentPurpleBrush}" CornerRadius="30" Margin="0,0,15,0">
-                                    <TextBlock Text="RS" Foreground="White" FontSize="18" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    <TextBlock Text="{Binding UserInitials, Source={x:Static services:UserProfileService.Instance}}" Foreground="White" FontSize="18" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Border>
                                 
                                 <!-- Profile Info -->
                                 <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                    <TextBlock Text="Rahul Singh" Foreground="{StaticResource TextPrimaryBrush}" FontSize="16" FontWeight="Bold"/>
-                                    <TextBlock Text="rahul.singh@example.com" Foreground="{StaticResource TextSecondaryBrush}" FontSize="14" Margin="0,2,0,0"/>
-                                    <TextBlock Text="Administrator" Foreground="{StaticResource AccentGreenBrush}" FontSize="12" FontWeight="SemiBold" Margin="0,2,0,0"/>
+                                    <TextBlock Text="{Binding UserName, Source={x:Static services:UserProfileService.Instance}}" Foreground="{StaticResource TextPrimaryBrush}" FontSize="16" FontWeight="Bold"/>
+                                    <TextBlock Text="{Binding DisplayInfo, Source={x:Static services:UserProfileService.Instance}}" Foreground="{StaticResource TextSecondaryBrush}" FontSize="14" Margin="0,2,0,0" Visibility="{Binding ShowContactInfo, Source={x:Static services:UserProfileService.Instance}, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                                    <TextBlock Text="{Binding LoginProvider, Source={x:Static services:UserProfileService.Instance}, StringFormat='Signed in with {0}'}" Foreground="{StaticResource AccentGreenBrush}" FontSize="12" FontWeight="SemiBold" Margin="0,2,0,0"/>
                                 </StackPanel>
                             </Grid>
 
                             <!-- Action Buttons -->
                             <StackPanel Orientation="Horizontal" Margin="0,20,0,0" HorizontalAlignment="Center">
-                                <Button Content="🚪 Sign Out" Style="{StaticResource DangerButton}" MinWidth="120"/>
-                                <Button Content="🔄 Switch Account" Style="{StaticResource SecondaryButton}" MinWidth="140" Margin="10,0,0,0"/>
+                                <Button x:Name="SignOutButton" Content="🚪 Sign Out" Style="{StaticResource DangerButton}" MinWidth="120" Click="SignOutButton_Click"/>
                             </StackPanel>
                         </StackPanel>
-                    </Border>
+                </Border>
 
-                    <!-- System Information -->
-                    <Border Style="{StaticResource SettingsCard}">
-                        <StackPanel>
-                            <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
-                                <TextBlock Text="ℹ️" FontSize="20" VerticalAlignment="Center" Margin="0,0,10,0" Foreground="{StaticResource AccentBlueBrush}"/>
-                                <TextBlock Text="System Information" Style="{StaticResource SectionHeader}"/>
-                            </StackPanel>
-
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto"/>
-                                    <ColumnDefinition Width="*"/>
-                                </Grid.ColumnDefinitions>
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="Auto"/>
-                                </Grid.RowDefinitions>
-
-                                <TextBlock Grid.Row="0" Grid.Column="0" Text="Version:" Style="{StaticResource SettingsLabel}" Margin="0,0,15,0"/>
-                                <TextBlock Grid.Row="0" Grid.Column="1" Text="v2.1.0" Style="{StaticResource SettingsLabel}" Foreground="{StaticResource TextSecondaryBrush}"/>
-
-                                <TextBlock Grid.Row="1" Grid.Column="0" Text="Database:" Style="{StaticResource SettingsLabel}" Margin="0,0,15,0"/>
-                                <TextBlock Grid.Row="1" Grid.Column="1" Text="SQLite 3.35" Style="{StaticResource SettingsLabel}" Foreground="{StaticResource TextSecondaryBrush}"/>
-
-                                <TextBlock Grid.Row="2" Grid.Column="0" Text="AI Framework:" Style="{StaticResource SettingsLabel}" Margin="0,0,15,0"/>
-                                <TextBlock Grid.Row="2" Grid.Column="1" Text="TensorFlow 2.8" Style="{StaticResource SettingsLabel}" Foreground="{StaticResource TextSecondaryBrush}"/>
-
-                                <TextBlock Grid.Row="3" Grid.Column="0" Text="Last Updated:" Style="{StaticResource SettingsLabel}" Margin="0,0,15,0"/>
-                                <TextBlock Grid.Row="3" Grid.Column="1" Text="2024-01-15" Style="{StaticResource SettingsLabel}" Foreground="{StaticResource TextSecondaryBrush}"/>
-
-                                <TextBlock Grid.Row="4" Grid.Column="0" Text="Data Path:" Style="{StaticResource SettingsLabel}" Margin="0,0,15,0"/>
-                                <TextBlock Grid.Row="4" Grid.Column="1" x:Name="DataPathLabel" Text="~/AppData/DroneSurveillance" Style="{StaticResource SettingsLabel}" Foreground="{StaticResource TextSecondaryBrush}"/>
-                            </Grid>
+                <!-- Device Configuration Section -->
+                <Border Style="{StaticResource SettingsCard}">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
+                            <TextBlock Text="📱" FontSize="20" VerticalAlignment="Center" Margin="0,0,10,0" Foreground="{StaticResource AccentBlueBrush}"/>
+                            <TextBlock Text="Device Configuration" Style="{StaticResource SectionHeader}"/>
                         </StackPanel>
-                    </Border>
-                </StackPanel>
 
-                <!-- Right Column - Device Configuration -->
-                <StackPanel Grid.Column="1" Margin="10,0,0,0">
-                    <!-- Device Configuration Header -->
-                    <Border Style="{StaticResource SettingsCard}">
-                        <StackPanel>
-                            <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
-                                <TextBlock Text="📱" FontSize="20" VerticalAlignment="Center" Margin="0,0,10,0" Foreground="{StaticResource AccentBlueBrush}"/>
-                                <TextBlock Text="Device Configuration" Style="{StaticResource SectionHeader}"/>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <!-- Drones Column -->
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="Drones" Style="{StaticResource SubSectionHeader}"/>
+                                <ItemsControl ItemsSource="{Binding Drones}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Expander Margin="0,6,0,0">
+                                                <Expander.Header>
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <TextBlock Text="🚁" Margin="0,0,6,0"/>
+                                                        <TextBlock Text="{Binding Name}" Foreground="{StaticResource TextPrimaryBrush}" FontWeight="Bold"/>
+                                                        <TextBlock Text="  •  " Foreground="{StaticResource TextSecondaryBrush}"/>
+                                                        <TextBlock Text="{Binding Status}" Foreground="{StaticResource TextSecondaryBrush}"/>
+                                                    </StackPanel>
+                                                </Expander.Header>
+                                                <StackPanel Margin="10,6,0,6">
+                                                    <TextBlock Text="Device ID (read-only):" Style="{StaticResource SettingsLabel}"/>
+                                                    <TextBox Text="{Binding DeviceId}" IsReadOnly="True" Style="{StaticResource ModernTextBox}"/>
+                                                    <TextBlock Text="Name:" Style="{StaticResource SettingsLabel}"/>
+                                                    <TextBox Text="{Binding Name}" Style="{StaticResource ModernTextBox}"/>
+                                                    <TextBlock Text="Bluetooth ID:" Style="{StaticResource SettingsLabel}"/>
+                                                    <TextBox Text="{Binding BluetoothMacAddress}" Style="{StaticResource ModernTextBox}"/>
+                                                    <TextBlock Text="Internet ID (IP Address):" Style="{StaticResource SettingsLabel}"/>
+                                                    <TextBox Text="{Binding IpAddress}" Style="{StaticResource ModernTextBox}"/>
+                                                    <TextBlock Text="Current Alert Detection:" Style="{StaticResource SettingsLabel}"/>
+                                                    <StackPanel>
+                                                        <CheckBox Content="Fire" Style="{StaticResource ModernCheckBox}"/>
+                                                        <CheckBox Content="Flood" Style="{StaticResource ModernCheckBox}"/>
+                                                        <CheckBox Content="Blood" Style="{StaticResource ModernCheckBox}"/>
+                                                        <CheckBox Content="Crowd" Style="{StaticResource ModernCheckBox}"/>
+                                                    </StackPanel>
+                                                </StackPanel>
+                                            </Expander>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
                             </StackPanel>
-                        </StackPanel>
-                    </Border>
 
-                    <!-- Horizontal Device Layout -->
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-
-                        <!-- Drone Configuration -->
-                        <Border Grid.Column="0" Style="{StaticResource DeviceCard}">
-                            <StackPanel>
-                                <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
-                                    <TextBlock Text="🚁" FontSize="16" VerticalAlignment="Center" Margin="0,0,8,0" Foreground="{StaticResource AccentBlueBrush}"/>
-                                    <TextBlock Text="Drone Configuration" Style="{StaticResource SubSectionHeader}"/>
-                                </StackPanel>
-                                
-                                <TextBlock Text="Drone Name:" Style="{StaticResource SettingsLabel}"/>
-                                <TextBox x:Name="DroneNameTextBox" Text="DJI Mavic 3" Style="{StaticResource ModernTextBox}"/>
-                                
-                                <TextBlock Text="Drone ID:" Style="{StaticResource SettingsLabel}"/>
-                                <TextBox x:Name="DroneIdTextBox" Text="DRN-001-2024" Style="{StaticResource ModernTextBox}"/>
-                                
-                                <TextBlock Text="Bluetooth ID:" Style="{StaticResource SettingsLabel}"/>
-                                <TextBox x:Name="BluetoothIdTextBox" Text="BT-00:1A:7D:DA:71:13" Style="{StaticResource ModernTextBox}"/>
-                                
-                                <TextBlock Text="MAC Address:" Style="{StaticResource SettingsLabel}"/>
-                                <TextBox x:Name="MacAddressTextBox" Text="00:1A:7D:DA:71:13" Style="{StaticResource ModernTextBox}"/>
-                                
-                                <TextBlock Text="Alert Handling:" Style="{StaticResource SettingsLabel}"/>
-                                <ComboBox x:Name="DroneAlertComboBox" Style="{StaticResource ModernComboBox}" SelectedIndex="0">
-                                    <ComboBoxItem Content="Auto-Handle Alerts"/>
-                                    <ComboBoxItem Content="Manual Confirmation"/>
-                                    <ComboBoxItem Content="Notify Only"/>
-                                </ComboBox>
+                            <!-- CCTVs Column -->
+                            <StackPanel Grid.Column="1" Margin="10,0,0,0">
+                                <TextBlock Text="CCTVs" Style="{StaticResource SubSectionHeader}"/>
+                                <ItemsControl ItemsSource="{Binding Cctvs}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Expander Margin="0,6,0,0">
+                                                <Expander.Header>
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <TextBlock Text="📷" Margin="0,0,6,0"/>
+                                                        <TextBlock Text="{Binding Name}" Foreground="{StaticResource TextPrimaryBrush}" FontWeight="Bold"/>
+                                                        <TextBlock Text="  •  " Foreground="{StaticResource TextSecondaryBrush}"/>
+                                                        <TextBlock Text="{Binding Status}" Foreground="{StaticResource TextSecondaryBrush}"/>
+                                                    </StackPanel>
+                                                </Expander.Header>
+                                                <StackPanel Margin="10,6,0,6">
+                                                    <TextBlock Text="Device ID (read-only):" Style="{StaticResource SettingsLabel}"/>
+                                                    <TextBox Text="{Binding DeviceId}" IsReadOnly="True" Style="{StaticResource ModernTextBox}"/>
+                                                    <TextBlock Text="Name:" Style="{StaticResource SettingsLabel}"/>
+                                                    <TextBox Text="{Binding Name}" Style="{StaticResource ModernTextBox}"/>
+                                                    <TextBlock Text="Bluetooth ID:" Style="{StaticResource SettingsLabel}"/>
+                                                    <TextBox Text="{Binding BluetoothMacAddress}" Style="{StaticResource ModernTextBox}"/>
+                                                    <TextBlock Text="Internet ID (IP Address):" Style="{StaticResource SettingsLabel}"/>
+                                                    <TextBox Text="{Binding IpAddress}" Style="{StaticResource ModernTextBox}"/>
+                                                    <TextBlock Text="Current Alert Detection:" Style="{StaticResource SettingsLabel}"/>
+                                                    <StackPanel>
+                                                        <CheckBox Content="Fire" Style="{StaticResource ModernCheckBox}"/>
+                                                        <CheckBox Content="Flood" Style="{StaticResource ModernCheckBox}"/>
+                                                        <CheckBox Content="Blood" Style="{StaticResource ModernCheckBox}"/>
+                                                        <CheckBox Content="Crowd" Style="{StaticResource ModernCheckBox}"/>
+                                                    </StackPanel>
+                                                </StackPanel>
+                                            </Expander>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
                             </StackPanel>
-                        </Border>
-
-                        <!-- CCTV Configuration -->
-                        <Border Grid.Column="1" Style="{StaticResource DeviceCard}">
-                            <StackPanel>
-                                <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
-                                    <TextBlock Text="📷" FontSize="16" VerticalAlignment="Center" Margin="0,0,8,0" Foreground="{StaticResource AccentBlueBrush}"/>
-                                    <TextBlock Text="CCTV Configuration" Style="{StaticResource SubSectionHeader}"/>
-                                </StackPanel>
-                                
-                                <TextBlock Text="CCTV Name:" Style="{StaticResource SettingsLabel}"/>
-                                <TextBox x:Name="CctvNameTextBox" Text="Axis P1447" Style="{StaticResource ModernTextBox}"/>
-                                
-                                <TextBlock Text="CCTV ID:" Style="{StaticResource SettingsLabel}"/>
-                                <TextBox x:Name="CctvIdTextBox" Text="CCTV-001-2024" Style="{StaticResource ModernTextBox}"/>
-                                
-                                <TextBlock Text="Bluetooth ID:" Style="{StaticResource SettingsLabel}"/>
-                                <TextBox x:Name="CctvBluetoothIdTextBox" Text="BT-00:1B:7E:DB:72:14" Style="{StaticResource ModernTextBox}"/>
-                                
-                                <TextBlock Text="MAC Address:" Style="{StaticResource SettingsLabel}"/>
-                                <TextBox x:Name="CctvMacAddressTextBox" Text="00:1B:7E:DB:72:14" Style="{StaticResource ModernTextBox}"/>
-                                
-                                <TextBlock Text="Alert Handling:" Style="{StaticResource SettingsLabel}"/>
-                                <ComboBox x:Name="CctvAlertComboBox" Style="{StaticResource ModernComboBox}" SelectedIndex="0">
-                                    <ComboBoxItem Content="Auto-Handle Alerts"/>
-                                    <ComboBoxItem Content="Manual Confirmation"/>
-                                    <ComboBoxItem Content="Notify Only"/>
-                                </ComboBox>
-                            </StackPanel>
-                        </Border>
-                    </Grid>
-
-                    <!-- Action Buttons -->
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
-                        <Button x:Name="ResetButton" Content="🔄 Reset" Style="{StaticResource SecondaryButton}" MinWidth="100"/>
-                        <Button x:Name="BackButton" Content="⬅ Back" Click="BackButton_Click" Style="{StaticResource SecondaryButton}" MinWidth="100" Margin="0,0,10,0"/>
-                        <Button x:Name="SaveButton" Content="💾 Save" Style="{StaticResource PrimaryButton}" MinWidth="100" Margin="10,0,0,0"/>
+                        </Grid>
                     </StackPanel>
+                </Border>
+
+                <!-- System Information Section -->
+                <Border Style="{StaticResource SettingsCard}">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
+                            <TextBlock Text="ℹ️" FontSize="20" VerticalAlignment="Center" Margin="0,0,10,0" Foreground="{StaticResource AccentBlueBrush}"/>
+                            <TextBlock Text="System Information" Style="{StaticResource SectionHeader}"/>
+                        </StackPanel>
+
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <TextBlock Grid.Row="0" Grid.Column="0" Text="App Version:" Style="{StaticResource SettingsLabel}" Margin="0,0,15,0"/>
+                            <TextBlock Grid.Row="0" Grid.Column="1" x:Name="AppVersionLabel" Style="{StaticResource SettingsLabel}" Foreground="{StaticResource TextSecondaryBrush}"/>
+
+                            <TextBlock Grid.Row="1" Grid.Column="0" Text="OS Version:" Style="{StaticResource SettingsLabel}" Margin="0,0,15,0"/>
+                            <TextBlock Grid.Row="1" Grid.Column="1" x:Name="OsVersionLabel" Style="{StaticResource SettingsLabel}" Foreground="{StaticResource TextSecondaryBrush}"/>
+
+                            <TextBlock Grid.Row="2" Grid.Column="0" Text="Machine Name:" Style="{StaticResource SettingsLabel}" Margin="0,0,15,0"/>
+                            <TextBlock Grid.Row="2" Grid.Column="1" x:Name="MachineNameLabel" Style="{StaticResource SettingsLabel}" Foreground="{StaticResource TextSecondaryBrush}"/>
+
+                            <TextBlock Grid.Row="3" Grid.Column="0" Text="User Name:" Style="{StaticResource SettingsLabel}" Margin="0,0,15,0"/>
+                            <TextBlock Grid.Row="3" Grid.Column="1" x:Name="UserNameLabel" Style="{StaticResource SettingsLabel}" Foreground="{StaticResource TextSecondaryBrush}"/>
+
+                            <TextBlock Grid.Row="4" Grid.Column="0" Text="CLR Version:" Style="{StaticResource SettingsLabel}" Margin="0,0,15,0"/>
+                            <TextBlock Grid.Row="4" Grid.Column="1" x:Name="ClrVersionLabel" Style="{StaticResource SettingsLabel}" Foreground="{StaticResource TextSecondaryBrush}"/>
+
+                            <TextBlock Grid.Row="5" Grid.Column="0" Text="Processor Count:" Style="{StaticResource SettingsLabel}" Margin="0,0,15,0"/>
+                            <TextBlock Grid.Row="5" Grid.Column="1" x:Name="ProcessorCountLabel" Style="{StaticResource SettingsLabel}" Foreground="{StaticResource TextSecondaryBrush}"/>
+
+                            <TextBlock Grid.Row="6" Grid.Column="0" Text="Data Path:" Style="{StaticResource SettingsLabel}" Margin="0,0,15,0"/>
+                            <TextBlock Grid.Row="6" Grid.Column="1" x:Name="DataPathLabel" Style="{StaticResource SettingsLabel}" Foreground="{StaticResource TextSecondaryBrush}"/>
+
+                            <TextBlock Grid.Row="7" Grid.Column="0" Text="Current Directory:" Style="{StaticResource SettingsLabel}" Margin="0,0,15,0"/>
+                            <TextBlock Grid.Row="7" Grid.Column="1" x:Name="CurrentDirLabel" Style="{StaticResource SettingsLabel}" Foreground="{StaticResource TextSecondaryBrush}"/>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <!-- Action Buttons -->
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
+                    <Button x:Name="ResetButton" Content="🔄 Reset" Style="{StaticResource SecondaryButton}" MinWidth="100"/>
+                    <Button x:Name="BackButton" Content="⬅ Back" Click="BackButton_Click" Style="{StaticResource SecondaryButton}" MinWidth="100" Margin="0,0,10,0"/>
+                    <Button x:Name="SaveButton" Content="💾 Save" Style="{StaticResource PrimaryButton}" MinWidth="100" Margin="10,0,0,0"/>
                 </StackPanel>
-            </Grid>
+            </StackPanel>
         </ScrollViewer>
     </Grid>
 </UserControl>

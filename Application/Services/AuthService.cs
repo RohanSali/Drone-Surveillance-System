@@ -29,7 +29,7 @@ namespace DroneSurveillanceSystem.Services
 
         public event EventHandler<bool>? AuthenticationStateChanged;
 
-        public bool IsAuthenticated => _currentAccount != null;
+        public bool IsAuthenticated => _currentAccount != null || (!string.IsNullOrEmpty(CurrentUserEmail) && !string.IsNullOrEmpty(CurrentUserName));
         public string? CurrentUserEmail { get; private set; }
         public string? CurrentUserName { get; private set; }
 
@@ -110,6 +110,8 @@ namespace DroneSurveillanceSystem.Services
                 _currentAccount = null;
                 CurrentUserEmail = null;
                 CurrentUserName = null;
+                
+                Debug.WriteLine($"Sign out completed - IsAuthenticated: {IsAuthenticated}");
                 
                 DeleteUserProfile();
                 AuthenticationStateChanged?.Invoke(this, false);
@@ -235,24 +237,24 @@ namespace DroneSurveillanceSystem.Services
                             
                             CurrentUserEmail = userInfo.Email;
                             CurrentUserName = userInfo.Name ?? userInfo.Email?.Split('@')[0];
+                            
+                            Debug.WriteLine($"Google Auth Success - Email: '{CurrentUserEmail}', Name: '{CurrentUserName}'");
                         }
                         catch (Exception ex)
                         {
                             Debug.WriteLine($"Error getting user info: {ex.Message}");
                             CurrentUserEmail = credential.UserId;
                             CurrentUserName = credential.UserId?.Split('@')[0] ?? "Unknown User";
+                            
+                            Debug.WriteLine($"Google Auth Fallback - Email: '{CurrentUserEmail}', Name: '{CurrentUserName}'");
                         }
 
                         SaveUserProfile();
+                        
+                        Debug.WriteLine($"Google Auth - About to invoke AuthenticationStateChanged. IsAuthenticated: {IsAuthenticated}");
                         AuthenticationStateChanged?.Invoke(this, true);
                         
-                        MessageBox.Show(
-                            $"Successfully signed in with Google!\n\nWelcome, {CurrentUserName}\nEmail: {CurrentUserEmail}",
-                            "Google Sign-in Successful",
-                            MessageBoxButton.OK,
-                            MessageBoxImage.Information
-                        );
-                        
+                        Debug.WriteLine($"Google Auth - Returning true. Final IsAuthenticated: {IsAuthenticated}");
                         return true;
                     }
                 }

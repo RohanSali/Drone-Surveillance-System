@@ -3,30 +3,79 @@ using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using DroneSurveillanceSystem.Services;
+using System.Collections.ObjectModel;
 using Microsoft.Win32;
+using System.Reflection;
 
 namespace DroneSurveillanceSystem.Views
 {
     public partial class SettingsPage : UserControl
     {
         private readonly SurveillanceService _surveillanceService;
+        public ObservableCollection<UsbDrone> Drones { get; } = new ObservableCollection<UsbDrone>();
+        public ObservableCollection<UsbCctv> Cctvs { get; } = new ObservableCollection<UsbCctv>();
 
         public SettingsPage()
         {
             InitializeComponent();
             _surveillanceService = new SurveillanceService();
+            this.DataContext = this;
             LoadCurrentSettings();
+
+            // Populate system information labels
+            try
+            {
+                var version = Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "";
+                if (AppVersionLabel != null) AppVersionLabel.Text = version;
+            }
+            catch { }
+
+            try { if (OsVersionLabel != null) OsVersionLabel.Text = Environment.OSVersion.ToString(); } catch { }
+            try { if (MachineNameLabel != null) MachineNameLabel.Text = Environment.MachineName; } catch { }
+            try { if (UserNameLabel != null) UserNameLabel.Text = Environment.UserName; } catch { }
+            try { if (ClrVersionLabel != null) ClrVersionLabel.Text = Environment.Version.ToString(); } catch { }
+            try { if (ProcessorCountLabel != null) ProcessorCountLabel.Text = Environment.ProcessorCount.ToString(); } catch { }
+            try { if (CurrentDirLabel != null) CurrentDirLabel.Text = Environment.CurrentDirectory; } catch { }
         }
 
         private void LoadCurrentSettings()
         {
             // Set data path label
             string dataPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "DroneSurveillance");
-            DataPathLabel.Text = dataPath;
+            if (DataPathLabel != null) DataPathLabel.Text = dataPath;
 
-            // Load saved settings or use defaults
-            // In a real application, these would be loaded from a settings file
-            DroneIdTextBox.Text = "Drone-001";
+            // Load saved settings or use defaults (moved out of per-device controls)
+
+            // Load devices for current user
+            try
+            {
+                Drones.Clear();
+                foreach (var d in DeviceDataManager.GetAllDrones()) Drones.Add(d);
+                Cctvs.Clear();
+                foreach (var c in DeviceDataManager.GetAllCctvs()) Cctvs.Add(c);
+
+                DeviceDataManager.DronesChanged += OnDronesChanged;
+                DeviceDataManager.CctvsChanged += OnCctvsChanged;
+            }
+            catch { }
+        }
+
+        private void OnDronesChanged(System.Collections.Generic.List<UsbDrone> drones)
+        {
+            Dispatcher.Invoke(() =>
+            {
+                Drones.Clear();
+                foreach (var d in drones) Drones.Add(d);
+            });
+        }
+
+        private void OnCctvsChanged(System.Collections.Generic.List<UsbCctv> cctvs)
+        {
+            Dispatcher.Invoke(() =>
+            {
+                Cctvs.Clear();
+                foreach (var c in cctvs) Cctvs.Add(c);
+            });
         }
 
         private async void ExportDataButton_Click(object sender, RoutedEventArgs e)
@@ -128,9 +177,6 @@ namespace DroneSurveillanceSystem.Views
 
             if (result == MessageBoxResult.Yes)
             {
-                // Reset all controls to default values
-                DroneIdTextBox.Text = "Drone-001";
-
                 MessageBox.Show("Settings have been reset to defaults.",
                               "Settings Reset",
                               MessageBoxButton.OK,
@@ -186,7 +232,6 @@ namespace DroneSurveillanceSystem.Views
 
                 var settings = new
                 {
-                    DroneId = DroneIdTextBox.Text,
                     LastUpdated = DateTime.Now
                 };
 
@@ -202,6 +247,39 @@ namespace DroneSurveillanceSystem.Views
         {
             // Raise the event to notify the parent (MainWindow) to close this settings page
             CloseRequested?.Invoke(this, EventArgs.Empty);
+        }
+
+        private async void SignOutButton_Click(object sender, RoutedEventArgs e)
+        {
+            var result = MessageBox.Show("Are you sure you want to sign out?", "Confirm Sign Out", MessageBoxButton.YesNo, MessageBoxImage.Question);
+            if (result != MessageBoxResult.Yes) return;
+            try
+            {
+                try { await ApiService.Instance.StopWebSocketAsync(); } catch { }
+                AlertManager.Instance.ClearAllAlerts();
+
+                var authService = new AuthService();
+                await authService.SignOutAsync();
+
+                UserProfileService.Instance.SetGuestMode();
+
+                var window = Window.GetWindow(this) as MainWindow;
+                if (window != null)
+                {
+                    window.Hide();
+                }
+
+                var loginWindow = new LoginWindow(authService);
+                if (Application.Current != null)
+                {
+                    Application.Current.MainWindow = loginWindow;
+                }
+                loginWindow.Show();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Sign out failed: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         // Event to notify when the settings page should be closed

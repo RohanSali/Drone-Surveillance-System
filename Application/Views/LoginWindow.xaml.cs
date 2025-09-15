@@ -33,8 +33,12 @@ namespace DroneSurveillanceSystem.Views
                     IsAuthenticated = true;
                     try
                     {
-                        DeviceDataManager.SetCurrentUser(_authService.CurrentUserEmail ?? _authService.CurrentUserName ?? "guest");
-                        NetworkService.SetCurrentUser(_authService.CurrentUserEmail ?? _authService.CurrentUserName ?? "guest");
+                        var userKey = _authService.CurrentUserEmail ?? _authService.CurrentUserName ?? "guest";
+                        DeviceDataManager.SetCurrentUser(userKey);
+                        NetworkService.SetCurrentUser(userKey);
+                        
+                        // Update UserProfileService for Silent signin (Microsoft)
+                        UserProfileService.Instance.UpdateFromAuthService(_authService, "Microsoft");
                     }
                     catch { }
                     
@@ -79,8 +83,12 @@ namespace DroneSurveillanceSystem.Views
                     IsAuthenticated = true;
                     try
                     {
-                        DeviceDataManager.SetCurrentUser(_authService.CurrentUserEmail ?? _authService.CurrentUserName ?? "guest");
-                        NetworkService.SetCurrentUser(_authService.CurrentUserEmail ?? _authService.CurrentUserName ?? "guest");
+                        var userKey = _authService.CurrentUserEmail ?? _authService.CurrentUserName ?? "guest";
+                        DeviceDataManager.SetCurrentUser(userKey);
+                        NetworkService.SetCurrentUser(userKey);
+                        
+                        // Update UserProfileService for Microsoft auth
+                        UserProfileService.Instance.UpdateFromAuthService(_authService, "Microsoft");
                     }
                     catch { }
                     
@@ -129,6 +137,9 @@ namespace DroneSurveillanceSystem.Views
                     {
                         DeviceDataManager.SetCurrentUser(_authService.CurrentUserEmail ?? _authService.CurrentUserName ?? "guest");
                         NetworkService.SetCurrentUser(_authService.CurrentUserEmail ?? _authService.CurrentUserName ?? "guest");
+                        
+                        // Update UserProfileService for Google auth - THIS WAS MISSING!
+                        UserProfileService.Instance.UpdateFromAuthService(_authService, "Google");
                     }
                     catch { }
                     
@@ -167,6 +178,9 @@ namespace DroneSurveillanceSystem.Views
             {
                 DeviceDataManager.SetCurrentUser("guest");
                 NetworkService.SetCurrentUser("guest");
+                
+                // Update UserProfileService for guest mode
+                UserProfileService.Instance.SetGuestMode();
             }
             catch { }
             
