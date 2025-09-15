@@ -15,6 +15,7 @@
     <Window.Resources>
         <local:ActiveStatusDotConverter x:Key="ActiveStatusDotConverter"/>
         <local:BoolStatusDotConverter x:Key="BoolStatusDotConverter"/>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
         
         <!-- Modern Grey Color Palette -->
         <Color x:Key="DarkGrey">#1A1A1A</Color>
@@ -315,7 +316,7 @@
                                 </ControlTemplate>
                             </ToggleButton.Template>
                             
-                            <TextBlock Text="R" 
+                            <TextBlock Text="{Binding UserProfile.UserInitials}" 
                                     Foreground="White" 
                                     FontWeight="Bold" 
                                     FontSize="16"
@@ -347,9 +348,6 @@
                                         <RowDefinition Height="Auto"/>
                                         <RowDefinition Height="Auto"/>
                                         <RowDefinition Height="Auto"/>
-                                        <RowDefinition Height="Auto"/>
-                                        <RowDefinition Height="Auto"/>
-                                        <RowDefinition Height="Auto"/>
                                     </Grid.RowDefinitions>
                                     
                                     <!-- User Info Section -->
@@ -367,7 +365,7 @@
                                                     </Ellipse.Effect>
                                                 </Ellipse>
 
-                                                <TextBlock Text="R" 
+                                                <TextBlock Text="{Binding UserProfile.UserInitials}" 
                                                         Foreground="White" 
                                                         FontWeight="Bold" 
                                                         FontSize="16"
@@ -377,15 +375,16 @@
 
                                             
                                             <StackPanel Grid.Column="1" Margin="10,0,0,0" VerticalAlignment="Center">
-                                                <TextBlock Text="Rahul Singh" 
+                                                <TextBlock Text="{Binding UserProfile.UserName}" 
                                                         Foreground="{StaticResource TextPrimaryBrush}" 
                                                         FontWeight="Bold"
                                                         FontSize="14"/>
-                                                <TextBlock Text="8809109905" 
+                                                <TextBlock Text="{Binding UserProfile.DisplayInfo}" 
                                                         Foreground="{StaticResource TextSecondaryBrush}"
                                                         FontSize="12"
-                                                        Margin="0,2,0,0"/>
-                                                <TextBlock Text="My Microsoft account" 
+                                                        Margin="0,2,0,0"
+                                                        Visibility="{Binding UserProfile.ShowContactInfo, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                                                <TextBlock Text="{Binding UserProfile.LoginProvider, StringFormat='Signed in with {0}'}" 
                                                         Foreground="{StaticResource AccentBlueBrush}"
                                                         FontSize="11"
                                                         Margin="0,2,0,0"/>
@@ -393,29 +392,11 @@
                                         </Grid>
                                     </Border>
                                     
-                                    <!-- Status Section -->
-                                    <Border Grid.Row="1" Background="{StaticResource MediumGreyBrush}" Padding="15,10">
-                                        <StackPanel>
-                                            <TextBlock Text="Available" 
-                                                    Foreground="{StaticResource SuccessGreenBrush}" 
-                                                    FontWeight="SemiBold"
-                                                    FontSize="13"/>
-                                            <TextBlock Text="Set status message" 
-                                                    Foreground="{StaticResource AccentBlueBrush}"
-                                                    FontSize="12"
-                                                    Margin="0,5,0,0"
-                                                    Cursor="Hand"/>
-                                        </StackPanel>
-                                    </Border>
-                                    
                                     <!-- Divider -->
-                                    <Rectangle Grid.Row="2" Height="1" Fill="{StaticResource LightGreyBrush}" Margin="10,0"/>
-                                     
-                                    <!-- Divider -->
-                                    <Rectangle Grid.Row="4" Height="1" Fill="{StaticResource LightGreyBrush}" Margin="10,0"/>
+                                    <Rectangle Grid.Row="1" Height="1" Fill="{StaticResource LightGreyBrush}" Margin="10,0"/>
                                     
                                     <!-- Settings Option -->
-                                    <Button Grid.Row="5" 
+                                    <Button Grid.Row="2"
                                         Name="SettingsButton" 
                                         Style="{StaticResource ModernButton}" 
                                         Background="Transparent"
@@ -430,7 +411,7 @@
                                     </Button>
                                     
                                     <!-- Logout Option -->
-                                    <Button Grid.Row="6" 
+                                    <Button Grid.Row="3"
                                         Name="LogoutButton" 
                                         Style="{StaticResource ModernButton}" 
                                         Background="Transparent"

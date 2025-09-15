@@ -48,6 +48,14 @@ namespace DroneSurveillanceSystem.Services
                 LoadForCurrentUser();
             }
         }
+        
+        public static string GetCurrentUser()
+        {
+            lock (_lockObject)
+            {
+                return _currentUserKey;
+            }
+        }
 
         private static void LoadForCurrentUser()
         {

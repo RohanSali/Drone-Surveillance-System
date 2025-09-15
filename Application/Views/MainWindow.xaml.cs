@@ -65,6 +65,9 @@ namespace DroneSurveillanceSystem.Views
 
         public ObservableCollection<DetectionEvent> ActiveAlerts { get; set; }
         public ObservableCollection<DetectionEvent> ActivityLog { get; set; }
+        
+        // User Profile Service for dynamic profile data
+        public UserProfileService UserProfile => UserProfileService.Instance;
 
         // Properties for data binding
         public string CurrentFeedImage
@@ -322,10 +325,14 @@ namespace DroneSurveillanceSystem.Views
 
                 // CRITICAL: Initialize XAML components first
                 InitializeComponent();
+                
                 Console.WriteLine("InitializeComponent completed");
 
                 DataContext = this;
                 Console.WriteLine("DataContext set");
+                
+                // UserProfile is already initialized by LoginWindow - just verify it's ready
+                Console.WriteLine($"UserProfile Status - Name: {UserProfile.UserName}, Provider: {UserProfile.LoginProvider}");
 
                 // Initialize collections
                 ActiveAlerts = new ObservableCollection<DetectionEvent>();
@@ -458,6 +465,7 @@ namespace DroneSurveillanceSystem.Views
         {
             SettingsOverlay.Visibility = Visibility.Collapsed;
         }
+        
 
         public void HideOverlay()
         {
@@ -786,6 +794,9 @@ namespace DroneSurveillanceSystem.Views
                     // Sign out from authentication service
                     var authService = new AuthService();
                     await authService.SignOutAsync();
+                    
+                    // Update user profile to guest mode
+                    UserProfile.SetGuestMode();
                     
                     // Hide this window (keep app alive) and show LoginWindow
                     this.Hide();
