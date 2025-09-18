@@ -20,7 +20,6 @@ namespace DroneSurveillanceSystem.Views
         private readonly List<UIElement> _droneIndicators;
         private readonly List<Border> _alertElements;
         private DateTime _sessionStartTime;
-        private int _dataPointsCounter = 0;
 
         public event PropertyChangedEventHandler? PropertyChanged;
         public event EventHandler? CloseRequested;
@@ -284,14 +283,11 @@ namespace DroneSurveillanceSystem.Views
 
         private void UpdateUI(object? sender, EventArgs e)
         {
-            _dataPointsCounter++;
-            DataPointsText.Text = _dataPointsCounter.ToString("N0");
-            
             // Update drone status cards
-            UpdateDroneStatusCards();
+            // UpdateDroneStatusCards();
             
             // Update map
-            UpdateMapDrones();
+            // UpdateMapDrones();
         }
 
         private void UpdateSessionTime(object? sender, EventArgs e)

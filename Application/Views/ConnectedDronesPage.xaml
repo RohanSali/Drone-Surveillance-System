@@ -304,7 +304,7 @@
                                         <Border Grid.Row="0" Grid.Column="0" Background="#1a1a1a" CornerRadius="8" Padding="8" Margin="0,0,15,0">
                                             <Viewbox Width="24" Height="24">
                                                 <Canvas Width="24" Height="24">
-                                                    <Path Fill="{Binding Name, Converter={StaticResource DroneColorConverter}}" Data="M12,3L7,9H10V15H14V9H17L12,3M10,9H14V10H10V9M10,11H14V12H10V11M10,13H14V14H10V13M6,22H18A1,1 0 0,0 19,21V19A1,1 0 0,0 18,18H6A1,1 0 0,0 5,19V21A1,1 0 0,0 6,22Z"/>
+                                                    <Path Fill="#FF00BCD4" Data="M12,3L7,9H10V15H14V9H17L12,3M10,9H14V10H10V9M10,11H14V12H10V11M10,13H14V14H10V13M6,22H18A1,1 0 0,0 19,21V19A1,1 0 0,0 18,18H6A1,1 0 0,0 5,19V21A1,1 0 0,0 6,22Z"/>
                                                 </Canvas>
                                             </Viewbox>
                                         </Border>
@@ -351,12 +351,24 @@
                                                     ToolTip="Remove device"/>
                                         </StackPanel>
                                         <!-- Expanded content -->
-                                        <StackPanel Grid.Row="1" Grid.ColumnSpan="3" Margin="0,10,0,0" Visibility="{Binding IsExpanded, Converter={StaticResource BooleanToVisibilityConverter}}">
-                                            <Border Background="#1f1f1f" CornerRadius="6" Padding="10">
-                                                <StackPanel Orientation="Horizontal">
-                                                    <Button Content="🔗 Connect" Style="{StaticResource DarkButton}" Click="DroneConnect_Click" Tag="{Binding}" Margin="0,0,10,0"/>
-                                                    <Button Content="📥 Fetch" Style="{StaticResource DarkButton}" Click="DroneFetch_Click" Tag="{Binding}" Margin="0,0,10,0"/>
-                                                    <Button Content="🧩 Install Module" Style="{StaticResource DarkButton}" Click="DroneInstall_Click" Tag="{Binding}"/>
+                                        <StackPanel Grid.Row="1" Grid.ColumnSpan="3" Margin="0,10,0,0" 
+                                                    Visibility="{Binding IsExpanded, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                            <Border Background="#1f1f1f" CornerRadius="6" Padding="15">
+                                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                                    <Button Content="🔗 Connect" Style="{StaticResource DarkButton}" 
+                                                            Click="DroneConnect_Click" Tag="{Binding}" 
+                                                            MinWidth="120" Height="36" FontSize="14" FontWeight="SemiBold"
+                                                            Padding="12,6" Margin="0,0,10,0"/>
+                                                    
+                                                    <Button Content="📥 Fetch" Style="{StaticResource DarkButton}" 
+                                                            Click="DroneFetch_Click" Tag="{Binding}" 
+                                                            MinWidth="120" Height="36" FontSize="14" FontWeight="SemiBold"
+                                                            Padding="12,6" Margin="0,0,10,0"/>
+                                                    
+                                                    <Button Content="🧩 Install Module" Style="{StaticResource DarkButton}" 
+                                                            Click="DroneInstall_Click" Tag="{Binding}" 
+                                                            MinWidth="140" Height="36" FontSize="14" FontWeight="SemiBold"
+                                                            Padding="12,6"/>
                                                 </StackPanel>
                                             </Border>
                                         </StackPanel>
@@ -461,12 +473,20 @@
                                                     Tag="{Binding}"
                                                     ToolTip="Remove device"/>
                                         </StackPanel>
-                                        <!-- Expanded content -->
-                                        <StackPanel Grid.Row="1" Grid.ColumnSpan="3" Margin="0,10,0,0" Visibility="{Binding IsExpanded, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                        <!-- Expanded content for cctv -->
+                                        <StackPanel Grid.Row="1" Grid.ColumnSpan="3" Margin="0,10,0,0" 
+                                                    Visibility="{Binding IsExpanded, Converter={StaticResource BooleanToVisibilityConverter}}">
                                             <Border Background="#1f1f1f" CornerRadius="6" Padding="10">
-                                                <StackPanel Orientation="Horizontal">
-                                                    <Button Content="🔗 Connect" Style="{StaticResource DarkButton}" Click="CctvConnect_Click" Tag="{Binding}" Margin="0,0,10,0"/>
-                                                    <Button Content="📥 Fetch" Style="{StaticResource DarkButton}" Click="CctvFetch_Click" Tag="{Binding}"/>
+                                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                                    <Button Content="🔗 Connect" Style="{StaticResource DarkButton}" 
+                                                            Click="CctvConnect_Click" Tag="{Binding}" 
+                                                            MinWidth="120" Height="36" FontSize="14" FontWeight="SemiBold"
+                                                            Padding="12,6" Margin="0,0,10,0"/>
+                                                    
+                                                    <Button Content="📥 Fetch" Style="{StaticResource DarkButton}" 
+                                                            Click="CctvFetch_Click" Tag="{Binding}"
+                                                            MinWidth="120" Height="36" FontSize="14" FontWeight="SemiBold"
+                                                            Padding="12,6"/>
                                                 </StackPanel>
                                             </Border>
                                         </StackPanel>

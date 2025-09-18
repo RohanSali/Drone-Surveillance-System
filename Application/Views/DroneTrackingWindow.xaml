@@ -333,42 +333,34 @@
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
 
                             <!-- Total Tracked -->
                             <StackPanel Grid.Column="0" HorizontalAlignment="Center">
                                 <TextBlock Text="Total Tracked" Style="{StaticResource DataTextStyle}" HorizontalAlignment="Center"/>
                                 <TextBlock Name="TotalTrackedText" Text="{Binding TotalDronesTracked}" 
-                                          Style="{StaticResource ValueTextStyle}" FontSize="20" HorizontalAlignment="Center"/>
-                            </StackPanel>
-
-                            <!-- Data Points -->
-                            <StackPanel Grid.Column="1" HorizontalAlignment="Center">
-                                <TextBlock Text="Data Points" Style="{StaticResource DataTextStyle}" HorizontalAlignment="Center"/>
-                                <TextBlock Name="DataPointsText" Text="{Binding DataPoints}" 
-                                          Style="{StaticResource ValueTextStyle}" FontSize="20" HorizontalAlignment="Center"/>
+                                        Style="{StaticResource ValueTextStyle}" FontSize="20" HorizontalAlignment="Center"/>
                             </StackPanel>
 
                             <!-- Coverage Area -->
-                            <StackPanel Grid.Column="2" HorizontalAlignment="Center">
+                            <StackPanel Grid.Column="1" HorizontalAlignment="Center">
                                 <TextBlock Text="Coverage Area" Style="{StaticResource DataTextStyle}" HorizontalAlignment="Center"/>
                                 <TextBlock Text="{Binding CoverageArea}" 
-                                          Style="{StaticResource ValueTextStyle}" FontSize="20" HorizontalAlignment="Center"/>
+                                        Style="{StaticResource ValueTextStyle}" FontSize="20" HorizontalAlignment="Center"/>
                             </StackPanel>
 
                             <!-- Session Time -->
-                            <StackPanel Grid.Column="3" HorizontalAlignment="Center">
+                            <StackPanel Grid.Column="2" HorizontalAlignment="Center">
                                 <TextBlock Text="Session Time" Style="{StaticResource DataTextStyle}" HorizontalAlignment="Center"/>
                                 <TextBlock Name="SessionTimeText" Text="{Binding SessionTime}" 
-                                          Style="{StaticResource ValueTextStyle}" FontSize="16" HorizontalAlignment="Center"/>
+                                        Style="{StaticResource ValueTextStyle}" FontSize="16" HorizontalAlignment="Center"/>
                             </StackPanel>
 
                             <!-- Update Rate -->
-                            <StackPanel Grid.Column="4" HorizontalAlignment="Center">
+                            <StackPanel Grid.Column="3" HorizontalAlignment="Center">
                                 <TextBlock Text="Update Rate" Style="{StaticResource DataTextStyle}" HorizontalAlignment="Center"/>
                                 <TextBlock Text="{Binding UpdateRate}" 
-                                          Style="{StaticResource ValueTextStyle}" FontSize="16" HorizontalAlignment="Center"/>
+                                        Style="{StaticResource ValueTextStyle}" FontSize="16" HorizontalAlignment="Center"/>
                             </StackPanel>
                         </Grid>
                     </Grid>

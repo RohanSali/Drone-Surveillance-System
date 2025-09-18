@@ -401,7 +401,6 @@
 
                     <!-- Editor Header -->
                     <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,20">
-                        <TextBlock Text="⚙️" FontSize="24" VerticalAlignment="Center" Margin="0,0,10,0" Foreground="{StaticResource AccentBlueBrush}"/>
                         <TextBlock Name="EditorHeaderText" Text="Create New Network" Style="{StaticResource HeaderStyle}"/>
                     </StackPanel>
 
