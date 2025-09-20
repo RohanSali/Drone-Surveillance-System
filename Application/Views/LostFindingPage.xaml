@@ -4,7 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
-        Background="#0a0a0a"
+        Background="#1A1A1A"
         FontFamily="Segoe UI">
 
     <UserControl.Resources>
@@ -22,7 +22,7 @@
         </Style>
 
         <Style x:Key="ModernButton" TargetType="Button">
-            <Setter Property="Background" Value="#0078d4"/>
+            <Setter Property="Background" Value="#00B4D8"/>
             <Setter Property="Foreground" Value="White"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Padding" Value="20,12"/>
@@ -101,7 +101,7 @@
                 </Grid.ColumnDefinitions>
 
                 <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-                    <TextBlock Text="🔍" FontSize="30" Margin="0,0,10,0" Foreground="#2196F3" />
+                    <TextBlock Text="🔍" FontSize="30" Margin="0,0,10,0" Foreground="#00B4D8" />
                     <StackPanel>
                         <TextBlock Text="Lost Person Finding" 
                                   Foreground="White" 
@@ -116,7 +116,7 @@
                 <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
                     <Button Name="RefreshButton" 
                             Content="🔄 Refresh" 
-                            Background="#17a2b8" 
+                            Background="#00B4D8" 
                             Foreground="White" 
                             BorderThickness="0" 
                             Padding="15,8" 
@@ -193,7 +193,7 @@
                     <StackPanel Grid.Row="0" Margin="0,0,0,20">
                         <TextBlock Text="📤 Upload Image" 
                                   Style="{StaticResource HeaderText}"
-                                  Foreground="#00BCD4"/>
+                                  Foreground="#00B4D8"/>
                         <TextBlock Text="Select an image of the lost person to search for" 
                                   Style="{StaticResource SubHeaderText}"/>
                     </StackPanel>

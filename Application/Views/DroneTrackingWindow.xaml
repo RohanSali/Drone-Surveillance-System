@@ -89,7 +89,7 @@
 
                 <!-- Title Section -->
                 <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="20,0">
-                    <Ellipse Width="45" Height="45" Fill="#2563EB" Margin="0,0,12,0"/>
+                    <Ellipse Width="45" Height="45" Fill="#00B4D8" Margin="0,0,12,0"/>
                     <TextBlock Text="🚁" FontSize="24" VerticalAlignment="Center" Margin="-50,0,15,0" Foreground="White"/>
                     <StackPanel VerticalAlignment="Center">
                         <TextBlock Text="DRONE TRACKING SYSTEM" 

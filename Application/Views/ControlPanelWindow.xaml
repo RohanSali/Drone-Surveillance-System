@@ -1,10 +1,9 @@
 <Window x:Class="DroneSurveillanceSystem.Views.ControlPanelWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Advanced Drone Control Panel"
         WindowState="Maximized"
         ResizeMode="CanResize"
-        WindowStyle="SingleBorderWindow"
+        WindowStyle="None"
         WindowStartupLocation="CenterScreen"
         Background="{StaticResource DarkBackgroundBrush}">
     
@@ -417,7 +416,7 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
         <!-- Top Navbar - Full Width -->
-        <Border Grid.Row="0" Background="#1e293b" BorderBrush="#475569" BorderThickness="0,0,0,2" Padding="0,0,0,0" HorizontalAlignment="Stretch">
+        <Border Grid.Row="0" Background="#2D2D2D" BorderBrush="#475569" BorderThickness="0,0,0,2" Padding="0,0,0,0" HorizontalAlignment="Stretch">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
@@ -463,7 +462,7 @@
             </Grid>
         </Border>
         <!-- Main Content -->
-        <Border Grid.Row="1" Background="#1e293b" CornerRadius="16" Padding="24" Margin="24,24,24,24">
+        <Border Grid.Row="1" Background="#1A1A1A" CornerRadius="16" Padding="24" Margin="24,24,24,24">
             <TabControl Background="Transparent" BorderBrush="Transparent" Style="{StaticResource DarkTabControl}">
                 <!-- Flight Control Tab -->
                 <TabItem Header="Flight Control" Foreground="White" Style="{StaticResource DarkTabItem}">
@@ -474,7 +473,7 @@
                             <ColumnDefinition Width="320"/>
                         </Grid.ColumnDefinitions>
                         <!-- Flight Controls -->
-                        <Border Grid.Column="0" Background="#1e232b" BorderBrush="#475569" BorderThickness="1" CornerRadius="10" Margin="0,0,16,0" Padding="18">
+                        <Border Grid.Column="0" Background="#2D2D2D" BorderBrush="#475569" BorderThickness="1" CornerRadius="10" Margin="0,0,16,0" Padding="18">
                             <StackPanel>
                                 <TextBlock Text="Flight Controls" Style="{StaticResource HeaderTextStyle}" FontSize="16"/>
                                 <Grid Margin="0,10">
@@ -514,7 +513,7 @@
                             </StackPanel>
                         </Border>
                         <!-- Live Data Display -->
-                        <Border Grid.Column="1" Background="#23272F" BorderBrush="#475569" BorderThickness="1" CornerRadius="10" Margin="0,0,0,0" Padding="18">
+                        <Border Grid.Column="1" Background="#2D2D2D" BorderBrush="#475569" BorderThickness="1" CornerRadius="10" Margin="0,0,0,0" Padding="18">
                             <Grid>
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto"/>
@@ -602,7 +601,7 @@
                             </Grid>
                         </Border>
                         <!-- Connection & Recording -->
-                        <Border Grid.Column="2" Background="#1e232b" BorderBrush="#475569" BorderThickness="1" CornerRadius="10" Margin="16,0,0,0" Padding="18">
+                        <Border Grid.Column="2" Background="#2D2D2D" BorderBrush="#475569" BorderThickness="1" CornerRadius="10" Margin="16,0,0,0" Padding="18">
                             <StackPanel>
                                 <TextBlock Text="Connection &amp; Recording" Style="{StaticResource HeaderTextStyle}" FontSize="16"/>
                                 <Grid Margin="0,10">
@@ -661,7 +660,7 @@
                         </Grid.ColumnDefinitions>
 
                         <!-- Processing Controls -->
-                        <Border Grid.Column="0" Background="#FF2D2D30" BorderBrush="#FF404040" BorderThickness="1" CornerRadius="5">
+                        <Border Grid.Column="0" Background="#2D2D2D" BorderBrush="#FF404040" BorderThickness="1" CornerRadius="5">
                             <StackPanel Margin="15">
                                 <TextBlock Text="Processing Controls" Style="{StaticResource HeaderTextStyle}"/>
                                 
@@ -715,7 +714,7 @@
                         </Border>
 
                         <!-- Processing Events -->
-                        <Border Grid.Column="1" Background="#FF2D2D30" BorderBrush="#FF404040" BorderThickness="1" CornerRadius="5" Margin="10,0,0,0">
+                        <Border Grid.Column="1" Background="#2D2D2D" BorderBrush="#FF404040" BorderThickness="1" CornerRadius="5" Margin="10,0,0,0">
                             <Grid>
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto"/>
@@ -741,7 +740,7 @@
                         </Grid.ColumnDefinitions>
 
                         <!-- Model Controls -->
-                        <Border Grid.Column="0" Background="#FF2D2D30" BorderBrush="#FF404040" BorderThickness="1" CornerRadius="5">
+                        <Border Grid.Column="0" Background="#2D2D2D" BorderBrush="#FF404040" BorderThickness="1" CornerRadius="5">
                             <StackPanel Margin="15">
                                 <TextBlock Text="Model Management" Style="{StaticResource HeaderTextStyle}"/>
                                 
@@ -758,7 +757,7 @@
                         </Border>
 
                         <!-- AI Models List -->
-                        <Border Grid.Column="1" Background="#FF2D2D30" BorderBrush="#FF404040" BorderThickness="1" CornerRadius="5" Margin="10,0">
+                        <Border Grid.Column="1" Background="#2D2D2D" BorderBrush="#FF404040" BorderThickness="1" CornerRadius="5" Margin="10,0">
                             <Grid>
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto"/>
@@ -780,7 +779,7 @@
                         </Border>
 
                         <!-- Active Models -->
-                        <Border Grid.Column="2" Background="#FF2D2D30" BorderBrush="#FF404040" BorderThickness="1" CornerRadius="5">
+                        <Border Grid.Column="2" Background="#2D2D2D" BorderBrush="#FF404040" BorderThickness="1" CornerRadius="5">
                             <Grid>
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto"/>

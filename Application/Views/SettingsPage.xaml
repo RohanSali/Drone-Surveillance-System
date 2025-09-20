@@ -364,6 +364,12 @@
                                 </ItemsControl>
                             </StackPanel>
                         </Grid>
+                        
+                        <!-- Action Buttons - Moved inside Device Configuration card -->
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
+                            <Button x:Name="ResetButton" Content="Reset" Style="{StaticResource SecondaryButton}" MinWidth="100"/>
+                            <Button x:Name="SaveButton" Content="Save Changes" Style="{StaticResource PrimaryButton}" MinWidth="120" Margin="10,0,0,0"/>
+                        </StackPanel>
                     </StackPanel>
                 </Border>
 
@@ -417,12 +423,6 @@
                         </Grid>
                     </StackPanel>
                 </Border>
-
-                <!-- Action Buttons -->
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
-                    <Button x:Name="ResetButton" Content="Reset" Style="{StaticResource SecondaryButton}" MinWidth="100"/>
-                    <Button x:Name="SaveButton" Content="Save Changes" Style="{StaticResource PrimaryButton}" MinWidth="120" Margin="10,0,0,0"/>
-                </StackPanel>
             </StackPanel>
         </ScrollViewer>
     </Grid>

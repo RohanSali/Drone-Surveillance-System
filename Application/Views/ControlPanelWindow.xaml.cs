@@ -558,5 +558,10 @@ namespace DroneSurveillanceSystem.Views
             _dataProcessingService?.Dispose();
             base.OnClosed(e);
         }
+
+        private void TabControl_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+        {
+
+        }
     }
 }

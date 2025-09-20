@@ -1,8 +1,8 @@
 <UserControl x:Class="DroneSurveillanceSystem.Views.MonitoringAlertsPage"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        
-        Background="#1a1a1a"
+
+        Background="#1A1A1A"
         >
     <UserControl.Resources>
         <!-- Comfortable UI Styles -->
@@ -124,7 +124,7 @@
                 <Button Grid.Column="0" 
                         Name="FilterButton" 
                         Content="🔍 All Devices" 
-                        Background="#0078D4" 
+                        Background="#00B4D8" 
                         Foreground="White" 
                         BorderThickness="0" 
                         Padding="15,10" 
@@ -197,8 +197,7 @@
                     <TextBlock Name="DevicesTitle" Text="🚁 Active Drones" Style="{StaticResource HeaderStyle}" Margin="0,0,0,15">
                     <TextBlock.Foreground>
                         <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                            <GradientStop Color="#FF00BCD4" Offset="0"/>
-                            <GradientStop Color="#FF2196F3" Offset="1"/>
+                            <GradientStop Color="#00B4D8" Offset="1"/>
                         </LinearGradientBrush>
                     </TextBlock.Foreground>
                 </TextBlock>
