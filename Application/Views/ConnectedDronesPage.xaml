@@ -38,7 +38,7 @@
         </Style>
         
         <!-- Dark Button Style -->
-        <Style x:Key="DarkButton" TargetType="Button" BasedOn="{StaticResource ModernButton}">
+        <Style x:Key="DarkButton" TargetType="Button">
             <Setter Property="Background" Value="#3a3a3a"/>
             <Setter Property="Foreground" Value="White"/>
             <Setter Property="BorderThickness" Value="0"/>
@@ -67,20 +67,18 @@
             </Setter>
         </Style>
         
-        <!-- Red Back Button Style -->
-        <Style x:Key="RedBackButton" TargetType="Button">
+        <!-- Close Button Style (Properly Sized) -->
+        <Style x:Key="CloseButton" TargetType="Button">
             <Setter Property="Background" Value="#FFDC3545"/>
             <Setter Property="Foreground" Value="White"/>
             <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Padding" Value="40,20"/>
-            <Setter Property="Margin" Value="20"/>
-            <Setter Property="FontWeight" Value="Bold"/>
-            <Setter Property="FontSize" Value="22"/>
+            <Setter Property="Padding" Value="20,12"/>
+            <Setter Property="Margin" Value="20,0"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontSize" Value="14"/>
             <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="MinWidth" Value="220"/>
-            <Setter Property="MinHeight" Value="70"/>
-            <Setter Property="Width" Value="220"/>
-            <Setter Property="Height" Value="70"/>
+            <Setter Property="MinWidth" Value="100"/>
+            <Setter Property="Height" Value="45"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
@@ -104,7 +102,7 @@
         </Style>
         
         <!-- Drone ListBox Item Style -->
-        <Style x:Key="DroneListBoxItem" TargetType="ListBoxItem" BasedOn="{StaticResource ModernListBoxItem}">
+        <Style x:Key="DroneListBoxItem" TargetType="ListBoxItem">
             <Setter Property="Margin" Value="0,0,0,8"/>
             <Setter Property="Padding" Value="0"/>
             <Setter Property="Template">
@@ -191,10 +189,15 @@
                     </StackPanel>
                 </StackPanel>
                 
-                <Button Grid.Column="1" Name="BackButton" Content="← Back to Main" 
-                       Style="{StaticResource RedBackButton}" 
-                       Click="BackButton_Click" 
-                       Margin="20,0"/>
+                <Button Grid.Column="1" 
+                        Name="BackButton" 
+                        Content="Close" 
+                        Style="{StaticResource CloseButton}" 
+                        Click="BackButton_Click"
+                        Height="40"
+                        Width="120"
+                        FontSize="16"
+                        Margin="20,0"/>
             </Grid>
         </Border>
 

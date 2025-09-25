@@ -10,7 +10,10 @@
         Background="#1A1A1A"
         FontFamily="Segoe UI"
         WindowStyle="None"
-        ResizeMode="CanResizeWithGrip">
+        ResizeMode="CanResizeWithGrip"
+        MinWidth="1200"
+        MinHeight="800"
+        SizeChanged="Window_SizeChanged">
 
     <Window.Resources>
         <local:ActiveStatusDotConverter x:Key="ActiveStatusDotConverter"/>
@@ -44,6 +47,12 @@
         <SolidColorBrush x:Key="TextSecondaryBrush" Color="{StaticResource TextSecondary}"/>
         <SolidColorBrush x:Key="TextTertiaryBrush" Color="{StaticResource TextTertiary}"/>
 
+        <!-- Responsive Font Size Converter -->
+        <local:ResponsiveFontSizeConverter x:Key="ResponsiveFontSizeConverter"/>
+        
+        <!-- Responsive Margin Converter -->
+        <local:ResponsiveMarginConverter x:Key="ResponsiveMarginConverter"/>
+        
         <!-- Modern Button Style -->
         <Style x:Key="ModernButton" TargetType="Button">
             <Setter Property="Background" Value="{StaticResource LightGreyBrush}"/>
@@ -52,7 +61,7 @@
             <Setter Property="Padding" Value="16,10"/>
             <Setter Property="Margin" Value="5"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontSize" Value="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=DataContext.ResponsiveFontSize, Converter={StaticResource ResponsiveFontSizeConverter}, ConverterParameter=14}"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Template">
                 <Setter.Value>
@@ -249,11 +258,11 @@
         </Style>
     </Window.Resources>
 
-    <Grid>
+    <Grid x:Name="MainGrid">
         <Grid.RowDefinitions>
-            <RowDefinition Height="70" />
+            <RowDefinition Height="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=DataContext.HeaderHeight}" />
             <RowDefinition Height="*" />
-            <RowDefinition Height="30" />
+            <RowDefinition Height="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=DataContext.FooterHeight}" />
         </Grid.RowDefinitions>
 
         <!-- Add this to your MainWindow.xaml where you want the settings to appear -->
@@ -279,11 +288,13 @@
 
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="20,0">
                     <Border Background="{StaticResource DarkGreyBrush }" 
-                    Width="60" Height="60" 
+                    Width="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=DataContext.LogoSize}" 
+                    Height="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=DataContext.LogoSize}" 
                     Margin="0,0,12,0"
                     CornerRadius="50">
                         <Border Background="{StaticResource DarkGreyBrush }" 
-                    Width="45" Height="45"
+                    Width="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=DataContext.LogoInnerSize}"
+                    Height="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=DataContext.LogoInnerSize}"
                     CornerRadius="12"
                     Margin="2">
                             <Image Source="pack://application:,,,/Images/logo.png"
@@ -296,7 +307,7 @@
                     <TextBlock Text="Vigilance and Rapid Alerts" 
                             Foreground="{StaticResource TextPrimaryBrush}" 
                             FontWeight="Bold" 
-                            FontSize="24" 
+                            FontSize="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=DataContext.TitleFontSize}" 
                             VerticalAlignment="Center"/>
                 </StackPanel>
 
@@ -306,22 +317,22 @@
                     <Button Name="LostFindingButton" 
                             Style="{StaticResource SecondaryButton}" 
                             Click="LostFindingButton_Click"
-                            Height="40" 
-                            MinWidth="150" 
+                            Height="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=DataContext.ButtonHeight}" 
+                            MinWidth="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=DataContext.ButtonMinWidth}" 
                             Margin="5,0">
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="🔍" FontSize="16" Foreground="white" Margin="0,0,5,0" VerticalAlignment="Center"/>
+                            <TextBlock Text="🔍" FontSize="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=DataContext.IconFontSize}" Foreground="white" Margin="0,0,5,0" VerticalAlignment="Center"/>
                             <TextBlock Text="Lost Finding" Foreground="White" VerticalAlignment="Center"/>
                         </StackPanel>
                     </Button>
                     <Button Name="AdvancedControlButton" 
                             Style="{StaticResource SecondaryButton}" 
                             Click="AdvancedControlButton_Click"
-                            Height="40" 
-                            MinWidth="150" 
+                            Height="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=DataContext.ButtonHeight}" 
+                            MinWidth="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=DataContext.ButtonMinWidth}" 
                             Margin="5,0">
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="🚀" FontSize="16" Foreground="white" Margin="0,0,5,0" VerticalAlignment="Center"/>
+                            <TextBlock Text="🚀" FontSize="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=DataContext.IconFontSize}" Foreground="white" Margin="0,0,5,0" VerticalAlignment="Center"/>
                             <TextBlock Text="Device Controls" Foreground="White" VerticalAlignment="Center"/>
                         </StackPanel>
                     </Button>
@@ -342,8 +353,8 @@
                                     <Border Background="Transparent" CornerRadius="20">
                                         <Grid>
                                             <Ellipse x:Name="profileCircle" 
-                                                    Width="40" 
-                                                    Height="40" 
+                                                    Width="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=DataContext.ProfileIconSize}" 
+                                                    Height="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=DataContext.ProfileIconSize}" 
                                                     Fill="{StaticResource AccentBlueBrush}">
                                                 <Ellipse.Effect>
                                                     <DropShadowEffect BlurRadius="10" Opacity="0.3" ShadowDepth="2"/>
@@ -506,8 +517,8 @@
         <!-- Main Dashboard Content -->
         <Grid Grid.Row="1" Background="{StaticResource DarkGreyBrush}" Margin="0,8,0,8">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="4*" />
-                <ColumnDefinition Width="220" />
+                <ColumnDefinition Width="4*" MinWidth="800" />
+                <ColumnDefinition Width="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=DataContext.SidebarWidth}" MinWidth="200" MaxWidth="300" />
             </Grid.ColumnDefinitions>
 
             <!-- Left Panel - Main Dashboard Sections -->
@@ -540,21 +551,23 @@
                             <TextBlock Grid.Row="0" Text="Connect Devices" 
                                       Foreground="{StaticResource TextPrimaryBrush}" 
                                       FontWeight="Bold" 
-                                      FontSize="18" 
+                                      FontSize="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=DataContext.CardTitleFontSize}" 
                                       HorizontalAlignment="Center" 
                                       Margin="0,0,0,15"/>
 
                             <StackPanel Grid.Row="1" VerticalAlignment="Center">
-                                <Border Width="100" Height="100" 
-                                        Background="{StaticResource DarkGreyBrush}" 
+                                <Border Width="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=DataContext.CardIconSize}" 
+                                        Height="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=DataContext.CardIconSize}" 
+                                        Background="{StaticResource MediumGreyBrush}" 
                                         CornerRadius="50"
                                         HorizontalAlignment="Center" 
                                         Margin="0,0,0,10">
-                                    <Border Background="{StaticResource DarkGreyBrush}" 
-                                            Width="85" Height="85"
+                                    <Border Background="{StaticResource MediumGreyBrush}" 
+                                            Width="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=DataContext.CardIconInnerSize}"
+                                            Height="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=DataContext.CardIconInnerSize}"
                                             CornerRadius="30"
                                             Margin="2">
-                                        <Image Source="pack://application:,,,/Images/logo.png"
+                                        <Image Source="pack://application:,,,/Images/connect drone.png"
                                                 Stretch="Uniform"
                                                 VerticalAlignment="Center"
                                                 HorizontalAlignment="Center"/>
@@ -589,21 +602,23 @@
                             <TextBlock Grid.Row="0" Text="Monitor Devices" 
                                       Foreground="{StaticResource TextPrimaryBrush}" 
                                       FontWeight="Bold" 
-                                      FontSize="18" 
+                                      FontSize="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=DataContext.CardTitleFontSize}" 
                                       HorizontalAlignment="Center" 
                                       Margin="0,0,0,15"/>
 
                             <StackPanel Grid.Row="1" VerticalAlignment="Center">
-                                <Border Width="100" Height="100" 
-                                        Background="{StaticResource DarkGreyBrush}" 
+                                <Border Width="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=DataContext.CardIconSize}" 
+                                        Height="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=DataContext.CardIconSize}" 
+                                        Background="{StaticResource MediumGreyBrush}" 
                                         HorizontalAlignment="Center"
                                         CornerRadius="50"
                                         Margin="0,0,0,10">
-                                    <Border Background="{StaticResource DarkGreyBrush}" 
-                                            Width="85" Height="85"
+                                    <Border Background="{StaticResource MediumGreyBrush}" 
+                                            Width="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=DataContext.CardIconInnerSize}"
+                                            Height="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=DataContext.CardIconInnerSize}"
                                             CornerRadius="28"
                                             Margin="2">
-                                        <Image Source="pack://application:,,,/Images/logo.png"
+                                        <Image Source="pack://application:,,,/Images/Monitor Drone.png"
                                                 Stretch="Uniform"
                                                 VerticalAlignment="Center"
                                                 HorizontalAlignment="Center"/>
@@ -655,7 +670,7 @@
                                         <TextBlock Grid.Row="0" Text="Live Drone Tracking" 
                                                   Foreground="{StaticResource TextPrimaryBrush}" 
                                                   FontWeight="Bold" 
-                                                  FontSize="18" 
+                                                  FontSize="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=DataContext.CardTitleFontSize}" 
                                                   HorizontalAlignment="Center" 
                                                   Margin="0,0,0,15"/>
 
@@ -676,22 +691,24 @@
                                         <TextBlock Grid.Row="0" Text="Drone Tracking" 
                                                   Foreground="{StaticResource TextPrimaryBrush}" 
                                                   FontWeight="Bold" 
-                                                  FontSize="18" 
+                                                  FontSize="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=DataContext.CardTitleFontSize}" 
                                                   HorizontalAlignment="Center" 
                                                   Margin="0,0,0,10"/>
 
                                         <StackPanel Grid.Row="1" VerticalAlignment="Center" HorizontalAlignment="Center">
                                             <!-- Improved circular icon design -->
-                                            <Border Background="{StaticResource DarkGreyBrush}" 
-                                                    Width="100" Height="100" 
+                                            <Border Background="{StaticResource MediumGreyBrush}" 
+                                                    Width="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=DataContext.CardIconSize}" 
+                                                    Height="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=DataContext.CardIconSize}" 
                                                     CornerRadius="50" 
                                                     HorizontalAlignment="Center" 
                                                     Margin="0,0,0,15">
-                                                <Border Background="{StaticResource DarkGreyBrush}" 
-                                                        Width="85" Height="85"
+                                                <Border Background="{StaticResource MediumGreyBrush}" 
+                                                        Width="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=DataContext.CardIconInnerSize}"
+                                                        Height="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=DataContext.CardIconInnerSize}"
                                                         CornerRadius="30"
                                                         Margin="2">
-                                                    <Image Source="pack://application:,,,/Images/logo.png"
+                                                    <Image Source="pack://application:,,,/Images/Track Drone.png"
                                                             Stretch="Uniform"
                                                             VerticalAlignment="Center"
                                                             HorizontalAlignment="Center"/>
@@ -700,13 +717,13 @@
 
                                             <TextBlock Text="Real-time Location" 
                                                       Foreground="{StaticResource TextSecondaryBrush}" 
-                                                      FontSize="12" 
+                                                      FontSize="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=DataContext.SmallTextFontSize}" 
                                                       HorizontalAlignment="Center" 
                                                       TextAlignment="Center"
                                                       Margin="0,0,0,6"/>
                                             <TextBlock Text="Monitoring Active" 
                                                       Foreground="{StaticResource SuccessGreenBrush}" 
-                                                      FontSize="11" 
+                                                      FontSize="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=DataContext.SmallTextFontSize}" 
                                                       FontWeight="Bold" 
                                                       HorizontalAlignment="Center"
                                                       TextAlignment="Center"/>
@@ -718,9 +735,9 @@
                                                Click="DroneTrackingButton_Click"
                                                HorizontalAlignment="Center"
                                                Margin="0,12,0,0"
-                                               MinWidth="160"
-                                               Height="40"
-                                               FontSize="13"
+                                               MinWidth="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=DataContext.ButtonMinWidth}"
+                                               Height="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=DataContext.ButtonHeight}"
+                                               FontSize="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=DataContext.SmallTextFontSize}"
                                                FontWeight="SemiBold"/>
                                     </Grid>
                                 </Border>
@@ -731,7 +748,9 @@
             </Grid>
 
             <!-- Right Panel - Active Drones Network -->
-            <Border Grid.Column="1" Background="{StaticResource MediumGreyBrush}" Padding="20" Margin="8,0,0,0">
+            <Border Grid.Column="1" Background="{StaticResource MediumGreyBrush}" 
+                    Padding="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=DataContext.SidebarPadding}" 
+                    Margin="8,0,0,0">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
@@ -741,7 +760,9 @@
 
                     <!-- Live Drone Tracking Status -->
                     <StackPanel Grid.Row="0" Margin="0,0,0,15">
-                        <TextBlock Text="Live Tracking Status" Foreground="{StaticResource TextSecondaryBrush}" FontSize="14" FontWeight="Bold" Margin="0,0,0,10"/>
+                        <TextBlock Text="Live Tracking Status" Foreground="{StaticResource TextSecondaryBrush}" 
+                                   FontSize="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=DataContext.SidebarTitleFontSize}" 
+                                   FontWeight="Bold" Margin="0,0,0,10"/>
 
                         <!-- Dynamic Active Drones Status -->
                         <Border Background="{StaticResource LightGreyBrush}" CornerRadius="8" Padding="12" Margin="0,0,0,8"
@@ -902,16 +923,22 @@
                           Text="{Binding SystemStatusMessage}" 
                           Foreground="{StaticResource SuccessGreenBrush}" 
                           VerticalAlignment="Center" 
-                          Margin="15,0"/>
+                          Margin="15,0"
+                          FontSize="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=DataContext.FooterFontSize}"/>
 
                 <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="15,0">
-                    <TextBlock Text="AI Detection:" Foreground="{StaticResource TextSecondaryBrush}" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                    <TextBlock Text="AI Detection:" 
+                              Foreground="{StaticResource TextSecondaryBrush}" 
+                              VerticalAlignment="Center" 
+                              Margin="0,0,5,0"
+                              FontSize="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=DataContext.FooterFontSize}"/>
                     <Ellipse Width="8" Height="8" Fill="{Binding AiStatusColor}" VerticalAlignment="Center" Margin="0,0,15,0"/>
                     <TextBlock x:Name="TimeDisplay" 
                               Text="{Binding CurrentTime}" 
                               Foreground="{StaticResource TextSecondaryBrush}" 
                               VerticalAlignment="Center" 
-                              FontFamily="Consolas"/>
+                              FontFamily="Consolas"
+                              FontSize="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=DataContext.FooterFontSize}"/>
                 </StackPanel>
             </Grid>
         </Border>

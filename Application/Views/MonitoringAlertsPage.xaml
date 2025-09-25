@@ -41,7 +41,7 @@
         </Style>
 
         <Style x:Key="SuccessButtonStyle" TargetType="Button" BasedOn="{StaticResource ButtonStyle}">
-            <Setter Property="Background" Value="#28A745" />
+            <Setter Property="Background" Value="#4CAF50" />
             <Setter Property="MinWidth" Value="200" />
             <Setter Property="Padding" Value="25,12" />
             <Style.Triggers>
@@ -128,7 +128,7 @@
                         Foreground="White" 
                         BorderThickness="0" 
                         Padding="15,10" 
-                        FontSize="12"
+                        FontSize="16"
                         FontWeight="Bold"
                         MinWidth="140"
                         Height="40"
@@ -158,13 +158,11 @@
                 
                 <Button Grid.Column="2" 
                         Name="CloseButton" 
-                        Content="✕ Close" 
+                        Content="Close" 
                         Background="#dc3545" 
                         Foreground="White" 
                         BorderThickness="0" 
-                        Padding="20,10" 
                         FontSize="14"
-                        FontWeight="Bold"
                         MinWidth="120"
                         Height="40"
                         Margin="10,0,10,0"
@@ -194,7 +192,7 @@
         <!-- All Devices Display -->
         <Border Grid.Row="1" Grid.Column="0" Background="#2a2a2a" CornerRadius="6" Padding="15" Margin="10">
                 <StackPanel>
-                    <TextBlock Name="DevicesTitle" Text="🚁 Active Drones" Style="{StaticResource HeaderStyle}" Margin="0,0,0,15">
+                    <TextBlock Name="DevicesTitle" Text="🚁 Active Drones" Style="{StaticResource HeaderStyle}" Margin="0,0,0,15" FontSize="18" FontWeight="Bold">
                     <TextBlock.Foreground>
                         <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
                             <GradientStop Color="#00B4D8" Offset="1"/>
@@ -237,16 +235,16 @@
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
-                
-                <TextBlock Grid.Row="0" Text="🚨 Active Alerts" Style="{StaticResource HeaderStyle}" Margin="0,0,0,15">
-                    <TextBlock.Foreground>
-                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                            <GradientStop Color="#FFF44336" Offset="0"/>
-                            <GradientStop Color="#FFE91E63" Offset="1"/>
-                        </LinearGradientBrush>
-                    </TextBlock.Foreground>
-                </TextBlock>
-                
+
+                <TextBlock Grid.Row="0" 
+                    Text="🚨 Active Alerts" 
+                    Style="{StaticResource HeaderStyle}" 
+                    Margin="0,0,0,15"
+                    FontSize="18"
+                    FontWeight="Bold"       
+                    Foreground="#dc3545" />
+
+
                 <ScrollViewer Grid.Row="1" Style="{StaticResource HiddenSmoothScrollViewer}">
                     <ItemsControl ItemsSource="{Binding FilteredAlerts}">
                         <ItemsControl.ItemTemplate>
@@ -260,7 +258,7 @@
                                         </Grid.ColumnDefinitions>
                                         <TextBlock Grid.Column="0" Text="🚨" FontSize="14" Margin="0,0,8,0" Foreground="#dc3545"/>
                                         <StackPanel Grid.Column="1">
-                                            <TextBlock Text="{Binding Alert}" Foreground="#E8A598" FontWeight="Bold" FontSize="13"/>
+                                            <TextBlock Text="{Binding Alert}" Foreground="#E8A598" FontSize="13"/>
                                             <TextBlock Text="{Binding DroneId}" Style="{StaticResource DataTextStyle}"/>
                                             <TextBlock Text="{Binding Timestamp}" Style="{StaticResource DataTextStyle}" FontSize="10"/>
                                         </StackPanel>

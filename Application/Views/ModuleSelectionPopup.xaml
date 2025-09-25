@@ -18,7 +18,7 @@
             <TextBlock Text="Select Modules to Add to Drone" 
                        Foreground="#FF5252" FontWeight="Bold" FontSize="24" 
                        VerticalAlignment="Center"/>
-            <Button Grid.Column="1" Content="Back" Click="BackButton_Click" 
+            <Button Grid.Column="1" Content="Close" Click="BackButton_Click" 
                     Background="#FF5252" Foreground="White" FontWeight="Bold"
                     Padding="16,8" Margin="10,0,0,0"/>
         </Grid>

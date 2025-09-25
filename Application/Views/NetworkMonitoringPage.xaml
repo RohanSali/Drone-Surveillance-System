@@ -153,12 +153,13 @@
 
                 <Button Grid.Column="2" 
                         Name="CloseButton" 
-                        Content="✕ Close" 
+                        Content="Close" 
                         Background="#dc3545" 
                         Foreground="White" 
                         BorderThickness="0" 
-                        Padding="15,8" 
-                        FontSize="14"
+                        FontSize="16"
+                        Height="40"
+                        Width="120"
                         Click="CloseButton_Click">
                     <Button.Template>
                         <ControlTemplate TargetType="Button">

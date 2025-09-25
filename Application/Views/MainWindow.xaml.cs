@@ -62,6 +62,11 @@ namespace DroneSurveillanceSystem.Views
         private int _totalCasualties = 0;
         private int _totalAnomalies = 0;
         private string _systemStatusDisplay = "System Ready";
+        
+        // Responsive design properties
+        private double _responsiveFontSize = 1.0;
+        private double _windowWidth = 1200;
+        private double _windowHeight = 800;
 
         public ObservableCollection<DetectionEvent> ActiveAlerts { get; set; }
         public ObservableCollection<DetectionEvent> ActivityLog { get; set; }
@@ -213,6 +218,15 @@ namespace DroneSurveillanceSystem.Views
 
         // CCTV aggregates
         public int NetworkActiveCctvsCount => DeviceDataManager.GetAllCctvs().Count(c => c.IsConnected);
+        // Helper method to close user profile dropdown
+        private void CloseUserProfileDropdown()
+        {
+            if (UserProfileToggle != null)
+            {
+                UserProfileToggle.IsChecked = false;
+            }
+        }
+
         // Window control button handlers
         private void MinimizeButton_Click(object sender, RoutedEventArgs e)
         {
@@ -302,6 +316,45 @@ namespace DroneSurveillanceSystem.Views
             get => _systemStatusDisplay;
             set { _systemStatusDisplay = value; OnPropertyChanged(); }
         }
+
+        // Responsive design properties
+        public double ResponsiveFontSize
+        {
+            get => _responsiveFontSize;
+            set { _responsiveFontSize = value; OnPropertyChanged(); }
+        }
+
+        public double WindowWidth
+        {
+            get => _windowWidth;
+            set { _windowWidth = value; OnPropertyChanged(); }
+        }
+
+        public double WindowHeight
+        {
+            get => _windowHeight;
+            set { _windowHeight = value; OnPropertyChanged(); }
+        }
+
+        // Calculated responsive properties
+        public double HeaderHeight => Math.Max(80, Math.Max(WindowHeight * 0.08, LogoSize + 20));
+        public double FooterHeight => Math.Max(25, WindowHeight * 0.04);
+        public double SidebarWidth => Math.Min(300, Math.Max(200, WindowWidth * 0.2));
+        public double LogoSize => Math.Max(50, Math.Min(70, WindowHeight * 0.07));
+        public double LogoInnerSize => LogoSize * 0.75;
+        public double ProfileIconSize => Math.Max(30, Math.Min(50, WindowHeight * 0.06));
+        public double CardIconSize => Math.Max(60, Math.Min(120, WindowHeight * 0.12));
+        public double CardIconInnerSize => CardIconSize * 0.85;
+        public double ButtonHeight => Math.Max(30, Math.Min(50, WindowHeight * 0.06));
+        public double ButtonMinWidth => Math.Max(100, Math.Min(200, WindowWidth * 0.12));
+        public double TitleFontSize => Math.Max(16, Math.Min(32, WindowHeight * 0.03));
+        public double CardTitleFontSize => Math.Max(14, Math.Min(24, WindowHeight * 0.025));
+        public double IconFontSize => Math.Max(12, Math.Min(20, WindowHeight * 0.02));
+        public double SmallTextFontSize => Math.Max(10, Math.Min(16, WindowHeight * 0.015));
+        public double SidebarTitleFontSize => Math.Max(12, Math.Min(18, WindowHeight * 0.02));
+        public double FooterFontSize => Math.Max(10, Math.Min(14, WindowHeight * 0.015));
+        public Thickness SidebarPadding => new Thickness(Math.Max(10, Math.Min(25, WindowWidth * 0.02)));
+        public Thickness HeaderPadding => new Thickness(0, Math.Max(5, (HeaderHeight - LogoSize) / 2), 0, Math.Max(5, (HeaderHeight - LogoSize) / 2));
 
         public MainWindow()
         {
@@ -439,6 +492,14 @@ namespace DroneSurveillanceSystem.Views
 
                 // Ensure default page is visible on startup
                 HideOverlay();
+
+                // Initialize responsive properties
+                WindowWidth = this.ActualWidth > 0 ? this.ActualWidth : 1200;
+                WindowHeight = this.ActualHeight > 0 ? this.ActualHeight : 800;
+                ResponsiveFontSize = Math.Max(0.8, Math.Min(1.5, Math.Min(WindowWidth, WindowHeight) / 1000));
+
+                // Add Loaded event handler for proper initialization
+                this.Loaded += MainWindow_Loaded;
 
                 Console.WriteLine("MainWindow constructor completed successfully");
             }
@@ -772,6 +833,9 @@ namespace DroneSurveillanceSystem.Views
 
         private async void LogoutButton_Click(object sender, RoutedEventArgs e)
         {
+            // Close the user profile dropdown
+            UserProfileToggle.IsChecked = false;
+            
             var result = MessageBox.Show("Are you sure you want to sign out?", 
                                        "Confirm Sign Out", 
                                        MessageBoxButton.YesNo, 
@@ -1022,6 +1086,66 @@ namespace DroneSurveillanceSystem.Views
             });
         }
         
+        private void MainWindow_Loaded(object sender, RoutedEventArgs e)
+        {
+            // Initialize responsive properties when window is loaded
+            WindowWidth = this.ActualWidth;
+            WindowHeight = this.ActualHeight;
+            ResponsiveFontSize = Math.Max(0.8, Math.Min(1.5, Math.Min(WindowWidth, WindowHeight) / 1000));
+            
+            // Notify property changes for all responsive properties
+            OnPropertyChanged(nameof(HeaderHeight));
+            OnPropertyChanged(nameof(FooterHeight));
+            OnPropertyChanged(nameof(SidebarWidth));
+            OnPropertyChanged(nameof(LogoSize));
+            OnPropertyChanged(nameof(LogoInnerSize));
+            OnPropertyChanged(nameof(ProfileIconSize));
+            OnPropertyChanged(nameof(CardIconSize));
+            OnPropertyChanged(nameof(CardIconInnerSize));
+            OnPropertyChanged(nameof(ButtonHeight));
+            OnPropertyChanged(nameof(ButtonMinWidth));
+            OnPropertyChanged(nameof(TitleFontSize));
+            OnPropertyChanged(nameof(CardTitleFontSize));
+            OnPropertyChanged(nameof(IconFontSize));
+            OnPropertyChanged(nameof(SmallTextFontSize));
+            OnPropertyChanged(nameof(SidebarTitleFontSize));
+            OnPropertyChanged(nameof(FooterFontSize));
+            OnPropertyChanged(nameof(SidebarPadding));
+            OnPropertyChanged(nameof(HeaderPadding));
+        }
+
+        private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            // Update window dimensions
+            WindowWidth = e.NewSize.Width;
+            WindowHeight = e.NewSize.Height;
+            
+            // Calculate responsive font size based on window size
+            // Base font size on the smaller dimension to maintain proportions
+            double baseSize = Math.Min(WindowWidth, WindowHeight);
+            ResponsiveFontSize = Math.Max(0.8, Math.Min(1.5, baseSize / 1000));
+            
+            // Notify property changes for all responsive properties
+            OnPropertyChanged(nameof(HeaderHeight));
+            OnPropertyChanged(nameof(FooterHeight));
+            OnPropertyChanged(nameof(SidebarWidth));
+            OnPropertyChanged(nameof(LogoSize));
+            OnPropertyChanged(nameof(LogoInnerSize));
+            OnPropertyChanged(nameof(ProfileIconSize));
+            OnPropertyChanged(nameof(CardIconSize));
+            OnPropertyChanged(nameof(CardIconInnerSize));
+            OnPropertyChanged(nameof(ButtonHeight));
+            OnPropertyChanged(nameof(ButtonMinWidth));
+            OnPropertyChanged(nameof(TitleFontSize));
+            OnPropertyChanged(nameof(CardTitleFontSize));
+            OnPropertyChanged(nameof(IconFontSize));
+            OnPropertyChanged(nameof(SmallTextFontSize));
+            OnPropertyChanged(nameof(SidebarTitleFontSize));
+            OnPropertyChanged(nameof(FooterFontSize));
+            OnPropertyChanged(nameof(SidebarPadding));
+            OnPropertyChanged(nameof(HeaderPadding));
+        }
+
         protected override void OnClosing(CancelEventArgs e)
         {
             _droneTrackingService?.StopTracking();

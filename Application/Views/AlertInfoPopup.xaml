@@ -73,7 +73,7 @@
                     <TextBlock Text="Alert Details" Foreground="white" FontWeight="ExtraBold" FontSize="26" HorizontalAlignment="Center"/>
                     <TextBlock x:Name="AlertTitleText" Foreground="#ff6b6b" FontWeight="Bold" FontSize="20" HorizontalAlignment="Center" Margin="0,10,0,0"/>
                 </StackPanel>
-                <Button Grid.Column="1" Content="✕" Style="{StaticResource PopupButtonStyle}" Width="40" Height="40" Click="CloseButton_Click" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,0,0,0" Background="#dc3545" />
+                <Button Grid.Column="1" Content="Close" Style="{StaticResource PopupButtonStyle}" Width="40" Height="40" Click="CloseButton_Click" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,0,0,0" Background="#dc3545" />
             </Grid>
         </Border>
 

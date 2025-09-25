@@ -438,7 +438,6 @@
                         BorderThickness="0" 
                         Padding="20,10" 
                         FontSize="15"
-                        FontWeight="Bold"
                         Margin="15"
                         Width="120"
                         Height="45"

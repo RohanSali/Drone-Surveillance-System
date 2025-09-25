@@ -146,7 +146,7 @@ namespace DroneSurveillanceSystem.Views
                         Status = drone.IsConnected ? "CONNECTED" : "DISCONNECTED",
                         StatusText = string.IsNullOrWhiteSpace(drone.Status) ? (drone.IsConnected ? "Connected" : "Disconnected") : drone.Status,
                         BatteryText = $"Battery: {Math.Max(0, Math.Min(100, drone.BatteryLevel))}%",
-                        StatusColor = drone.IsConnected ? "#88C999" : "#FF6B6B",
+                        StatusColor = drone.IsConnected ? " #4ACF50" : "#dc3545",
                         DeviceId = drone.DeviceId,
                         DeviceType = "Drone"
                     });
@@ -163,7 +163,7 @@ namespace DroneSurveillanceSystem.Views
                         Details = $"Device ID: {cctv.DeviceId}",
                         AdditionalInfo = $"Resolution: {cctv.Resolution} | Frame Rate: {cctv.FrameRate}fps",
                         Status = cctv.IsConnected ? "CONNECTED" : "DISCONNECTED",
-                        StatusColor = cctv.IsConnected ? "#88C999" : "#FF6B6B",
+                        StatusColor = cctv.IsConnected ? "#4ACF50" : "#dc3545",
                         DeviceId = cctv.DeviceId,
                         DeviceType = "CCTV"
                     });

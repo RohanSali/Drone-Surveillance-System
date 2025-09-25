@@ -218,8 +218,16 @@
                         VerticalAlignment="Center"/>
                 
                 <!-- Back Button -->
-                <Button Grid.Column="2" x:Name="BackButton" Content="Back" Click="BackButton_Click" 
-                        Style="{StaticResource DangerButton}" MinWidth="80" HorizontalAlignment="Right"/>
+                <Button Grid.Column="2" 
+                x:Name="BackButton" 
+                Content="Close" 
+                Click="BackButton_Click"
+                Background="#dc3545" 
+                Foreground="White"
+                Height="40" 
+                Width="120"
+                Style="{StaticResource DangerButton}" 
+                HorizontalAlignment="Right"/>
             </Grid>
         </Border>
 
@@ -261,7 +269,14 @@
 
                         <!-- Action Buttons -->
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                            <Button x:Name="SignOutButton" Content="Sign Out" Style="{StaticResource DangerButton}" MinWidth="100" Click="SignOutButton_Click"/>
+                            <Button x:Name="SignOutButton" 
+                                Content="Sign Out" 
+                                Click="SignOutButton_Click"
+                                Background="#dc3545" 
+                                Foreground="White"
+                                Height="40" 
+                                Width="120"
+                                Style="{StaticResource DangerButton}"/>
                         </StackPanel>
                     </StackPanel>
                 </Border>
