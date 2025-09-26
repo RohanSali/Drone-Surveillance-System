@@ -131,8 +131,12 @@
 
             <!-- Left Panel - Devices (Drones and CCTVs) -->
             <Border Grid.Column="0" Grid.RowSpan="2" Background="#2a2a2a" CornerRadius="6" Padding="15" Margin="0,0,10,0">
-                <StackPanel>
-                    <TextBlock x:Name="DevicesTitle" Text="🚁📷 Network Devices" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,15">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <TextBlock Grid.Row="0" x:Name="DevicesTitle" Text="🚁📷 Network Devices" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,15">
                         <TextBlock.Foreground>
                             <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
                                 <GradientStop Color="#00B4D8" Offset="1"/>
@@ -141,8 +145,13 @@
                     </TextBlock>
                     
                     <!-- Dynamic Devices List -->
-                    <ScrollViewer Style="{StaticResource HiddenSmoothScrollViewer}">
+                    <ScrollViewer Grid.Row="1" Style="{StaticResource HiddenSmoothScrollViewer}" VerticalScrollBarVisibility="Hidden" CanContentScroll="True">
                         <ItemsControl ItemsSource="{Binding FilteredDevices}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <VirtualizingStackPanel/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
                                     <Border Background="#333" CornerRadius="4" Padding="10" Margin="0,5">
@@ -167,7 +176,7 @@
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
                     </ScrollViewer>
-                </StackPanel>
+                </Grid>
             </Border>
 
             <!-- Combined Right Panel - Network Summary (top) and Active Alerts (bottom) -->
@@ -253,7 +262,7 @@
                                                     <ColumnDefinition Width="*"/>
                                                     <ColumnDefinition Width="Auto"/>
                                                 </Grid.ColumnDefinitions>
-                                                <TextBlock Grid.Column="0" Text="🚨" FontSize="14" Margin="0,0,8,0"/>
+                                                <TextBlock Grid.Column="0" Text="🚨" Foreground="#dc3545" FontSize="14" Margin="0,0,8,0"/>
                                                 <StackPanel Grid.Column="1">
                                                     <TextBlock Text="{Binding Alert}" Foreground="#E8A598" FontWeight="Bold" FontSize="13"/>
                                                     <TextBlock Text="{Binding DroneId}" Style="{StaticResource DataTextStyle}"/>

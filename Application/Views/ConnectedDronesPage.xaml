@@ -221,8 +221,7 @@
                                   Style="{StaticResource SectionHeader}">
                             <TextBlock.Foreground>
                                 <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                                    <GradientStop Color="#FF4CAF50" Offset="0"/>
-                                    <GradientStop Color="#FF8BC34A" Offset="1"/>
+                                    <GradientStop Color="#FF4ACF50" Offset="0"/>
                                 </LinearGradientBrush>
                             </TextBlock.Foreground>
                         </TextBlock>
@@ -509,8 +508,7 @@
                           FontSize="12">
                     <TextBlock.Foreground>
                         <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                            <GradientStop Color="#FFFF9800" Offset="0"/>
-                            <GradientStop Color="#FFFF5722" Offset="1"/>
+                            <GradientStop Color="#FF9800" Offset="0"/>
                         </LinearGradientBrush>
                     </TextBlock.Foreground>
                 </TextBlock>

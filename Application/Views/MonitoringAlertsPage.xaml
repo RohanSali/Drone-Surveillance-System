@@ -191,18 +191,27 @@
 
         <!-- All Devices Display -->
         <Border Grid.Row="1" Grid.Column="0" Background="#2a2a2a" CornerRadius="6" Padding="15" Margin="10">
-                <StackPanel>
-                    <TextBlock Name="DevicesTitle" Text="🚁 Active Drones" Style="{StaticResource HeaderStyle}" Margin="0,0,0,15" FontSize="18" FontWeight="Bold">
-                    <TextBlock.Foreground>
-                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                            <GradientStop Color="#00B4D8" Offset="1"/>
-                        </LinearGradientBrush>
-                    </TextBlock.Foreground>
-                </TextBlock>
-                    
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <TextBlock Grid.Row="0" Name="DevicesTitle" Text="🚁 Active Drones" Style="{StaticResource HeaderStyle}" Margin="0,0,0,15" FontSize="18" FontWeight="Bold">
+                        <TextBlock.Foreground>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                <GradientStop Color="#00B4D8" Offset="1"/>
+                            </LinearGradientBrush>
+                        </TextBlock.Foreground>
+                    </TextBlock>
+
                     <!-- Dynamic Devices List -->
-                    <ScrollViewer Style="{StaticResource HiddenSmoothScrollViewer}" MaxHeight="550">
+                    <ScrollViewer Grid.Row="1" Style="{StaticResource HiddenSmoothScrollViewer}" VerticalScrollBarVisibility="Auto" CanContentScroll="True">
                         <ItemsControl ItemsSource="{Binding FilteredDevices}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <VirtualizingStackPanel/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
                                     <Border Background="#333" CornerRadius="4" Padding="10" Margin="0,5">
@@ -225,7 +234,7 @@
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
                     </ScrollViewer>
-                </StackPanel>
+                </Grid>
         </Border>
 
         <!-- Alerts Section -->

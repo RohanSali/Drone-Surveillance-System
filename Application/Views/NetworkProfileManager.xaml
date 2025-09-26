@@ -420,12 +420,12 @@
                             <TextBlock Text="Description" Style="{StaticResource DataTextStyle}"/>
                             <TextBox Name="NetworkDescriptionTextBox" 
                                      Style="{StaticResource ModernTextBox}"
-                                     Height="60"
+                                     Height="40"
                                      TextWrapping="Wrap"
                                      AcceptsReturn="True"
                                      VerticalScrollBarVisibility="Auto"
                                      HorizontalScrollBarVisibility="Disabled" 
-                                     MaxLength="500" 
+                                     MaxLength="50" 
                                      Margin="0,0,0,15"/>
                             
                             <Grid Margin="0,0,0,15">

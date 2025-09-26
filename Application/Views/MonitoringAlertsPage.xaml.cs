@@ -146,7 +146,7 @@ namespace DroneSurveillanceSystem.Views
                         Status = drone.IsConnected ? "CONNECTED" : "DISCONNECTED",
                         StatusText = string.IsNullOrWhiteSpace(drone.Status) ? (drone.IsConnected ? "Connected" : "Disconnected") : drone.Status,
                         BatteryText = $"Battery: {Math.Max(0, Math.Min(100, drone.BatteryLevel))}%",
-                        StatusColor = drone.IsConnected ? " #4ACF50" : "#dc3545",
+                        StatusColor = drone.IsConnected ? "#4ACF50" : "#dc3545",
                         DeviceId = drone.DeviceId,
                         DeviceType = "Drone"
                     });
