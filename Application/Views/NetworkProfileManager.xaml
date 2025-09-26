@@ -345,6 +345,7 @@
                                 Content="➕ Create New Network" 
                                 Style="{StaticResource SuccessButton}"
                                 Click="CreateNetworkButton_Click"
+                                Background="#4ACF50"
                                 Margin="20,0,0,0"
                                 FontWeight="Bold"/>
                     </StackPanel>
@@ -368,7 +369,7 @@
                                         </StackPanel>
                                     </StackPanel>
                                     <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                                        <Border Background="#FF28A745" CornerRadius="4" Padding="5,2" Margin="0,0,10,0">
+                                        <Border Background="#4ACF50" CornerRadius="4" Padding="5,2" Margin="0,0,10,0">
                                             <TextBlock Text="ACTIVE" Foreground="White" FontSize="10" FontWeight="Bold"/>
                                         </Border>
                                         <Button Content="⚙️ Edit" Style="{StaticResource ModernButton}" Width="80" Height="30" FontSize="12"/>
@@ -477,6 +478,7 @@
                                         Name="AddDroneButton"
                                         Content="➕ Add"
                                         Style="{StaticResource SuccessButton}"
+                                        Background="#4ACF50"
                                         Click="AddDroneButton_Click"/>
                             </Grid>
 
@@ -507,6 +509,7 @@
                                         Name="AddCctvButton"
                                         Content="➕ Add"
                                         Style="{StaticResource SuccessButton}"
+                                        Background="#4ACF50"
                                         Click="AddCctvButton_Click"/>
                             </Grid>
 
@@ -585,7 +588,7 @@
                 <TextBlock Grid.Column="0" 
                           Name="StatusText"
                           Text="Ready - Select a network to edit or create a new one"
-                          Foreground="{StaticResource AccentGreenBrush}" 
+                          Foreground="#4ACF50" 
                           VerticalAlignment="Center" 
                           Margin="15,0"/>
                 

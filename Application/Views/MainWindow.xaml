@@ -365,10 +365,10 @@
                                     </Border>
                                     <ControlTemplate.Triggers>
                                         <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter TargetName="profileCircle" Property="Fill" Value="#2563EB"/>
+                                            <Setter TargetName="profileCircle" Property="Fill" Value="#00B4D8"/>
                                         </Trigger>
                                         <Trigger Property="IsChecked" Value="True">
-                                            <Setter TargetName="profileCircle" Property="Fill" Value="#1D4ED8"/>
+                                            <Setter TargetName="profileCircle" Property="Fill" Value="#00B4D8"/>
                                         </Trigger>
                                     </ControlTemplate.Triggers>
                                 </ControlTemplate>
@@ -463,8 +463,8 @@
                                         Click="SettingsButton_Click"
                                         Padding="15">
                                         <StackPanel Orientation="Horizontal">
-                                            <TextBlock Text="⚙️" Margin="0,0,10,0" Foreground="{StaticResource TextSecondaryBrush}"/>
-                                            <TextBlock Text="Settings" Foreground="{StaticResource TextPrimaryBrush}"/>
+                                            <TextBlock Text="⚙️" Margin="0,0,10,0" FontSize="16" Foreground="{StaticResource TextSecondaryBrush}"/>
+                                            <TextBlock Text="Settings" FontSize="16" Foreground="{StaticResource TextPrimaryBrush}"/>
                                         </StackPanel>
                                     </Button>
 
@@ -478,8 +478,8 @@
                                         Click="LogoutButton_Click"
                                         Padding="15">
                                         <StackPanel Orientation="Horizontal">
-                                            <TextBlock Text="🚪" Margin="0,0,10,0" Foreground="{StaticResource ErrorRedBrush}"/>
-                                            <TextBlock Text="Sign out" Foreground="{StaticResource ErrorRedBrush}" FontWeight="SemiBold"/>
+                                            <TextBlock Text="🚪" Margin="0,0,10,0" FontSize="16" Foreground="{StaticResource ErrorRedBrush}"/>
+                                            <TextBlock Text="Sign out" FontSize="16" Foreground="{StaticResource ErrorRedBrush}" FontWeight="SemiBold"/>
                                         </StackPanel>
                                     </Button>
                                 </Grid>
@@ -815,20 +815,22 @@
 
                         <!-- Networks Section -->
                         <Border Background="{StaticResource LightGreyBrush}" CornerRadius="8" Padding="12" Margin="0,15,0,0">
-                            <ScrollViewer Style="{StaticResource HiddenSmoothScrollViewer}" MaxHeight="600">
+                            <ScrollViewer VerticalScrollBarVisibility="Auto" 
+                                        HorizontalScrollBarVisibility="Disabled"
+                                        MaxHeight="300">
                                 <StackPanel>
                                     <TextBlock Text="NETWORKS" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" FontWeight="Bold" Margin="0,0,0,8"/>
                                     <ItemsControl ItemsSource="{Binding Networks}">
                                         <ItemsControl.ItemTemplate>
                                             <DataTemplate>
                                                 <Expander Background="{StaticResource MediumGreyBrush}" 
-                                                          BorderBrush="#555555" 
-                                                          BorderThickness="1"
-                                                          Margin="0,4"
-                                                          Foreground="{StaticResource TextPrimaryBrush}"
-                                                          FontSize="11"
-                                                          FontWeight="Bold"
-                                                          IsExpanded="True">
+                                                        BorderBrush="#555555" 
+                                                        BorderThickness="1"
+                                                        Margin="0,4"
+                                                        Foreground="{StaticResource TextPrimaryBrush}"
+                                                        FontSize="11"
+                                                        FontWeight="Bold"
+                                                        IsExpanded="True">
                                                     <Expander.HeaderTemplate>
                                                         <DataTemplate>
                                                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
