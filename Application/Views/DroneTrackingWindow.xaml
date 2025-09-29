@@ -89,7 +89,7 @@
 
                 <!-- Title Section -->
                 <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="20,0">
-                    <Ellipse Width="45" Height="45" Fill="#2563EB" Margin="0,0,12,0"/>
+                    <Ellipse Width="45" Height="45" Fill="#00B4D8" Margin="0,0,12,0"/>
                     <TextBlock Text="🚁" FontSize="24" VerticalAlignment="Center" Margin="-50,0,15,0" Foreground="White"/>
                     <StackPanel VerticalAlignment="Center">
                         <TextBlock Text="DRONE TRACKING SYSTEM" 
@@ -115,8 +115,8 @@
 
                 <!-- Control Buttons -->
                 <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="20,0">                
-                    <Button Name="CloseButton" Content="✖ Close" 
-                            Style="{StaticResource TrackingButtonStyle}" Background="#FFDC3545" Click="CloseButton_Click"/>
+                    <Button Name="CloseButton" Content="Close" FontWeight="Normal" FontSize="16" Height="40" Width="120" 
+                            Style="{StaticResource TrackingButtonStyle}" Background="#dc3545" Click="CloseButton_Click"/>
                 </StackPanel>
             </Grid>
         </Border>
@@ -257,13 +257,13 @@
                                             <TextBlock Text="50.0m" Style="{StaticResource ValueTextStyle}"/>
                                             
                                             <TextBlock Text="Casualties:" Style="{StaticResource DataTextStyle}" Margin="0,5,0,0"/>
-                                            <TextBlock Text="0" Style="{StaticResource ValueTextStyle}" Foreground="#FFFF4444"/>
+                                            <TextBlock Text="0" Style="{StaticResource ValueTextStyle}" Foreground="#DC3545"/>
                                         </StackPanel>
 
                                         <StackPanel Grid.Column="1">
                                             <TextBlock Text="Battery:" Style="{StaticResource DataTextStyle}"/>
                                             <ProgressBar Value="85" Maximum="100" Height="15" 
-                                                        Foreground="#FF00FF00" Background="#FF333333" Margin="0,2"/>
+                                                        Foreground="#4ACF50" Background="#FF333333" Margin="0,2"/>
                                             
                                             <TextBlock Text="Signal:" Style="{StaticResource DataTextStyle}" Margin="0,5,0,0"/>
                                             <ProgressBar Value="92" Maximum="100" Height="15" 

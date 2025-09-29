@@ -26,6 +26,9 @@
   </ItemGroup>
   <ItemGroup>
   <Resource Include="Images\logo.png" />
+  <Resource Include="Images\connect drone.png" />
+  <Resource Include="Images\Monitor Drone.png" />
+  <Resource Include="Images\Track Drone.png" />  
   </ItemGroup>
 
   <ItemGroup>

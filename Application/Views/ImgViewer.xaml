@@ -5,30 +5,60 @@
         WindowStartupLocation="CenterScreen"
         WindowState="Maximized"
         Initialized="ImgViewer_Initialized"
-        Background="#0a0a0a">
+        Background="#1A1A1A">
+    
     <Window.Resources>
+        <!-- Color Resources -->
+        <Color x:Key="DarkBackgroundColor">#FF1A1A1A</Color>
+        <Color x:Key="MediumBackgroundColor">#FF2D2D30</Color>
+        <Color x:Key="LightBackgroundColor">#FF3E3E42</Color>
+        <Color x:Key="BorderColor">#FF404040</Color>
+        <Color x:Key="AccentColor">#FF007ACC</Color>
+        <Color x:Key="TextColor">#FFE1E1E1</Color>
+        <Color x:Key="MutedTextColor">#FF9E9E9E</Color>
+        
+        <!-- Brush Resources -->
+        <SolidColorBrush x:Key="DarkBackgroundBrush" Color="{StaticResource DarkBackgroundColor}"/>
+        <SolidColorBrush x:Key="MediumBackgroundBrush" Color="{StaticResource MediumBackgroundColor}"/>
+        <SolidColorBrush x:Key="LightBackgroundBrush" Color="{StaticResource LightBackgroundColor}"/>
+        <SolidColorBrush x:Key="BorderBrush" Color="{StaticResource BorderColor}"/>
+        <SolidColorBrush x:Key="AccentBrush" Color="{StaticResource AccentColor}"/>
+        <SolidColorBrush x:Key="TextBrush" Color="{StaticResource TextColor}"/>
+        <SolidColorBrush x:Key="MutedTextBrush" Color="{StaticResource MutedTextColor}"/>
+        
         <!-- IMG Viewer specific styles -->
         <Style x:Key="ViewerButtonStyle" TargetType="Button">
-            <Setter Property="Background" Value="#0078d4" />
-            <Setter Property="Foreground" Value="White" />
-            <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="Padding" Value="10,5" />
-            <Setter Property="Margin" Value="5" />
-            <Setter Property="FontWeight" Value="SemiBold" />
-            <Setter Property="FontSize" Value="14" />
-            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Background" Value="{StaticResource MediumBackgroundBrush}"/>
+            <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="12,8"/>
+            <Setter Property="Margin" Value="4"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border Background="{TemplateBinding Background}" CornerRadius="5">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        <Border x:Name="border" 
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="4">
+                            <ContentPresenter x:Name="contentPresenter" 
+                                              Content="{TemplateBinding Content}"
+                                              HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"
+                                              Margin="{TemplateBinding Padding}"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Background" Value="#005a9e"/>
+                                <Setter TargetName="border" Property="Background" Value="#FF404040"/>
+                                <Setter TargetName="border" Property="BorderBrush" Value="#FF606060"/>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter Property="Background" Value="#003f6b"/>
+                                <Setter TargetName="border" Property="Background" Value="#FF1E1E1E"/>
+                                <Setter TargetName="border" Property="BorderBrush" Value="#FF606060"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -36,23 +66,51 @@
             </Setter>
         </Style>
 
+        <Style x:Key="AccentButtonStyle" TargetType="Button" BasedOn="{StaticResource ViewerButtonStyle}">
+            <Setter Property="Background" Value="{StaticResource AccentBrush}"/>
+            <Setter Property="BorderBrush" Value="#0063B1"/>
+        </Style>
+
         <Style x:Key="RecordSliderStyle" TargetType="Slider">
-            <Setter Property="Background" Value="#2d2d2d"/>
-            <Setter Property="Foreground" Value="#0078d4"/>
-            <Setter Property="Height" Value="25"/>
-            <Setter Property="Margin" Value="10"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{StaticResource AccentBrush}"/>
+            <Setter Property="Height" Value="20"/>
+            <Setter Property="Margin" Value="10,5"/>
+        </Style>
+
+        <Style x:Key="SectionHeaderStyle" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Margin" Value="0,0,0,8"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+        </Style>
+
+        <Style x:Key="InfoTextStyle" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{StaticResource MutedTextBrush}"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Margin" Value="4"/>
+        </Style>
+
+        <Style x:Key="ControlPanelStyle" TargetType="Border">
+            <Setter Property="Background" Value="{StaticResource MediumBackgroundBrush}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="Padding" Value="12"/>
+            <Setter Property="Margin" Value="8"/>
         </Style>
     </Window.Resources>
 
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="60"/>
+            <RowDefinition Height="70"/>
             <RowDefinition Height="*"/>
-            <RowDefinition Height="100"/>
+            <RowDefinition Height="120"/>
         </Grid.RowDefinitions>
 
         <!-- Header with Controls -->
-        <Border Grid.Row="0" Background="#1e1e1e">
+        <Border Grid.Row="0" Background="{StaticResource MediumBackgroundBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
@@ -62,35 +120,37 @@
 
                 <!-- Title -->
                 <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="20,0">
-                    <TextBlock Text="🖼️ Image Viewer" Foreground="White" FontWeight="Bold" FontSize="20"/>
+                    <TextBlock Text="🖼️" FontSize="24" Margin="0,0,10,0"/>
+                    <TextBlock Text="Image Viewer" Foreground="{StaticResource TextBrush}" FontWeight="Bold" FontSize="18"/>
                 </StackPanel>
 
                 <!-- Image Info -->
                 <StackPanel Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Center">
                     <TextBlock Name="ImageIdText" Text="Image ID: IMG_001" 
-                               Foreground="#ccc" FontSize="14" HorizontalAlignment="Center"/>
+                               Foreground="{StaticResource TextBrush}" FontSize="14" HorizontalAlignment="Center" FontWeight="SemiBold"/>
                     <TextBlock Name="ImageInfoText" Text="Resolution: 1920x1080 | Size: 2.4MB | Date: 2023-07-28 10:32 AM" 
-                               Foreground="#888" FontSize="12" HorizontalAlignment="Center"/>
+                               Foreground="{StaticResource MutedTextBrush}" FontSize="12" HorizontalAlignment="Center"/>
                 </StackPanel>
 
                 <!-- Action Buttons -->
                 <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="20,0">
-                    <Button Content="💾 Save" Style="{StaticResource ViewerButtonStyle}"/>
-                    <Button Content="🔄 Rotate" Style="{StaticResource ViewerButtonStyle}"/>
-                    <Button Content="🔍 Zoom" Style="{StaticResource ViewerButtonStyle}"/>
-                    <Button Content="✖ Close" Style="{StaticResource ViewerButtonStyle}" 
+                    <Button Content="💾 Save" Style="{StaticResource ViewerButtonStyle}" Width="80"/>
+                    <Button Content="🔄 Rotate" Style="{StaticResource ViewerButtonStyle}" Width="80"/>
+                    <Button Content="🔍 Zoom" Style="{StaticResource ViewerButtonStyle}" Width="80"/>
+                    <Button Content="✖ Close" Style="{StaticResource ViewerButtonStyle}" Width="80"
                             Click="CloseButton_Click"/>
                 </StackPanel>
             </Grid>
         </Border>
 
         <!-- Main Image Display -->
-        <Border Grid.Row="1" Background="#1a1a1a" Margin="10">
+        <Border Grid.Row="1" Background="{StaticResource DarkBackgroundBrush}" Margin="10">
             <Grid>
                 <!-- Image Container -->
                 <ScrollViewer Name="ImageScrollViewer"
-                              Style="{StaticResource HiddenSmoothScrollViewer}"
-                              Background="Transparent">
+                              Background="Transparent"
+                              VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollBarVisibility="Auto">
                     <Image Name="MainImage" 
                            Source="/Images/surveillance_placeholder.svg" 
                            Stretch="Uniform"
@@ -105,9 +165,10 @@
                 </ScrollViewer>
 
                 <!-- Overlay Controls (visible on hover) -->
-                <Grid Name="OverlayControls" Background="#AA000000" Opacity="0" 
-                      MouseEnter="OverlayControls_MouseEnter" 
-                      MouseLeave="OverlayControls_MouseLeave">
+                <Border Name="OverlayControls" Background="#801A1A1A" Opacity="0" 
+                        CornerRadius="8"
+                        MouseEnter="OverlayControls_MouseEnter" 
+                        MouseLeave="OverlayControls_MouseLeave">
                     <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="10">
                             <Button Content="◀◀ Previous" Style="{StaticResource ViewerButtonStyle}" 
@@ -122,25 +183,16 @@
                             <Button Content="🔍- Zoom Out" Style="{StaticResource ViewerButtonStyle}" 
                                     Width="100" Click="ZoomOutButton_Click"/>
                             <Button Content="🔄 Rotate 90°" Style="{StaticResource ViewerButtonStyle}" 
-                                Width="100" Click="RotateButton_Click"/>
+                                    Width="100" Click="RotateButton_Click"/>
                         </StackPanel>
                     </StackPanel>
-                </Grid>
-                
-                <!-- Image Attributes Display -->
-                <StackPanel Orientation="Horizontal" Grid.Row="2" HorizontalAlignment="Center" Margin="10">
-                    <TextBlock Text="Brightness: " Foreground="White" FontSize="12"/>
-                    <Slider Minimum="0" Maximum="1" Value="0.5" Width="200" />
-
-                    <TextBlock Text="Contrast: " Foreground="White" FontSize="12" Margin="10,0,0,0"/>
-                    <Slider Minimum="0" Maximum="1" Value="0.5" Width="200" />
-                </StackPanel>
+                </Border>
             </Grid>
         </Border>
 
         <!-- Recording Controls -->
-        <Border Grid.Row="2" Background="#2d2d2d">
-            <Grid>
+        <Border Grid.Row="2" Background="{StaticResource MediumBackgroundBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1,0,0,0">
+            <Grid Margin="10">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
@@ -148,54 +200,55 @@
                 </Grid.ColumnDefinitions>
 
                 <!-- Playback Controls -->
-                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="20,0">
-                    <Button Content="⏮️" Style="{StaticResource ViewerButtonStyle}" Width="40" 
-                            ToolTip="First Image"/>
-                    <Button Content="⏪" Style="{StaticResource ViewerButtonStyle}" Width="40" 
-                            ToolTip="Fast Backward"/>
-                    <Button Content="▶️" Style="{StaticResource ViewerButtonStyle}" Width="40" 
-                            ToolTip="Play"/>
-                    <Button Content="⏸️" Style="{StaticResource ViewerButtonStyle}" Width="40" 
-                            ToolTip="Pause"/>
-                    <Button Content="⏩" Style="{StaticResource ViewerButtonStyle}" Width="40" 
-                            ToolTip="Fast Forward"/>
-                    <Button Content="⏭️" Style="{StaticResource ViewerButtonStyle}" Width="40" 
-                            ToolTip="Last Image"/>
-                </StackPanel>
+                <Border Grid.Column="0" Style="{StaticResource ControlPanelStyle}">
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <Button Content="⏮️" Style="{StaticResource ViewerButtonStyle}" Width="40" 
+                                ToolTip="First Image"/>
+                        <Button Content="⏪" Style="{StaticResource ViewerButtonStyle}" Width="40" 
+                                ToolTip="Fast Backward"/>
+                        <Button Content="▶️" Style="{StaticResource AccentButtonStyle}" Width="40" 
+                                ToolTip="Play"/>
+                        <Button Content="⏸️" Style="{StaticResource ViewerButtonStyle}" Width="40" 
+                                ToolTip="Pause"/>
+                        <Button Content="⏩" Style="{StaticResource ViewerButtonStyle}" Width="40" 
+                                ToolTip="Fast Forward"/>
+                        <Button Content="⏭️" Style="{StaticResource ViewerButtonStyle}" Width="40" 
+                                ToolTip="Last Image"/>
+                    </StackPanel>
+                </Border>
 
                 <!-- Progress Slider -->
-                <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="20,0">
-                    <TextBlock Text="📊 Record Progress" Foreground="White" FontWeight="Bold" 
-                               FontSize="12" Margin="0,0,0,5" HorizontalAlignment="Center"/>
-                    <Slider Name="RecordSlider" Style="{StaticResource RecordSliderStyle}" 
-                            Minimum="1" Maximum="150" Value="75" 
-                            ValueChanged="RecordSlider_ValueChanged"/>
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                        <TextBlock Name="CurrentFrameText" Text="Frame 75" 
-                                   Foreground="#ccc" FontSize="11" Margin="5,0"/>
-                        <TextBlock Text="/" Foreground="#888" FontSize="11"/>
-                        <TextBlock Name="TotalFramesText" Text="150" 
-                                   Foreground="#ccc" FontSize="11" Margin="5,0"/>
-                        <TextBlock Text="(" Foreground="#888" FontSize="11" Margin="10,0,0,0"/>
-                        <TextBlock Name="TimestampText" Text="10:32:45" 
-                                   Foreground="#ccc" FontSize="11"/>
-                        <TextBlock Text=")" Foreground="#888" FontSize="11"/>
+                <Border Grid.Column="1" Style="{StaticResource ControlPanelStyle}" Margin="10,0">
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="📊 Record Progress" Style="{StaticResource SectionHeaderStyle}"/>
+                        <Slider Name="RecordSlider" Style="{StaticResource RecordSliderStyle}" 
+                                Minimum="1" Maximum="150" Value="75" 
+                                ValueChanged="RecordSlider_ValueChanged"/>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                            <TextBlock Name="CurrentFrameText" Text="Frame 75" Style="{StaticResource InfoTextStyle}"/>
+                            <TextBlock Text="/" Style="{StaticResource InfoTextStyle}"/>
+                            <TextBlock Name="TotalFramesText" Text="150" Style="{StaticResource InfoTextStyle}"/>
+                            <TextBlock Text="(" Style="{StaticResource InfoTextStyle}" Margin="10,0,0,0"/>
+                            <TextBlock Name="TimestampText" Text="10:32:45" Style="{StaticResource InfoTextStyle}"/>
+                            <TextBlock Text=")" Style="{StaticResource InfoTextStyle}"/>
+                        </StackPanel>
                     </StackPanel>
-                </StackPanel>
+                </Border>
 
                 <!-- Speed and Options -->
-                <StackPanel Grid.Column="2" VerticalAlignment="Center" Margin="20,0">
-                    <TextBlock Text="⚡ Speed" Foreground="White" FontWeight="Bold" 
-                               FontSize="12" HorizontalAlignment="Center"/>
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,5">
-                        <Button Content="0.5x" Style="{StaticResource ViewerButtonStyle}" Width="40" FontSize="10"/>
-                        <Button Content="1x" Style="{StaticResource ViewerButtonStyle}" Width="40" FontSize="10"/>
-                        <Button Content="2x" Style="{StaticResource ViewerButtonStyle}" Width="40" FontSize="10"/>
-                        <Button Content="4x" Style="{StaticResource ViewerButtonStyle}" Width="40" FontSize="10"/>
+                <Border Grid.Column="2" Style="{StaticResource ControlPanelStyle}">
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="⚡ Speed" Style="{StaticResource SectionHeaderStyle}"/>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,5">
+                            <Button Content="0.5x" Style="{StaticResource ViewerButtonStyle}" Width="40" FontSize="10"/>
+                            <Button Content="1x" Style="{StaticResource AccentButtonStyle}" Width="40" FontSize="10"/>
+                            <Button Content="2x" Style="{StaticResource ViewerButtonStyle}" Width="40" FontSize="10"/>
+                            <Button Content="4x" Style="{StaticResource ViewerButtonStyle}" Width="40" FontSize="10"/>
+                        </StackPanel>
+                        <CheckBox Content="Loop" Foreground="{StaticResource TextBrush}" FontSize="11" 
+                                  HorizontalAlignment="Center" Margin="0,8"/>
                     </StackPanel>
-                    <CheckBox Content="Loop" Foreground="White" FontSize="11" 
-                              HorizontalAlignment="Center" Margin="0,5"/>
-                </StackPanel>
+                </Border>
             </Grid>
         </Border>
     </Grid>

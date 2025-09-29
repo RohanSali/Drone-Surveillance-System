@@ -6,7 +6,7 @@
         mc:Ignorable="d"
         Title="Module Selector - Drone Surveillance System" Height="500" Width="600"
         WindowStartupLocation="CenterScreen"
-        Background="#0a0a0a"
+        Background="#1A1A1A"
         FontFamily="Segoe UI"
         ResizeMode="NoResize">
 

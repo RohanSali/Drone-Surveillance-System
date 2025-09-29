@@ -190,7 +190,8 @@ namespace DroneSurveillanceSystem.Views
 
             // Update editor header with more prominent styling
             EditorHeaderText.Text = "🆕 Create New Network";
-            EditorHeaderText.Foreground = System.Windows.Media.Brushes.LightGreen;
+            EditorHeaderText.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#4ACF50"));
+
 
             // Set status text
             StatusText.Text = "Creating new network - Fill in the details and click Save";
@@ -221,9 +222,11 @@ namespace DroneSurveillanceSystem.Views
 
             // Update button states
             SaveNetworkButton.Content = "💾 Create Network";
+            SaveNetworkButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#4ACF50"));
             DeleteNetworkButton.IsEnabled = false;
             DeleteNetworkButton.Opacity = 0.3;
             DeleteNetworkButton.ToolTip = "No network selected for deletion";
+
         }
 
         private void LoadNetworkIntoEditor(Network network)
@@ -543,8 +546,8 @@ namespace DroneSurveillanceSystem.Views
                 Name = NetworkNameTextBox.Text,
                 Description = NetworkDescriptionTextBox.Text ?? "",
                 Status = "Active", // Default status
-                StatusColor = "#4CAF50", // Default color for Active
-                IconColor = "#4CAF50",
+                StatusColor = "#4ACF50", // Default color for Active
+                IconColor = "#4ACF50",
                 CoverageRegion = ((ComboBoxItem)CoverageRegionComboBox.SelectedItem)?.Content?.ToString() ?? "Urban Zone",
                 PriorityLevel = ((ComboBoxItem)PriorityLevelComboBox.SelectedItem)?.Content?.ToString() ?? "Medium Priority",
                 OperationMode = ((ComboBoxItem)OperationModeComboBox.SelectedItem)?.Content?.ToString() ?? "Patrol Mode",

@@ -4,7 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
-        Background="#0a0a0a"
+        Background="#1A1A1A"
         FontFamily="Segoe UI">
 
     <UserControl.Resources>
@@ -22,7 +22,7 @@
         </Style>
 
         <Style x:Key="ModernButton" TargetType="Button">
-            <Setter Property="Background" Value="#0078d4"/>
+            <Setter Property="Background" Value="#00B4D8"/>
             <Setter Property="Foreground" Value="White"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Padding" Value="20,12"/>
@@ -49,7 +49,7 @@
         </Style>
 
         <Style x:Key="SuccessButton" TargetType="Button">
-            <Setter Property="Background" Value="#28A745"/>
+            <Setter Property="Background" Value="#4caf50"/>
             <Setter Property="Foreground" Value="White"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Padding" Value="20,12"/>
@@ -101,7 +101,7 @@
                 </Grid.ColumnDefinitions>
 
                 <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-                    <TextBlock Text="🔍" FontSize="30" Margin="0,0,10,0" Foreground="#2196F3" />
+                    <TextBlock Text="🔍" FontSize="35" Margin="0,0,10,0" Foreground="#3d9df7" />
                     <StackPanel>
                         <TextBlock Text="Lost Person Finding" 
                                   Foreground="White" 
@@ -116,11 +116,12 @@
                 <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
                     <Button Name="RefreshButton" 
                             Content="🔄 Refresh" 
-                            Background="#17a2b8" 
+                            Background="#3d9df7" 
                             Foreground="White" 
                             BorderThickness="0" 
-                            Padding="15,8" 
-                            FontSize="14"
+                            FontSize="16"
+                            Height="40"
+                            Width="120"
                             Click="RefreshButton_Click"
                             Margin="0,0,10,0">
                         <Button.Template>
@@ -143,12 +144,13 @@
                         </Button.Template>
                     </Button>
                     <Button Name="CloseButton" 
-                            Content="✕ Close" 
+                            Content="Close" 
                             Background="#dc3545" 
                             Foreground="White" 
                             BorderThickness="0" 
-                            Padding="15,8" 
-                            FontSize="14"
+                            FontSize="16"
+                            Height="40"
+                            Width="120"
                             Click="CloseButton_Click">
                         <Button.Template>
                             <ControlTemplate TargetType="Button">
@@ -193,7 +195,7 @@
                     <StackPanel Grid.Row="0" Margin="0,0,0,20">
                         <TextBlock Text="📤 Upload Image" 
                                   Style="{StaticResource HeaderText}"
-                                  Foreground="#00BCD4"/>
+                                  Foreground="#3d9df7"/>
                         <TextBlock Text="Select an image of the lost person to search for" 
                                   Style="{StaticResource SubHeaderText}"/>
                     </StackPanel>
@@ -222,6 +224,7 @@
                                 Content="📁 Select Image" 
                                 Style="{StaticResource ModernButton}" 
                                 Click="SelectImageButton_Click"
+                                Background="#3d9df7"
                                 Margin="0,0,10,0"
                                 Width="200"
                                 Height="40"/>
