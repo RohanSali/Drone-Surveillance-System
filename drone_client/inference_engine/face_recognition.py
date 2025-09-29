@@ -129,6 +129,7 @@ def compare_faces(frame1, frame2, name, capture_timestamp, intrinsic_matrix, dro
 
             frame1_blob = encode_frame(frame1)
             frame2_blob = encode_frame(frame2)
+            name, ext = os.path.splitext(name)
             
             # Create payload for saving to machine
             payload = {
