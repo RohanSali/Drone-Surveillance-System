@@ -285,8 +285,8 @@
                     <ColumnDefinition Width="Auto" />
                     <!-- Add this for window controls -->
                 </Grid.ColumnDefinitions>
-
-                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="20,0">
+                <!-- Left Side - Logo and the Text -->
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="25,0">
                     <Border Background="{StaticResource DarkGreyBrush }" 
                     Width="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=DataContext.LogoSize}" 
                     Height="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=DataContext.LogoSize}" 
@@ -489,7 +489,7 @@
                 </StackPanel>
 
                 <!-- Window Control Buttons -->
-                <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,10,0">
+                <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,25,0">
                     <Button x:Name="MinimizeButton" 
                             Style="{StaticResource WindowControlButton}" 
                             Click="MinimizeButton_Click"

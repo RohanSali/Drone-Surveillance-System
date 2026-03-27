@@ -18,3 +18,10 @@ __pycache__/
 # Ignore all files in temp folder but not the folder itself
 temp/*
 !temp/.gitkeep  # Keep the folder structure if needed
+
+# Ignore MyAppinstaller files
+bin/
+Debug/
+Release/
+*.msi
+*.exe

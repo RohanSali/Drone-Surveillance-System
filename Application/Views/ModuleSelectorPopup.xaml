@@ -7,6 +7,7 @@
         Title="Module Selector - Drone Surveillance System" Height="500" Width="600"
         WindowStartupLocation="CenterScreen"
         Background="#1A1A1A"
+        WindowStyle="None"
         FontFamily="Segoe UI"
         ResizeMode="NoResize">
 
@@ -129,7 +130,8 @@
                        Content="Cancel" 
                        Style="{StaticResource DarkButton}" 
                        Click="CancelButton_Click"
-                       Background="#666"/>
+                       Background="#666"
+                       Padding="15,8"/>
                 <Button Content="Apply Configuration" 
                        Style="{StaticResource DarkButton}"/>
             </StackPanel>
