@@ -1,1 +1,38 @@
-/airsim_simulation
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.so
+*.egg-info/
+dist/
+build/
+
+# Unreal Engine project artifacts (VIRA_city)
+airsim_simulation/VIRA_city/.vs/
+airsim_simulation/VIRA_city/Binaries/
+airsim_simulation/VIRA_city/DerivedDataCache/
+airsim_simulation/VIRA_city/Intermediate/
+airsim_simulation/VIRA_city/Saved/
+
+# RL Model checkpoints and training artifacts (large files)
+rl_models/*.zip
+rl_models/*.pth
+rl_models/*.pt
+rl_models/*.h5
+rl_models/__pycache__/
+
+# Python environment and IDE
+.pytest_cache/
+.coverage
+*.egg
+.DS_Store
+.vscode/
+*.swp
+*.swo
+
+# Training logs and outputs
+*.out
+*.err
+logs/
+runs/

@@ -139,4 +139,11 @@ def validate_alert(alert_name,alert_id,frame,capture_timestamp = datetime.now())
         }
 
         save_to_machine(payload)
-        asyncio.run(send_alert(payload,type='validated_alert'))
+        # Use a new event loop safely to avoid destroying the main/thread event loop
+        # asyncio.run() would destroy any existing event loop, breaking AirSim's msgpackrpc
+        try:
+            loop = asyncio.new_event_loop()
+            loop.run_until_complete(send_alert(payload, type='validated_alert'))
+            loop.close()
+        except Exception as e:
+            print(f"⚠ Error sending validated alert: {e}")
