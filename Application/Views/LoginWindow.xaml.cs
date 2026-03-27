@@ -1,21 +1,25 @@
 using DroneSurveillanceSystem.Services;
+using DroneSurveillanceSystem.Services.Firebase;
 using System;
 using System.Windows;
+using System.Threading;
 
 namespace DroneSurveillanceSystem.Views
 {
     public partial class LoginWindow : Window
     {
-        private readonly AuthService _authService;
         public bool IsAuthenticated { get; private set; }
         public bool IsGuestMode { get; private set; }
 
-        public LoginWindow(AuthService authService)
+        private readonly FirebaseAuthService _firebaseAuthService;
+        private CancellationTokenSource? _silentSignInCts;
+
+        public LoginWindow()
         {
             InitializeComponent();
-            _authService = authService;
-            
-            // Try silent sign-in first
+            _firebaseAuthService = new FirebaseAuthService();
+
+            // Attempt silent sign-in first (based on cached Firebase refresh token).
             TrySilentSignIn();
         }
 
@@ -23,150 +27,109 @@ namespace DroneSurveillanceSystem.Views
         {
             try
             {
-                MicrosoftSignInButton.IsEnabled = false;
-                GmailSignInButton.IsEnabled = false;
+                GoogleSignInButton.IsEnabled = false;
                 GuestButton.IsEnabled = false;
-                
-                var success = await _authService.SilentSignInAsync();
-                if (success)
+
+                _silentSignInCts = new CancellationTokenSource();
+                var user = await _firebaseAuthService.TrySilentSignInAsync(_silentSignInCts.Token);
+                if (user == null) return;
+
+                FirebaseSession.Set(user);
+                IsAuthenticated = true;
+                IsGuestMode = false;
+
+                var userKey = string.IsNullOrWhiteSpace(user.AppClientId) ? "guest" : user.AppClientId;
+
+                // Lock devices for this appId before loading device lists
+                if (!string.IsNullOrWhiteSpace(user.AppClientId))
                 {
-                    IsAuthenticated = true;
-                    try
-                    {
-                        var userKey = _authService.CurrentUserEmail ?? _authService.CurrentUserName ?? "guest";
-                        DeviceDataManager.SetCurrentUser(userKey);
-                        NetworkService.SetCurrentUser(userKey);
-                        
-                        // Update UserProfileService for Silent signin (Microsoft)
-                        UserProfileService.Instance.UpdateFromAuthService(_authService, "Microsoft");
-                    }
-                    catch { }
-                    
-                    // Create and show the main window for silently authenticated users
-                    try
-                    {
-                        var mainWindow = new MainWindow();
-                        mainWindow.Show();
-                        this.Close();
-                    }
-                    catch (Exception mainEx)
-                    {
-                        MessageBox.Show($"Error opening main window: {mainEx.Message}", "Error", 
-                            MessageBoxButton.OK, MessageBoxImage.Error);
-                        this.Close();
-                    }
+                    var config = FirebaseAuthConfig.Load();
+                    using var http = new System.Net.Http.HttpClient();
+                    var rtdb = new FirebaseRtdbRestClient(http, config);
+                    var mapping = new FirebaseUserClientMappingService(rtdb);
+                    await mapping.BestEffortMigrateMappingsAsync(
+                        user.Uid,
+                        user.AppClientId,
+                        user.FirebaseIdToken,
+                        System.Threading.CancellationToken.None);
+                    var access = new FirebaseDeviceAccessService(rtdb);
+                    await access.LockMappedDevicesForAppAsync(user.AppClientId, user.FirebaseIdToken, CancellationToken.None);
                 }
+
+                DeviceDataManager.SetCurrentUser(userKey);
+                NetworkService.SetCurrentUser(userKey);
+
+                var displayName = string.IsNullOrWhiteSpace(user.DisplayName) ? "User" : user.DisplayName;
+                var email = string.IsNullOrWhiteSpace(user.Email) ? "" : user.Email;
+                UserProfileService.Instance.SetAuthenticatedUser(displayName, email, "Google");
+
+                var mainWindow = new MainWindow();
+                mainWindow.Show();
+                Close();
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                // Silent sign-in failed, enable buttons
+                // Ignore silent auth failures; user can still sign in or use guest.
+                System.Diagnostics.Debug.WriteLine($"Silent Firebase sign-in failed: {ex.Message}");
             }
             finally
             {
-                MicrosoftSignInButton.IsEnabled = true;
-                GmailSignInButton.IsEnabled = true;
+                GoogleSignInButton.IsEnabled = true;
                 GuestButton.IsEnabled = true;
             }
         }
 
-        private async void MicrosoftSignInButton_Click(object sender, RoutedEventArgs e)
+        private async void GoogleSignInButton_Click(object sender, System.Windows.RoutedEventArgs e)
         {
-            try
-            {
-                MicrosoftSignInButton.IsEnabled = false;
-                GmailSignInButton.IsEnabled = false;
-                GuestButton.IsEnabled = false;
-                
-                var success = await _authService.SignInAsync();
-                if (success)
-                {
-                    IsAuthenticated = true;
-                    try
-                    {
-                        var userKey = _authService.CurrentUserEmail ?? _authService.CurrentUserName ?? "guest";
-                        DeviceDataManager.SetCurrentUser(userKey);
-                        NetworkService.SetCurrentUser(userKey);
-                        
-                        // Update UserProfileService for Microsoft auth
-                        UserProfileService.Instance.UpdateFromAuthService(_authService, "Microsoft");
-                    }
-                    catch { }
-                    
-                    // Create and show the main window for authenticated users
-                    try
-                    {
-                        var mainWindow = new MainWindow();
-                        mainWindow.Show();
-                        this.Close();
-                    }
-                    catch (Exception mainEx)
-                    {
-                        MessageBox.Show($"Error opening main window: {mainEx.Message}", "Error", 
-                            MessageBoxButton.OK, MessageBoxImage.Error);
-                        this.Close();
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Sign-in failed: {ex.Message}", "Authentication Error", 
-                    MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-            finally
-            {
-                MicrosoftSignInButton.IsEnabled = true;
-                GmailSignInButton.IsEnabled = true;
-                GuestButton.IsEnabled = true;
-            }
-        }
+            GoogleSignInButton.IsEnabled = false;
+            GuestButton.IsEnabled = false;
 
-        private async void GmailSignInButton_Click(object sender, RoutedEventArgs e)
-        {
             try
             {
-                MicrosoftSignInButton.IsEnabled = false;
-                GmailSignInButton.IsEnabled = false;
-                GuestButton.IsEnabled = false;
-                
-                // Use the dedicated Gmail authentication method
-                var success = await _authService.SignInWithGmailAsync();
-                if (success)
+                var user = await _firebaseAuthService.SignInWithGoogleAsync(CancellationToken.None);
+                if (user == null) return;
+
+                FirebaseSession.Set(user);
+                IsAuthenticated = true;
+                IsGuestMode = false;
+
+                var userKey = string.IsNullOrWhiteSpace(user.AppClientId) ? "guest" : user.AppClientId;
+
+                // Lock devices for this appId before loading device lists
+                if (!string.IsNullOrWhiteSpace(user.AppClientId))
                 {
-                    IsAuthenticated = true;
-                    try
-                    {
-                        DeviceDataManager.SetCurrentUser(_authService.CurrentUserEmail ?? _authService.CurrentUserName ?? "guest");
-                        NetworkService.SetCurrentUser(_authService.CurrentUserEmail ?? _authService.CurrentUserName ?? "guest");
-                        
-                        // Update UserProfileService for Google auth - THIS WAS MISSING!
-                        UserProfileService.Instance.UpdateFromAuthService(_authService, "Google");
-                    }
-                    catch { }
-                    
-                    // Create and show the main window for authenticated users
-                    try
-                    {
-                        var mainWindow = new MainWindow();
-                        mainWindow.Show();
-                        this.Close();
-                    }
-                    catch (Exception mainEx)
-                    {
-                        MessageBox.Show($"Error opening main window: {mainEx.Message}", "Error", 
-                            MessageBoxButton.OK, MessageBoxImage.Error);
-                        this.Close();
-                    }
+                    var config = FirebaseAuthConfig.Load();
+                    using var http = new System.Net.Http.HttpClient();
+                    var rtdb = new FirebaseRtdbRestClient(http, config);
+                    var mapping = new FirebaseUserClientMappingService(rtdb);
+                    await mapping.BestEffortMigrateMappingsAsync(
+                        user.Uid,
+                        user.AppClientId,
+                        user.FirebaseIdToken,
+                        System.Threading.CancellationToken.None);
+                    var access = new FirebaseDeviceAccessService(rtdb);
+                    await access.LockMappedDevicesForAppAsync(user.AppClientId, user.FirebaseIdToken, CancellationToken.None);
                 }
+
+                DeviceDataManager.SetCurrentUser(userKey);
+                NetworkService.SetCurrentUser(userKey);
+
+                var displayName = string.IsNullOrWhiteSpace(user.DisplayName) ? "User" : user.DisplayName;
+                var email = string.IsNullOrWhiteSpace(user.Email) ? "" : user.Email;
+                UserProfileService.Instance.SetAuthenticatedUser(displayName, email, "Google");
+
+                var mainWindow = new MainWindow();
+                mainWindow.Show();
+                Close();
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Gmail sign-in failed: {ex.Message}", "Authentication Error", 
+                MessageBox.Show($"Google Firebase sign-in failed: {ex.Message}", "Authentication Error",
                     MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
             {
-                MicrosoftSignInButton.IsEnabled = true;
-                GmailSignInButton.IsEnabled = true;
+                GoogleSignInButton.IsEnabled = true;
                 GuestButton.IsEnabled = true;
             }
         }
@@ -203,6 +166,13 @@ namespace DroneSurveillanceSystem.Views
         protected override void OnClosed(EventArgs e)
         {
             base.OnClosed(e);
+
+            try
+            {
+                _silentSignInCts?.Cancel();
+                _silentSignInCts?.Dispose();
+            }
+            catch { }
             
             // If neither authenticated nor guest mode, exit the application
             if (!IsAuthenticated && !IsGuestMode)

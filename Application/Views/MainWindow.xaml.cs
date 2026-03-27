@@ -21,6 +21,7 @@ using Microsoft.Win32;
 using System.Linq;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
+using DroneSurveillanceSystem.Services.Firebase;
 
 namespace DroneSurveillanceSystem.Views
 {
@@ -854,32 +855,55 @@ namespace DroneSurveillanceSystem.Views
                     
                     AlertManager.Instance.ClearAllAlerts();
                     OnPropertyChanged(nameof(ActiveAlertsCount));
-                    
-                    // Sign out from authentication service
-                    var authService = new AuthService();
-                    await authService.SignOutAsync();
-                    
-                    // Update user profile to guest mode
+
+                    // Reset per-user state
+                    try { LostFindingManager.Instance.ClearAllPendingRequests(); } catch { }
+
+                    // Unlock devices for this appId before switching to guest
+                    var currentUser = FirebaseSession.Current;
+                    if (currentUser != null &&
+                        !string.IsNullOrWhiteSpace(currentUser.AppClientId) &&
+                        !string.IsNullOrWhiteSpace(currentUser.FirebaseIdToken))
+                    {
+                        try
+                        {
+                            var config = FirebaseAuthConfig.Load();
+                            using var http = new System.Net.Http.HttpClient();
+                            var rtdb = new FirebaseRtdbRestClient(http, config);
+                            var access = new FirebaseDeviceAccessService(rtdb);
+                            await access.UnlockMappedDevicesForAppAsync(currentUser.AppClientId, currentUser.FirebaseIdToken, CancellationToken.None);
+                        }
+                        catch (Exception unlockEx)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"Device unlock failed: {unlockEx.Message}");
+                        }
+                    }
+
+                    DeviceDataManager.SetCurrentUser("guest");
+                    NetworkService.SetCurrentUser("guest");
                     UserProfile.SetGuestMode();
-                    
-                    // Hide this window (keep app alive) and show LoginWindow
+
+                    try
+                    {
+                        var auth = new FirebaseAuthService();
+                        await auth.SignOutAsync();
+                    }
+                    catch { }
+
+                    try { FirebaseSession.Clear(); } catch { }
+
+                    // Hide this window (keep app alive) and show guest-only LoginWindow
                     this.Hide();
                     var oldMainWindow = this;
-                    var loginWindow = new LoginWindow(authService);
+                    var loginWindow = new LoginWindow();
 
                     // Switch MainWindow to the LoginWindow so closing the old one doesn't exit the app
                     Application.Current.MainWindow = loginWindow;
 
-                    // When login window closes (after successful login it will create/show a new MainWindow),
-                    // clean up and close the old hidden MainWindow instance to avoid duplicates
+                    // When login window closes, close the old hidden main window to avoid duplicates
                     loginWindow.Closed += (s, args) =>
                     {
-                        try
-                        {
-                            // Ensure the hidden window is closed and resources are released
-                            oldMainWindow.Close();
-                        }
-                        catch { }
+                        try { oldMainWindow.Close(); } catch { }
                     };
 
                     // Show login as the active window (non-modal)
