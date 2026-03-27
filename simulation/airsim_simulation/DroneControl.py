@@ -24,6 +24,7 @@ project_dir = os.path.abspath(os.path.join(current_dir, '..', '..'))
 DRONE_NAME = "Drone_Rohan"
 DRONE_CORDS_PATH = os.path.join(project_dir,"drone_client","capture_engine","drone_targets.txt")
 DRONE_INFO_PATH = os.path.join(project_dir, "drone_client", "drone_info.json")
+DRONE_TASKS_PATH = os.path.join(project_dir, "drone_client", "drone_tasks.txt")
 CHECK_INTERVAL = 2.0  # seconds between file checks
 VELOCITY = 5  # drone movement speed (m/s)
 FOV = 90  # camera field of view in degrees
@@ -31,11 +32,12 @@ HOVER_STABILIZE_TIME = 2.0  # seconds to hover for stabilization
 TELEMETRY_UPDATE_INTERVAL = 0.5  # seconds between telemetry updates
 
 # --- State flags (thread-safe via GIL for simple booleans) ---
-drone_state = "IDLE"  # "IDLE", "MOVING", "HOVERING", "VALIDATING", "INFERENCING", "LANDING"
+drone_state = "IDLE"  # "IDLE", "MOVING", "HOVERING", "VALIDATING", "INFERENCING", "LANDING", "TASK"
 is_validating = False
 running = False
 current_target_name = None  # name of target currently being served
 targets_remaining_count = 0
+abort_targets = False  # set True by task system to preempt validation targets
 
 # --- Drone info: loaded once from file, then continuously updated ---
 def load_drone_info():
@@ -96,14 +98,25 @@ def telemetry_thread():
     Continuously reads live position, speed, orientation from AirSim
     and writes to drone_info.json — even while the main thread is
     blocked on moveToPositionAsync.
+    Also handles aborting in-flight movements when abort_targets is set.
     """
-    # Dedicated read-only client for this thread
+    # Dedicated client for this thread (read-only + hover for abort)
     telem_client = airsim.MultirotorClient()
     telem_client.confirmConnection()
     print("📡 Telemetry thread started.")
 
+    abort_sent = False  # prevent sending hover repeatedly
+
     while running:
         try:
+            # --- Abort handler: cancel in-progress flight when task arrives ---
+            if abort_targets and not abort_sent:
+                print("⚡ ABORT: Cancelling current flight for high-priority task...")
+                telem_client.hoverAsync(vehicle_name=DRONE_NAME)
+                abort_sent = True
+            elif not abort_targets:
+                abort_sent = False
+
             # Read live pose
             pose = telem_client.simGetVehiclePose(vehicle_name=DRONE_NAME)
             pos = pose.position
@@ -284,12 +297,18 @@ def execute_coordinate_queue(coords):
     """
     Execute a list of target coordinates sequentially.
     MUST be called from the main thread (uses the global AirSim client).
+    Will abort if abort_targets flag is set (high-priority task arrived).
     """
     global drone_state, is_validating, current_target_name, targets_remaining_count
 
     for i, coord in enumerate(coords):
-        if not running:
+        # Check abort before starting each target
+        if not running or abort_targets:
+            if abort_targets:
+                remaining = len(coords) - i
+                print(f"\n⚡ Aborting {remaining} remaining target(s) for high-priority task!")
             break
+
         name, x, y, z, yaw, alert_name, alert_id = coord
         targets_remaining_count = len(coords) - i
         print(f"\n🎯 Going to position {i+1}/{len(coords)}: {name}")
@@ -306,7 +325,10 @@ def execute_coordinate_queue(coords):
             vehicle_name=DRONE_NAME
         ).join()
 
-        if not running:
+        # Check abort after movement completes (may have been interrupted by hover)
+        if not running or abort_targets:
+            if abort_targets:
+                print(f"⚡ Flight to {name} interrupted by high-priority task!")
             break
 
         # Hover to stabilize
@@ -316,7 +338,7 @@ def execute_coordinate_queue(coords):
         client.hoverAsync(vehicle_name=DRONE_NAME).join()
         time.sleep(HOVER_STABILIZE_TIME)
 
-        if not running:
+        if not running or abort_targets:
             break
 
         # Capture frame and validate alert
@@ -338,32 +360,117 @@ def execute_coordinate_queue(coords):
         time.sleep(0.5)
 
 
+def load_tasks_from_file():
+    """Read and clear drone_tasks.txt, return list of task dicts."""
+    tasks = []
+    try:
+        if not os.path.exists(DRONE_TASKS_PATH):
+            return tasks
+        with open(DRONE_TASKS_PATH, 'r') as f:
+            lines = f.readlines()
+        if not lines:
+            return tasks
+        # Clear file after reading
+        open(DRONE_TASKS_PATH, 'w').close()
+        for line in lines:
+            line = line.strip()
+            if line:
+                try:
+                    task = json.loads(line)
+                    tasks.append(task)
+                except json.JSONDecodeError:
+                    print(f"⚠️ Invalid task line: {line}")
+    except Exception as e:
+        print(f"⚠️ Error reading drone_tasks.txt: {e}")
+    return tasks
+
+
+def execute_drone_task(task):
+    """
+    Execute a single drone task (high priority).
+    Currently supports action='move': fly to position and hover.
+    MUST be called from the main thread.
+    """
+    global drone_state, current_target_name, abort_targets
+
+    action = task.get("action", "unknown")
+    pos = task.get("pos", [0, 0, 0, 0])
+    timestamp = task.get("timestamp", "")
+
+    if action == "move":
+        x, y, z = pos[0], pos[1], pos[2]
+        yaw = pos[3] if len(pos) > 3 else 0
+
+        print(f"\n🔴 HIGH-PRIORITY TASK: Move to ({x}, {y}, {z}) | Yaw: {yaw}°")
+        print(f"   Timestamp: {timestamp}")
+
+        drone_state = "TASK"
+        current_target_name = "task_move"
+        set_drone_status(status=f"Task: Moving to ({x}, {y}, {z})", target_name="task_move")
+
+        # Fly to the task position
+        client.moveToPositionAsync(
+            x, y, z, VELOCITY,
+            yaw_mode=airsim.YawMode(is_rate=False, yaw_or_rate=yaw),
+            vehicle_name=DRONE_NAME
+        ).join()
+
+        # Hover at position
+        drone_state = "HOVERING"
+        set_drone_status(status=f"Task: Hovering at ({x}, {y}, {z})")
+        client.hoverAsync(vehicle_name=DRONE_NAME).join()
+        print(f"✅ Task complete: Hovering at ({x}, {y}, {z})")
+
+        drone_state = "AT_LOCATION"
+        current_target_name = None
+        set_drone_status(status="Inferencing", target_name=None)
+    else:
+        print(f"⚠️ Unknown task action: {action} — skipping.")
+
+    # Task is done — clear the abort flag so targets can resume normally
+    abort_targets = False
+
+
 def file_monitor_thread():
     """
-    Background thread that ONLY watches the file for new coordinates.
-    Does NOT call any AirSim APIs. Puts new coords into the shared queue.
+    Background thread that watches BOTH files:
+    - drone_tasks.txt (high priority → task_queue, sets abort_targets)
+    - drone_targets.txt (normal priority → coord_queue)
+    Does NOT call any AirSim APIs.
     """
-    print("🔄 Monitoring for new coordinates...")
-    print("💡 Add new lines to drone_targets.txt — they'll be executed automatically!")
+    global abort_targets
+    print("🔄 Monitoring for tasks and coordinates...")
     while running:
         try:
+            # --- HIGH PRIORITY: Check for drone tasks ---
+            new_tasks = load_tasks_from_file()
+            if new_tasks:
+                print(f"\n🔴 Found {len(new_tasks)} high-priority task(s)!")
+                for t in new_tasks:
+                    task_queue.append(t)
+                # Signal abort to interrupt any in-progress target execution
+                abort_targets = True
+
+            # --- NORMAL PRIORITY: Check for validation targets ---
             new_coords = load_coordinates_from_file(DRONE_CORDS_PATH)
             if new_coords:
                 print(f"🆕 Found {len(new_coords)} new coordinate(s). Adding to queue...")
                 for c in new_coords:
                     coord_queue.append(c)
+
             time.sleep(CHECK_INTERVAL)
         except Exception as e:
             print(f"⚠️ Error monitoring file: {e}")
             time.sleep(2)
 
 
-# Shared coordinate queue — appended by file_monitor_thread, consumed by main thread
-coord_queue = []
+# Shared queues — appended by file_monitor_thread, consumed by main thread
+coord_queue = []   # validation targets (normal priority)
+task_queue = []    # drone tasks (HIGH priority)
 
 
 def main():
-    global running, drone_state, mission_start_time
+    global running, drone_state, mission_start_time, abort_targets
 
     running = True
     mission_start_time = datetime.now()
@@ -388,7 +495,7 @@ def main():
         execute_coordinate_queue(initial_coords)
         print("🏁 Initial targets complete.\n")
 
-    # Start file monitor (only does file I/O, NO AirSim calls)
+    # Start file monitor (watches both drone_tasks.txt and drone_targets.txt)
     threading.Thread(target=file_monitor_thread, daemon=True).start()
 
     print("📷 Continuous inference active.")
@@ -396,22 +503,36 @@ def main():
 
     try:
         while running:
-            # --- 1. Check for new target coordinates from the file monitor ---
-            if coord_queue:
+            # --- 1. HIGH PRIORITY: Execute drone tasks first ---
+            if task_queue:
+                abort_targets = False  # reset abort flag before executing tasks
+                tasks_batch = list(task_queue)
+                task_queue.clear()
+                # Also clear pending coord targets (tasks take full priority)
+                if coord_queue:
+                    print(f"⚡ Discarding {len(coord_queue)} pending target(s) due to task priority.")
+                    coord_queue.clear()
+                for task in tasks_batch:
+                    execute_drone_task(task)
+
+            # --- 2. NORMAL PRIORITY: Execute validation targets ---
+            elif coord_queue:
+                abort_targets = False
                 batch = list(coord_queue)
                 coord_queue.clear()
                 print(f"\n🆕 Executing {len(batch)} new coordinate(s)...")
                 execute_coordinate_queue(batch)
-                print("✅ Completed new coordinates.\n")
+                if not abort_targets:
+                    print("✅ Completed new coordinates.\n")
 
-            # --- 2. Continuous inference (when NOT serving targets) ---
+            # --- 3. Continuous inference (when idle) ---
             if drone_state == "AT_LOCATION" and not is_validating:
                 frame, intrinsic_matrix, rotation_matrix, w, h = getImgFrame()
                 if frame is not None:
                     drone_pos, _, _ = get_drone_position_and_orientation()
                     runner.runner_sim(frame, intrinsic_matrix, rotation_matrix, drone_pos)
 
-            # Small sleep to keep the loop responsive without hammering AirSim
+            # Small sleep to keep the loop responsive
             time.sleep(0.1)
 
     except KeyboardInterrupt:

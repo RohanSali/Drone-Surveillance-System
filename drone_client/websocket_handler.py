@@ -11,6 +11,7 @@ DRONE_JSON_FILE_PATH = os.path.join(current_dir, "drone_info.json")
 ALERT_QUEUE_FILE = os.path.join(current_dir, "alert_queue.txt")
 TARGETS_FILE = os.path.join(current_dir, "capture_engine", "drone_targets.txt")
 LOST_PERSON_FOLDER = os.path.join(current_dir, "inference_engine", "lost_person")
+DRONE_TASKS_FILE = os.path.join(current_dir, "drone_tasks.txt")
 DRONE_POS_UPDATE_INTERVAL = 3  # seconds (fast for real-time tracking)
 ALERT_QUEUE_CHECK_INTERVAL = 1  # seconds (alerts are higher priority)
 
@@ -148,6 +149,15 @@ class DroneWebSocketHandler:
         except Exception as e:
             print(f"❌ Error saving target: {e}")
 
+    async def handle_drone_task(self, data):
+        """Process incoming drone_task message — append data to drone_tasks.txt"""
+        try:
+            task_data = data.get("data", {})
+            with open(DRONE_TASKS_FILE, "a") as f:
+                f.write(json.dumps(task_data) + "\n")
+        except Exception as e:
+            print(f"❌ Error saving drone task: {e}")
+
     async def listen(self):
         """Listen to server messages"""
         try:
@@ -160,6 +170,8 @@ class DroneWebSocketHandler:
                         await self.handle_alert_image(data)
                     elif msg_type == "target_pos":
                         await self.handle_target(data)
+                    elif msg_type == "drone_task":
+                        await self.handle_drone_task(data)
                     elif msg_type == "connection_established":
                         print("✅ Connection established with server")
                     else:

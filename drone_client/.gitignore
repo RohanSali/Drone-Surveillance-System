@@ -4,6 +4,7 @@
 # Ignore a specific file
 alert_queue.txt
 drone_info.json
+drone_tasks.txt
 
 # Ignore a folder and its contents
 __pycache__/
