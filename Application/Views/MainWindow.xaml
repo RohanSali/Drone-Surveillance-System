@@ -11,8 +11,8 @@
         FontFamily="Segoe UI"
         WindowStyle="None"
         ResizeMode="CanResizeWithGrip"
-        MinWidth="1200"
-        MinHeight="800"
+        MinWidth="0"
+        MinHeight="0"
         SizeChanged="Window_SizeChanged">
 
     <Window.Resources>

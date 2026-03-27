@@ -7,6 +7,8 @@
 
 appsettings.json
 google_credentials.json
+firebase.local.json
+firebase_auth_cache.json
 networks_9905singhrahul@gmail.com.json
 
 # User-specific files

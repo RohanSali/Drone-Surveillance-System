@@ -196,7 +196,6 @@ def inference_crowd_density(frame,capture_timestamp, intrinsic_matrix , drone_ro
 
         if timestamp :
             time_difference = (capture_timestamp - timestamp).total_seconds()
-            print(f"Time difference between last {new_label} prediction is : {time_difference} ⏳")
             if time_difference > TIME_THRESHOLD:
                 x,y,z = get_crowd_location(frame,result,intrinsic_matrix,drone_rotation_matrix,drone_pos)
                 if x is not None and y is not None and z is not None :
@@ -214,5 +213,3 @@ def inference_crowd_density(frame,capture_timestamp, intrinsic_matrix , drone_ro
 
             asyncio.run(save_to_machine(payload))
             asyncio.run(send_alert(payload))
-
-    print(f"Found {number_of_people} peoples in the frame!")

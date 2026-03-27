@@ -200,33 +200,16 @@
                            Style="{StaticResource TitleTextStyle}"
                            FontSize="32" Margin="0,0,0,10"/>
                 
-                <TextBlock Text="Sign in to access the surveillance dashboard" 
+                <TextBlock Text="Continue as Guest to access the surveillance dashboard"
                            Style="{StaticResource SubtitleTextStyle}"/>
                 
                 <!-- Login Buttons -->
                 <StackPanel Margin="0,30,0,0">
-                    <!-- Microsoft -->
-                    <Button x:Name="MicrosoftSignInButton"
-                            Content="Continue with Microsoft"
+                    <!-- Google (Firebase Auth) -->
+                    <Button x:Name="GoogleSignInButton"
+                            Content="Continue with Google"
                             Style="{StaticResource FuturisticButton}"
-                            Click="MicrosoftSignInButton_Click"
-                            Height="50">
-                        <Button.Background>
-                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                                <GradientStop Color="#2F2F2F" Offset="0.0"/>
-                                <GradientStop Color="#1A1A1A" Offset="1.0"/>
-                            </LinearGradientBrush>
-                        </Button.Background>
-                        <Button.Effect>
-                            <DropShadowEffect BlurRadius="5" Color="{StaticResource NeonBlueColor}" Opacity="0.4" ShadowDepth="0"/>
-                        </Button.Effect>
-                    </Button>
-
-                    <!-- Gmail -->
-                    <Button x:Name="GmailSignInButton"
-                            Content="Continue with Gmail"
-                            Style="{StaticResource FuturisticButton}"
-                            Click="GmailSignInButton_Click"
+                            Click="GoogleSignInButton_Click"
                             Height="50">
                         <Button.Background>
                             <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">

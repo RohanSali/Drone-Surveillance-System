@@ -6,6 +6,7 @@ using DroneSurveillanceSystem.Services;
 using System.Collections.ObjectModel;
 using Microsoft.Win32;
 using System.Reflection;
+using DroneSurveillanceSystem.Services.Firebase;
 
 namespace DroneSurveillanceSystem.Views
 {
@@ -258,10 +259,42 @@ namespace DroneSurveillanceSystem.Views
                 try { await ApiService.Instance.StopWebSocketAsync(); } catch { }
                 AlertManager.Instance.ClearAllAlerts();
 
-                var authService = new AuthService();
-                await authService.SignOutAsync();
+                // Reset per-user state (guest-only auth for now)
+                try { LostFindingManager.Instance.ClearAllPendingRequests(); } catch { }
+
+                // Unlock devices for this appId before switching to guest
+                var currentUser = FirebaseSession.Current;
+                if (currentUser != null &&
+                    !string.IsNullOrWhiteSpace(currentUser.AppClientId) &&
+                    !string.IsNullOrWhiteSpace(currentUser.FirebaseIdToken))
+                {
+                    try
+                    {
+                        var config = FirebaseAuthConfig.Load();
+                        using var http = new System.Net.Http.HttpClient();
+                        var rtdb = new FirebaseRtdbRestClient(http, config);
+                        var access = new FirebaseDeviceAccessService(rtdb);
+                        await access.UnlockMappedDevicesForAppAsync(currentUser.AppClientId, currentUser.FirebaseIdToken, System.Threading.CancellationToken.None);
+                    }
+                    catch (Exception unlockEx)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"Device unlock failed: {unlockEx.Message}");
+                    }
+                }
+
+                DeviceDataManager.SetCurrentUser("guest");
+                NetworkService.SetCurrentUser("guest");
 
                 UserProfileService.Instance.SetGuestMode();
+
+                try
+                {
+                    var auth = new FirebaseAuthService();
+                    await auth.SignOutAsync();
+                }
+                catch { }
+
+                try { FirebaseSession.Clear(); } catch { }
 
                 var window = Window.GetWindow(this) as MainWindow;
                 if (window != null)
@@ -269,7 +302,7 @@ namespace DroneSurveillanceSystem.Views
                     window.Hide();
                 }
 
-                var loginWindow = new LoginWindow(authService);
+                var loginWindow = new LoginWindow();
                 if (Application.Current != null)
                 {
                     Application.Current.MainWindow = loginWindow;
