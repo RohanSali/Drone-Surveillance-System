@@ -9,6 +9,7 @@ import threading
 import math
 import time
 import ast
+import json
 import numpy as np
 from datetime import datetime
 import cv2
@@ -20,17 +21,130 @@ from drone_client.capture_engine import validate_error
 current_dir = os.path.dirname(os.path.abspath(__file__))
 project_dir = os.path.abspath(os.path.join(current_dir, '..', '..'))
 
-DRONE_NAME = "Drone1"
+DRONE_NAME = "Drone_Rohan"
 DRONE_CORDS_PATH = os.path.join(project_dir,"drone_client","capture_engine","drone_targets.txt")
+DRONE_INFO_PATH = os.path.join(project_dir, "drone_client", "drone_info.json")
 CHECK_INTERVAL = 2.0  # seconds between file checks
 VELOCITY = 5  # drone movement speed (m/s)
 FOV = 90  # camera field of view in degrees
 HOVER_STABILIZE_TIME = 2.0  # seconds to hover for stabilization
+TELEMETRY_UPDATE_INTERVAL = 0.5  # seconds between telemetry updates
 
 # --- State flags (thread-safe via GIL for simple booleans) ---
-drone_state = "IDLE"  # "IDLE", "MOVING", "HOVERING", "AT_LOCATION"
+drone_state = "IDLE"  # "IDLE", "MOVING", "HOVERING", "VALIDATING", "INFERENCING", "LANDING"
 is_validating = False
 running = False
+current_target_name = None  # name of target currently being served
+targets_remaining_count = 0
+
+# --- Drone info: loaded once from file, then continuously updated ---
+def load_drone_info():
+    """Load identity fields from drone_info.json, build full telemetry structure."""
+    identity = {
+        "drone_id": "drone_001",
+        "drone_name": "Drone1",
+    }
+    if os.path.exists(DRONE_INFO_PATH):
+        try:
+            with open(DRONE_INFO_PATH, 'r') as f:
+                saved = json.load(f)
+            identity["drone_id"] = saved.get("drone_id", identity["drone_id"])
+            identity["drone_name"] = saved.get("drone_name", identity["drone_name"])
+        except Exception as e:
+            print(f"⚠ Could not load drone_info.json: {e}, using defaults.")
+
+    return {
+        "drone_id": identity["drone_id"],
+        "drone_name": identity["drone_name"],
+        "position": [0, 0, 0],
+        "yaw": 0,
+        "orientation": [0, 0, 0],
+        "altitude": 0,
+        "speed": 0,
+        "battery": 100,
+        "status": "Idle",
+        "current_target": None,
+        "targets_remaining": 0,
+        "last_updated": datetime.now().isoformat(),
+        "mission_start_time": None,
+        "uptime_seconds": 0
+    }
+
+drone_info = load_drone_info()
+mission_start_time = None
+
+def save_drone_info():
+    """Write current drone_info dict to disk."""
+    try:
+        with open(DRONE_INFO_PATH, 'w') as f:
+            json.dump(drone_info, f, indent=4)
+    except Exception as e:
+        pass  # Silently ignore write errors (file may be open in editor)
+
+def set_drone_status(status=None, target_name="_SKIP_", targets_remaining=None):
+    """Set status fields (called from main thread, fast, no AirSim calls)."""
+    if status is not None:
+        drone_info["status"] = status
+    if target_name != "_SKIP_":  # allow setting to None explicitly
+        drone_info["current_target"] = target_name
+    if targets_remaining is not None:
+        drone_info["targets_remaining"] = targets_remaining
+
+def telemetry_thread():
+    """
+    Background thread with its own read-only AirSim client.
+    Continuously reads live position, speed, orientation from AirSim
+    and writes to drone_info.json — even while the main thread is
+    blocked on moveToPositionAsync.
+    """
+    # Dedicated read-only client for this thread
+    telem_client = airsim.MultirotorClient()
+    telem_client.confirmConnection()
+    print("📡 Telemetry thread started.")
+
+    while running:
+        try:
+            # Read live pose
+            pose = telem_client.simGetVehiclePose(vehicle_name=DRONE_NAME)
+            pos = pose.position
+            ori = pose.orientation
+            euler = quaternion_to_euler(ori)
+
+            drone_info["position"] = [
+                round(pos.x_val, 2),
+                round(pos.y_val, 2),
+                round(pos.z_val, 2)
+            ]
+            drone_info["yaw"] = round(euler[2], 2)
+            drone_info["orientation"] = [
+                round(euler[0], 2),  # roll
+                round(euler[1], 2),  # pitch
+                round(euler[2], 2)   # yaw
+            ]
+            drone_info["altitude"] = round(abs(pos.z_val), 2)
+
+            # Read live velocity
+            state = telem_client.getMultirotorState(vehicle_name=DRONE_NAME)
+            vel = state.kinematics_estimated.linear_velocity
+            speed = math.sqrt(vel.x_val**2 + vel.y_val**2 + vel.z_val**2)
+            drone_info["speed"] = round(speed, 2)
+
+            # Battery simulation (AirSim doesn't model battery)
+            if mission_start_time:
+                elapsed = (datetime.now() - mission_start_time).total_seconds()
+                drone_info["uptime_seconds"] = round(elapsed, 1)
+                drain = elapsed * 0.05  # ~0.05%/sec → ~33 min full flight
+                drone_info["battery"] = max(0, round(100 - drain, 1))
+
+            # Pick up latest status flags set by main thread
+            drone_info["targets_remaining"] = targets_remaining_count
+            drone_info["last_updated"] = datetime.now().isoformat()
+
+            save_drone_info()
+        except Exception:
+            pass  # Silently skip errors (connection hiccups)
+
+        time.sleep(TELEMETRY_UPDATE_INTERVAL)
 
 # --- Single AirSim client used ONLY from the main thread ---
 client = airsim.MultirotorClient()
@@ -171,16 +285,19 @@ def execute_coordinate_queue(coords):
     Execute a list of target coordinates sequentially.
     MUST be called from the main thread (uses the global AirSim client).
     """
-    global drone_state, is_validating
+    global drone_state, is_validating, current_target_name, targets_remaining_count
 
     for i, coord in enumerate(coords):
         if not running:
             break
         name, x, y, z, yaw, alert_name, alert_id = coord
+        targets_remaining_count = len(coords) - i
         print(f"\n🎯 Going to position {i+1}/{len(coords)}: {name}")
         print(f"   → Coordinates: ({x}, {y}, {z}) | Yaw: {yaw}°")
 
         drone_state = "MOVING"
+        current_target_name = name
+        set_drone_status(status=f"Moving to {name}", target_name=name)
 
         # Move to target position
         client.moveToPositionAsync(
@@ -195,6 +312,7 @@ def execute_coordinate_queue(coords):
         # Hover to stabilize
         drone_state = "HOVERING"
         print("🚁 Hovering to stabilize...")
+        set_drone_status(status=f"Hovering at {name}")
         client.hoverAsync(vehicle_name=DRONE_NAME).join()
         time.sleep(HOVER_STABILIZE_TIME)
 
@@ -202,7 +320,9 @@ def execute_coordinate_queue(coords):
             break
 
         # Capture frame and validate alert
+        drone_state = "VALIDATING"
         is_validating = True
+        set_drone_status(status=f"Validating: {alert_name}")
         frame, intrinsic_matrix, rotation_matrix, w, h = getImgFrame()
         if frame is not None:
             validate_error.validate_alert(alert_name, alert_id, frame, datetime.now())
@@ -212,6 +332,9 @@ def execute_coordinate_queue(coords):
         print(f"   [Alert Name: {alert_name} | ID: {alert_id}] @ {datetime.now().strftime('%H:%M:%S')}")
 
         drone_state = "AT_LOCATION"
+        current_target_name = None
+        targets_remaining_count = max(0, targets_remaining_count - 1)
+        set_drone_status(status="Inferencing", target_name=None)
         time.sleep(0.5)
 
 
@@ -240,16 +363,23 @@ coord_queue = []
 
 
 def main():
-    global running, drone_state
+    global running, drone_state, mission_start_time
 
     running = True
+    mission_start_time = datetime.now()
+    drone_info["mission_start_time"] = mission_start_time.isoformat()
+
+    # Start telemetry thread (uses its own read-only AirSim client)
+    threading.Thread(target=telemetry_thread, daemon=True).start()
 
     # Takeoff
     print("🚁 Taking off...")
+    set_drone_status(status="Taking Off")
     client.takeoffAsync(vehicle_name=DRONE_NAME).join()
     print("✅ Drone ready for mission!\n")
 
     drone_state = "AT_LOCATION"
+    set_drone_status(status="Inferencing")
 
     # Load initial coordinates
     initial_coords = load_coordinates_from_file(DRONE_CORDS_PATH)
@@ -288,6 +418,8 @@ def main():
         print("\n🛑 Mission interrupted by user.")
     finally:
         running = False
+        drone_state = "LANDING"
+        set_drone_status(status="Landing")
         print("🛬 Landing drone...")
         try:
             client.landAsync(vehicle_name=DRONE_NAME).join()
@@ -295,8 +427,9 @@ def main():
             print(f"⚠ Landing error: {e}")
         client.armDisarm(False, DRONE_NAME)
         client.enableApiControl(False, DRONE_NAME)
+        set_drone_status(status="Disconnected", target_name=None, targets_remaining=0)
+        save_drone_info()  # Final write
         print("✅ Drone disconnected from AirSim.")
 
 if __name__ == "__main__":
     main()
-
