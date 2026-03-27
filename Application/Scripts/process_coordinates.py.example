@@ -1,0 +1,95 @@
+#!/usr/bin/env python3
+"""
+Example Python script for processing alert coordinates.
+
+This script receives coordinate data via stdin as JSON and outputs processed coordinates as JSON.
+
+Input format (JSON via stdin):
+{
+    "latitude": 37.7749,
+    "longitude": -122.4194,
+    "altitude": 50.0,
+    "alert_id": "alert_123",
+    "drone_id": "drone_001",
+    "timestamp": "2024-01-01T12:00:00.000Z"
+}
+
+Output format (JSON to stdout):
+{
+    "latitude": 37.7750,
+    "longitude": -122.4195,
+    "altitude": 50.5
+}
+
+Replace this example with your actual coordinate processing logic.
+"""
+
+import json
+import sys
+
+def process_coordinates(latitude, longitude, altitude, alert_id=None, drone_id=None):
+    """
+    Process coordinates - replace this with your actual processing logic.
+    
+    Args:
+        latitude: Original latitude
+        longitude: Original longitude
+        altitude: Original altitude
+        alert_id: Optional alert ID
+        drone_id: Optional drone ID
+    
+    Returns:
+        Tuple of (processed_latitude, processed_longitude, processed_altitude)
+    """
+    # TODO: Replace this with your actual coordinate processing logic
+    # Example: Simple offset (you should replace this with your algorithm)
+    processed_lat = latitude + 0.0001  # Example: add small offset
+    processed_lon = longitude + 0.0001
+    processed_alt = altitude + 0.5
+    
+    return processed_lat, processed_lon, processed_alt
+
+
+def main():
+    """Main function to read input, process, and output results."""
+    try:
+        # Read input from stdin
+        input_data = json.load(sys.stdin)
+        
+        # Extract coordinates
+        latitude = float(input_data.get('latitude', 0))
+        longitude = float(input_data.get('longitude', 0))
+        altitude = float(input_data.get('altitude', 0))
+        alert_id = input_data.get('alert_id')
+        drone_id = input_data.get('drone_id')
+        
+        # Process coordinates
+        processed_lat, processed_lon, processed_alt = process_coordinates(
+            latitude, longitude, altitude, alert_id, drone_id
+        )
+        
+        # Output processed coordinates as JSON
+        result = {
+            "latitude": processed_lat,
+            "longitude": processed_lon,
+            "altitude": processed_alt
+        }
+        
+        print(json.dumps(result))
+        sys.stdout.flush()
+        
+    except Exception as e:
+        # On error, output error information (optional - you can handle errors differently)
+        error_result = {
+            "error": str(e),
+            "latitude": None,
+            "longitude": None,
+            "altitude": None
+        }
+        print(json.dumps(error_result))
+        sys.stderr.write(f"Error processing coordinates: {e}\n")
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()

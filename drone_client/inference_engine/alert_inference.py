@@ -81,7 +81,7 @@ def classify_frame(frame):
 
 def detect_object(frame, alert_name):
     # Run inference
-    print(f"🔍 Detecting {alert_name} in the frame...")
+    # print(f"🔍 Detecting {alert_name} in the frame...")
     results = detection_model(frame,conf=CONFIDENCE_THRESHOLD)[0]  # batch size 1, so take first 
     
     name_map = {
@@ -89,7 +89,7 @@ def detect_object(frame, alert_name):
         'Flood Detected': 'flood',
         'Accident Detected': 'accident',
         'Blood Detected': 'blood',
-        'Face Mask Detected': 'face_mask',
+        'Face Mask Detected': 'mask',
         'Gun Detected': 'gun',
         'Knife Detected': 'knife',
         'Structural Damage Detected' : 'collapse'
@@ -219,7 +219,6 @@ def inference_for_alert(frame , capture_timestamp, intrinsic_matrix , drone_rota
 
         if timestamp:
             time_difference = (capture_timestamp - timestamp).total_seconds()
-            print(f"Time difference between last {label} prediction is : {time_difference} ⏳")
             if time_difference > TIME_THRESHOLD:
                 x,y,z = get_alert_location(frame,label,intrinsic_matrix,drone_rotation_matrix,drone_pos)
                 if x is not None and y is not None and z is not None:
@@ -235,5 +234,3 @@ def inference_for_alert(frame , capture_timestamp, intrinsic_matrix , drone_rota
                     
             asyncio.run(save_to_machine(payload))
             asyncio.run(send_alert(payload))
-
-    print(f"▶️ Frame processed in time {processing_duration:.3f} seconds & label : {label}")

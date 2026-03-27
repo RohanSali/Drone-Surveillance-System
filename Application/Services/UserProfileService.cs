@@ -1,7 +1,6 @@
 using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
-using DroneSurveillanceSystem.Models;
 
 namespace DroneSurveillanceSystem.Services
 {
@@ -61,53 +60,6 @@ namespace DroneSurveillanceSystem.Services
         {
             // Initialize with guest mode by default
             SetGuestMode();
-        }
-
-        public void UpdateFromAuthService(AuthService authService, string? explicitProvider = null)
-        {
-            System.Diagnostics.Debug.WriteLine($"UserProfileService: UpdateFromAuthService called");
-            System.Diagnostics.Debug.WriteLine($"  - IsAuthenticated: {authService.IsAuthenticated}");
-            System.Diagnostics.Debug.WriteLine($"  - CurrentUserName: {authService.CurrentUserName}");
-            System.Diagnostics.Debug.WriteLine($"  - CurrentUserEmail: {authService.CurrentUserEmail}");
-            System.Diagnostics.Debug.WriteLine($"  - ExplicitProvider: {explicitProvider}");
-            
-            if (authService.IsAuthenticated)
-            {
-                var name = authService.CurrentUserName ?? "Unknown";
-                var email = authService.CurrentUserEmail ?? "";
-
-                // Use explicit provider if provided, otherwise fall back to email domain detection
-                string provider = explicitProvider ?? "Account";
-                if (string.IsNullOrEmpty(explicitProvider))
-                {
-                    // Only use email domain detection as fallback when no explicit provider is given
-                    if (!string.IsNullOrEmpty(email))
-                    {
-                        if (email.Contains("gmail.com") || email.Contains("googlemail.com") || 
-                            email.Contains("@google.com") || email.EndsWith(".gmail.com"))
-                        {
-                            provider = "Google";
-                        }
-                        else if (email.Contains("outlook.com") || email.Contains("hotmail.com") || 
-                                 email.Contains("live.com") || email.Contains("msn.com"))
-                        {
-                            provider = "Microsoft";
-                        }
-                        else
-                        {
-                            provider = "Account";
-                        }
-                    }
-                }
-                
-                System.Diagnostics.Debug.WriteLine($"  - Final provider: {provider}");
-                SetAuthenticatedUser(name, email, provider);
-            }
-            else
-            {
-                System.Diagnostics.Debug.WriteLine($"  - Setting guest mode (not authenticated)");
-                SetGuestMode();
-            }
         }
 
         public void SetAuthenticatedUser(string name, string email, string provider)

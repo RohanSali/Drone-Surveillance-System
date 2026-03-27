@@ -5,6 +5,7 @@ using System.Windows.Controls;
 using System.Collections.Generic;
 using System.Linq;
 using DroneSurveillanceSystem.Services;
+using DroneSurveillanceSystem.Services.Firebase;
 
 namespace DroneSurveillanceSystem.Views
 {
@@ -116,7 +117,7 @@ namespace DroneSurveillanceSystem.Views
             CctvList.ItemsSource = _connectedCctvs;
         }
 
-        private void AddDummyDroneButton_Click(object sender, RoutedEventArgs e)
+        private async void AddDummyDroneButton_Click(object sender, RoutedEventArgs e)
         {
             var popup = new AddDronePopup();
             var ownerWindow = Application.Current.Windows.OfType<Window>().FirstOrDefault(w => w.IsActive) ?? Application.Current.MainWindow;
@@ -129,18 +130,63 @@ namespace DroneSurveillanceSystem.Views
             {
                 try
                 {
+                    var existedBefore = DeviceDataManager.GetAllDrones().Any(d =>
+                        !string.IsNullOrWhiteSpace(d.DeviceId) &&
+                        d.DeviceId.Equals(popup.NewDrone.DeviceId, StringComparison.OrdinalIgnoreCase));
+
                     // Use the persistent data manager
                     DeviceDataManager.AddDrone(popup.NewDrone);
                     
                     // Refresh the local list from the persistent manager
                     _connectedDrones = DeviceDataManager.GetAllDrones();
                     UpdateDronesList();
+
+                    // Register in RTDB and create user-device mapping if signed in.
+                    try
+                    {
+                        var user = FirebaseSession.Current;
+                        if (user == null)
+                        {
+                            var auth = new FirebaseAuthService();
+                            user = await auth.TrySilentSignInAsync(System.Threading.CancellationToken.None);
+                            if (user != null) FirebaseSession.Set(user);
+                        }
+                        if (user != null && !string.IsNullOrWhiteSpace(user.AppClientId) && !string.IsNullOrWhiteSpace(user.FirebaseIdToken))
+                        {
+                            var config = FirebaseAuthConfig.Load();
+                            using var http = new System.Net.Http.HttpClient();
+                            var rtdb = new FirebaseRtdbRestClient(http, config);
+                            var registry = new FirebaseClientRegistryService(rtdb);
+                            await registry.EnsureDroneClientAsync(popup.NewDrone.DeviceId, popup.NewDrone.Name, user.FirebaseIdToken, System.Threading.CancellationToken.None);
+                            var mappingService = new FirebaseUserClientMappingService(rtdb);
+                            await mappingService.UpsertDroneMappingAsync(
+                                user.AppClientId,
+                                popup.NewDrone.DeviceId,
+                                popup.NewDrone.Name,
+                                user.FirebaseIdToken,
+                                System.Threading.CancellationToken.None);
+
+                            // If the current app is allowed, set device_accessing so this user can use it.
+                            var access = new FirebaseDeviceAccessService(rtdb);
+                            var locked = await access.TryLockDroneAsync(popup.NewDrone.DeviceId, user.AppClientId, user.FirebaseIdToken, System.Threading.CancellationToken.None);
+                            DeviceDataManager.SetDroneAccessAllowed(popup.NewDrone.DeviceId, locked);
+
+                            // Static drone metadata sync to rtdb/drones/{droneId}
+                            var droneMetadataService = new FirebaseDroneMetadataService(rtdb);
+                            await droneMetadataService.UpsertDroneMetadataAsync(
+                                popup.NewDrone,
+                                Array.Empty<string>(),
+                                user.FirebaseIdToken,
+                                System.Threading.CancellationToken.None);
+                        }
+                    }
+                    catch (Exception syncEx)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"Firebase drone client sync failed: {syncEx.Message}");
+                    }
                     
-                    MessageBox.Show($"Drone '{popup.NewDrone.Name}' added successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
-                }
-                catch (InvalidOperationException ex)
-                {
-                    MessageBox.Show(ex.Message, "Duplicate Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    var verb = existedBefore ? "updated" : "added";
+                    MessageBox.Show($"Drone '{popup.NewDrone.Name}' {verb} successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
                 catch (Exception ex)
                 {
@@ -149,7 +195,7 @@ namespace DroneSurveillanceSystem.Views
             }
         }
 
-        private void AddDummyCctvButton_Click(object sender, RoutedEventArgs e)
+        private async void AddDummyCctvButton_Click(object sender, RoutedEventArgs e)
         {
             var popup = new AddCctvPopup();
             var ownerWindow = Application.Current.Windows.OfType<Window>().FirstOrDefault(w => w.IsActive) ?? Application.Current.MainWindow;
@@ -162,18 +208,63 @@ namespace DroneSurveillanceSystem.Views
             {
                 try
                 {
+                    var existedBefore = DeviceDataManager.GetAllCctvs().Any(c =>
+                        !string.IsNullOrWhiteSpace(c.DeviceId) &&
+                        c.DeviceId.Equals(popup.NewCctv.DeviceId, StringComparison.OrdinalIgnoreCase));
+
                     // Use the persistent data manager
                     DeviceDataManager.AddCctv(popup.NewCctv);
                     
                     // Refresh the local list from the persistent manager
                     _connectedCctvs = DeviceDataManager.GetAllCctvs();
                     UpdateCctvList();
+
+                    // Register in RTDB and create user-device mapping if signed in.
+                    try
+                    {
+                        var user = FirebaseSession.Current;
+                        if (user == null)
+                        {
+                            var auth = new FirebaseAuthService();
+                            user = await auth.TrySilentSignInAsync(System.Threading.CancellationToken.None);
+                            if (user != null) FirebaseSession.Set(user);
+                        }
+                        if (user != null && !string.IsNullOrWhiteSpace(user.AppClientId) && !string.IsNullOrWhiteSpace(user.FirebaseIdToken))
+                        {
+                            var config = FirebaseAuthConfig.Load();
+                            using var http = new System.Net.Http.HttpClient();
+                            var rtdb = new FirebaseRtdbRestClient(http, config);
+                            var registry = new FirebaseClientRegistryService(rtdb);
+                            await registry.EnsureCctvClientAsync(popup.NewCctv.DeviceId, popup.NewCctv.Name, user.FirebaseIdToken, System.Threading.CancellationToken.None);
+                            var mappingService = new FirebaseUserClientMappingService(rtdb);
+                            await mappingService.UpsertCctvMappingAsync(
+                                user.AppClientId,
+                                popup.NewCctv.DeviceId,
+                                popup.NewCctv.Name,
+                                user.FirebaseIdToken,
+                                System.Threading.CancellationToken.None);
+
+                            // If the current app is allowed, set device_accessing so this user can use it.
+                            var access = new FirebaseDeviceAccessService(rtdb);
+                            var locked = await access.TryLockCctvAsync(popup.NewCctv.DeviceId, user.AppClientId, user.FirebaseIdToken, System.Threading.CancellationToken.None);
+                            DeviceDataManager.SetCctvAccessAllowed(popup.NewCctv.DeviceId, locked);
+
+                            // Static CCTV metadata sync to rtdb/cctvs/{cctvId}
+                            var cctvMetadataService = new FirebaseCctvMetadataService(rtdb);
+                            await cctvMetadataService.UpsertCctvMetadataAsync(
+                                popup.NewCctv,
+                                Array.Empty<string>(),
+                                user.FirebaseIdToken,
+                                System.Threading.CancellationToken.None);
+                        }
+                    }
+                    catch (Exception syncEx)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"Firebase CCTV client sync failed: {syncEx.Message}");
+                    }
                     
-                    MessageBox.Show($"CCTV '{popup.NewCctv.Name}' added successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
-                }
-                catch (InvalidOperationException ex)
-                {
-                    MessageBox.Show(ex.Message, "Duplicate Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    var verb = existedBefore ? "updated" : "added";
+                    MessageBox.Show($"CCTV '{popup.NewCctv.Name}' {verb} successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
                 catch (Exception ex)
                 {
@@ -182,7 +273,7 @@ namespace DroneSurveillanceSystem.Views
             }
         }
 
-        private void DeleteDrone_Click(object sender, RoutedEventArgs e)
+        private async void DeleteDrone_Click(object sender, RoutedEventArgs e)
         {
             if (sender is Button button && button.Tag is UsbDrone drone)
             {
@@ -192,6 +283,28 @@ namespace DroneSurveillanceSystem.Views
                     // Use the persistent data manager to permanently delete
                     if (DeviceDataManager.RemoveDrone(drone))
                     {
+                        // Remove user-device mapping from RTDB if signed in.
+                        try
+                        {
+                            var user = FirebaseSession.Current;
+                            if (user != null && !string.IsNullOrWhiteSpace(user.AppClientId) && !string.IsNullOrWhiteSpace(user.FirebaseIdToken))
+                            {
+                                var config = FirebaseAuthConfig.Load();
+                                using var http = new System.Net.Http.HttpClient();
+                                var rtdb = new FirebaseRtdbRestClient(http, config);
+                                var mappingService = new FirebaseUserClientMappingService(rtdb);
+                                await mappingService.RemoveDroneMappingAsync(
+                                    user.AppClientId,
+                                    drone.DeviceId,
+                                    user.FirebaseIdToken,
+                                    System.Threading.CancellationToken.None);
+                            }
+                        }
+                        catch (Exception mappingEx)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"Firebase drone mapping delete failed: {mappingEx.Message}");
+                        }
+
                         // Refresh the local list from the persistent manager
                         _connectedDrones = DeviceDataManager.GetAllDrones();
                         UpdateDronesList();
@@ -205,7 +318,7 @@ namespace DroneSurveillanceSystem.Views
             }
         }
 
-        private void DeleteCctv_Click(object sender, RoutedEventArgs e)
+        private async void DeleteCctv_Click(object sender, RoutedEventArgs e)
         {
             if (sender is Button button && button.Tag is UsbCctv cam)
             {
@@ -215,6 +328,28 @@ namespace DroneSurveillanceSystem.Views
                     // Use the persistent data manager to permanently delete
                     if (DeviceDataManager.RemoveCctv(cam))
                     {
+                        // Remove user-device mapping from RTDB if signed in.
+                        try
+                        {
+                            var user = FirebaseSession.Current;
+                            if (user != null && !string.IsNullOrWhiteSpace(user.AppClientId) && !string.IsNullOrWhiteSpace(user.FirebaseIdToken))
+                            {
+                                var config = FirebaseAuthConfig.Load();
+                                using var http = new System.Net.Http.HttpClient();
+                                var rtdb = new FirebaseRtdbRestClient(http, config);
+                                var mappingService = new FirebaseUserClientMappingService(rtdb);
+                                await mappingService.RemoveCctvMappingAsync(
+                                    user.AppClientId,
+                                    cam.DeviceId,
+                                    user.FirebaseIdToken,
+                                    System.Threading.CancellationToken.None);
+                            }
+                        }
+                        catch (Exception mappingEx)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"Firebase CCTV mapping delete failed: {mappingEx.Message}");
+                        }
+
                         // Refresh the local list from the persistent manager
                         _connectedCctvs = DeviceDataManager.GetAllCctvs();
                         UpdateCctvList();
@@ -289,6 +424,33 @@ namespace DroneSurveillanceSystem.Views
         {
             if (sender is Button btn && btn.Tag is UsbDrone drone)
             {
+                if (!DeviceDataManager.IsDroneAccessAllowed(drone.DeviceId))
+                {
+                    // Device might have been unlocked after another user logout; try to lock once.
+                    var user = FirebaseSession.Current;
+                    if (user != null &&
+                        !string.IsNullOrWhiteSpace(user.AppClientId) &&
+                        !string.IsNullOrWhiteSpace(user.FirebaseIdToken))
+                    {
+                        try
+                        {
+                            var config = FirebaseAuthConfig.Load();
+                            using var http = new System.Net.Http.HttpClient();
+                            var rtdb = new FirebaseRtdbRestClient(http, config);
+                            var access = new FirebaseDeviceAccessService(rtdb);
+                            var locked = await access.TryLockDroneAsync(drone.DeviceId, user.AppClientId, user.FirebaseIdToken, System.Threading.CancellationToken.None);
+                            DeviceDataManager.SetDroneAccessAllowed(drone.DeviceId, locked);
+                        }
+                        catch { }
+                    }
+
+                    if (!DeviceDataManager.IsDroneAccessAllowed(drone.DeviceId))
+                    {
+                    MessageBox.Show($"Drone '{drone.Name}' is locked by another user. It is currently disconnected.", "Access Denied", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                    }
+                }
+
                 var success = await _usbDroneService.ConnectToDroneAsync(drone.Name);
                 if (success)
                 {
@@ -306,6 +468,33 @@ namespace DroneSurveillanceSystem.Views
         {
             if (sender is Button btn && btn.Tag is UsbDrone drone)
             {
+                if (!DeviceDataManager.IsDroneAccessAllowed(drone.DeviceId))
+                {
+                    // Device might have been unlocked after another user logout; try to lock once.
+                    var user = FirebaseSession.Current;
+                    if (user != null &&
+                        !string.IsNullOrWhiteSpace(user.AppClientId) &&
+                        !string.IsNullOrWhiteSpace(user.FirebaseIdToken))
+                    {
+                        try
+                        {
+                            var config = FirebaseAuthConfig.Load();
+                            using var http = new System.Net.Http.HttpClient();
+                            var rtdb = new FirebaseRtdbRestClient(http, config);
+                            var access = new FirebaseDeviceAccessService(rtdb);
+                            var locked = await access.TryLockDroneAsync(drone.DeviceId, user.AppClientId, user.FirebaseIdToken, System.Threading.CancellationToken.None);
+                            DeviceDataManager.SetDroneAccessAllowed(drone.DeviceId, locked);
+                        }
+                        catch { }
+                    }
+
+                    if (!DeviceDataManager.IsDroneAccessAllowed(drone.DeviceId))
+                    {
+                    MessageBox.Show($"Drone '{drone.Name}' is locked by another user. It is currently disconnected.", "Access Denied", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                    }
+                }
+
                 var success = await _usbDroneService.FetchDataAsync(drone.Name);
                 if (success)
                 {
@@ -331,7 +520,7 @@ namespace DroneSurveillanceSystem.Views
                     {
                         moduleSelectionPopup.Owner = ownerWindow;
                     }
-                    moduleSelectionPopup.ShowDialog();
+                    moduleSelectionPopup.Show();
                 }
                 catch (Exception ex)
                 {
@@ -344,6 +533,33 @@ namespace DroneSurveillanceSystem.Views
         {
             if (sender is Button btn && btn.Tag is UsbCctv cam)
             {
+                if (!DeviceDataManager.IsCctvAccessAllowed(cam.DeviceId))
+                {
+                    // Device might have been unlocked after another user logout; try to lock once.
+                    var user = FirebaseSession.Current;
+                    if (user != null &&
+                        !string.IsNullOrWhiteSpace(user.AppClientId) &&
+                        !string.IsNullOrWhiteSpace(user.FirebaseIdToken))
+                    {
+                        try
+                        {
+                            var config = FirebaseAuthConfig.Load();
+                            using var http = new System.Net.Http.HttpClient();
+                            var rtdb = new FirebaseRtdbRestClient(http, config);
+                            var access = new FirebaseDeviceAccessService(rtdb);
+                            var locked = await access.TryLockCctvAsync(cam.DeviceId, user.AppClientId, user.FirebaseIdToken, System.Threading.CancellationToken.None);
+                            DeviceDataManager.SetCctvAccessAllowed(cam.DeviceId, locked);
+                        }
+                        catch { }
+                    }
+
+                    if (!DeviceDataManager.IsCctvAccessAllowed(cam.DeviceId))
+                    {
+                    MessageBox.Show($"CCTV '{cam.Name}' is locked by another user. It is currently disconnected.", "Access Denied", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                    }
+                }
+
                 if (await _usbCctvService.ConnectAsync(cam.Name))
                 {
                     cam.Status = "Connected - Ready";
@@ -358,6 +574,29 @@ namespace DroneSurveillanceSystem.Views
             {
                 try
                 {
+                    if (!DeviceDataManager.IsCctvAccessAllowed(cam.DeviceId))
+                    {
+                        // Device might have been unlocked after another user logout; try to lock once.
+                        var user = FirebaseSession.Current;
+                        if (user != null &&
+                            !string.IsNullOrWhiteSpace(user.AppClientId) &&
+                            !string.IsNullOrWhiteSpace(user.FirebaseIdToken))
+                        {
+                            var config = FirebaseAuthConfig.Load();
+                            using var http = new System.Net.Http.HttpClient();
+                            var rtdb = new FirebaseRtdbRestClient(http, config);
+                            var access = new FirebaseDeviceAccessService(rtdb);
+                            var locked = await access.TryLockCctvAsync(cam.DeviceId, user.AppClientId, user.FirebaseIdToken, System.Threading.CancellationToken.None);
+                            DeviceDataManager.SetCctvAccessAllowed(cam.DeviceId, locked);
+                        }
+                    }
+
+                    if (!DeviceDataManager.IsCctvAccessAllowed(cam.DeviceId))
+                    {
+                        MessageBox.Show($"CCTV '{cam.Name}' is locked by another user. It is currently disconnected.", "Access Denied", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        return;
+                    }
+
                     // Simulate fetch then open inline config dialog as in details page
                     await System.Threading.Tasks.Task.Delay(500);
                     var configForm = new CctvDetailsForm(cam);

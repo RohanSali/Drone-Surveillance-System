@@ -8,11 +8,13 @@ using Websocket.Client;
 using Newtonsoft.Json;
 using DroneSurveillanceSystem.Models;
 using DroneSurveillanceSystem.Views;
+using DroneSurveillanceSystem.Services.Firebase;
 using System.IO;
 using System.Linq; // Added for .OfType() and .FirstOrDefault()
 using System.Windows; // Added for Window
 using System.Threading; // Added for Timer
 using System.Net.WebSockets; // Added for WebSocketCloseStatus
+using System.Globalization;
 
 namespace DroneSurveillanceSystem.Services
 {
@@ -30,7 +32,8 @@ namespace DroneSurveillanceSystem.Services
         private readonly string _baseUrl;
         private readonly string _authToken;
         internal WebsocketClient? _client;
-        private readonly string _wsUrl = "wss://new-server-5iyd.onrender.com/ws/application/app_001";
+        private string _currentAppClientId = "app_001"; // Default fallback
+        private string? _wsUrl; // Dynamically generated
         private readonly string _logFilePath;
         private bool _isConnected = false;
         private Timer? _heartbeatTimer;
@@ -200,6 +203,45 @@ namespace DroneSurveillanceSystem.Services
             }
         }
 
+        /// <summary>
+        /// Gets the actual AppClientId from the current Firebase session or uses a default fallback
+        /// </summary>
+        private string GetCurrentAppClientId()
+        {
+            try
+            {
+                var session = FirebaseSession.Current;
+                if (session != null && !string.IsNullOrWhiteSpace(session.AppClientId))
+                {
+                    _currentAppClientId = session.AppClientId.Trim();
+                    return _currentAppClientId;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[WebSocket] Warning: Failed to retrieve AppClientId from FirebaseSession: {ex.Message}");
+            }
+            return _currentAppClientId;
+        }
+
+        /// <summary>
+        /// Public method to get the current AppClientId for external use
+        /// </summary>
+        public string GetAppClientId()
+        {
+            return GetCurrentAppClientId();
+        }
+
+        /// <summary>
+        /// Generates the WebSocket URL using the actual AppClientId
+        /// </summary>
+        private string GenerateWebSocketUrl()
+        {
+            var appId = GetCurrentAppClientId();
+            var wsUrl = $"wss://new-server-5iyd.onrender.com/ws/application/{appId}";
+            return wsUrl;
+        }
+
         public async Task StartWebSocketAsync()
         {
             lock (_lockObject)
@@ -219,6 +261,8 @@ namespace DroneSurveillanceSystem.Services
 
             try
             {
+                // Generate dynamic WebSocket URL using actual AppClientId
+                _wsUrl = GenerateWebSocketUrl();
                 var url = new Uri(_wsUrl);
                 _client = new WebsocketClient(url);
                 
@@ -341,6 +385,8 @@ namespace DroneSurveillanceSystem.Services
                                             if (coords != null && coords.Length >= 3)
                                             {
                                                 alert.AlertLocation = new Tuple<double, double, double>(coords[0], coords[1], coords[2]);
+                                                // Process coordinates asynchronously and send back to server
+                                                _ = ProcessAndSendCoordinatesAsync(alert.AlertLocation, alert.AlertId, alert.DroneId);
                                             }
                                         }
                                         else
@@ -352,6 +398,8 @@ namespace DroneSurveillanceSystem.Services
                                                 if (coords != null && coords.Length >= 3)
                                                 {
                                                     alert.AlertLocation = new Tuple<double, double, double>(coords[0], coords[1], coords[2]);
+                                                    // Process coordinates asynchronously and send back to server
+                                                    _ = ProcessAndSendCoordinatesAsync(alert.AlertLocation, alert.AlertId, alert.DroneId);
                                                 }
                                             }
                                         }
@@ -436,6 +484,8 @@ namespace DroneSurveillanceSystem.Services
                                             {
                                                 alert.AlertLocation = new Tuple<double, double, double>(coords[0], coords[1], coords[2]);
                                                 Console.WriteLine($"[WebSocket] Parsed location: [{coords[0]}, {coords[1]}, {coords[2]}]");
+                                                // Process coordinates asynchronously and send back to server
+                                                _ = ProcessAndSendCoordinatesAsync(alert.AlertLocation, alert.AlertId, alert.DroneId);
                                             }
                                         }
                                     }
@@ -472,9 +522,45 @@ namespace DroneSurveillanceSystem.Services
                                         {
                                             var posVal = dataObj["position"];
                                             if (posVal is Newtonsoft.Json.Linq.JArray arr)
+                                            {
                                                 position = arr.ToObject<double[]>();
+                                            }
+                                            else if (posVal is Newtonsoft.Json.Linq.JObject obj)
+                                            {
+                                                // Python drone client can send "position" as an object/dict.
+                                                // Support common key variants: lat/lon/alt, latitude/longitude/altitude.
+                                                double? lat = obj["lat"]?.ToObject<double?>() ?? obj["latitude"]?.ToObject<double?>();
+                                                double? lon = obj["lon"]?.ToObject<double?>() ?? obj["lng"]?.ToObject<double?>() ?? obj["longitude"]?.ToObject<double?>();
+                                                double? alt = obj["alt"]?.ToObject<double?>() ?? obj["altitude"]?.ToObject<double?>();
+
+                                                if (lat.HasValue && lon.HasValue)
+                                                {
+                                                    position = new[] { lat.Value, lon.Value, alt ?? 0.0 };
+                                                }
+                                            }
                                             else if (posVal != null)
-                                                position = JsonConvert.DeserializeObject<double[]>(posVal.ToString());
+                                            {
+                                                // Could be JSON array or JSON object serialized as string.
+                                                var posStr = posVal.ToString();
+                                                if (!string.IsNullOrWhiteSpace(posStr))
+                                                {
+                                                    if (posStr.TrimStart().StartsWith("{", StringComparison.Ordinal))
+                                                    {
+                                                        var jobj = JsonConvert.DeserializeObject<Newtonsoft.Json.Linq.JObject>(posStr);
+                                                        double? lat = jobj?["lat"]?.ToObject<double?>() ?? jobj?["latitude"]?.ToObject<double?>();
+                                                        double? lon = jobj?["lon"]?.ToObject<double?>() ?? jobj?["lng"]?.ToObject<double?>() ?? jobj?["longitude"]?.ToObject<double?>();
+                                                        double? alt = jobj?["alt"]?.ToObject<double?>() ?? jobj?["altitude"]?.ToObject<double?>();
+                                                        if (lat.HasValue && lon.HasValue)
+                                                        {
+                                                            position = new[] { lat.Value, lon.Value, alt ?? 0.0 };
+                                                        }
+                                                    }
+                                                    else
+                                                    {
+                                                        position = JsonConvert.DeserializeObject<double[]>(posStr);
+                                                    }
+                                                }
+                                            }
                                         }
                                     }
                                     catch { }
@@ -502,7 +588,16 @@ namespace DroneSurveillanceSystem.Services
                                                 lat = position[0]; lon = position[1]; alt = position[2];
                                             }
                                             double? bat = null;
-                                            if (!string.IsNullOrWhiteSpace(battery) && double.TryParse(battery, out var b)) bat = b;
+                                            if (!string.IsNullOrWhiteSpace(battery))
+                                            {
+                                                var raw = battery.Trim();
+                                                if (raw.EndsWith("%", StringComparison.Ordinal)) raw = raw[..^1].Trim();
+                                                if (double.TryParse(raw, NumberStyles.Float, CultureInfo.InvariantCulture, out var b) ||
+                                                    double.TryParse(raw, NumberStyles.Float, CultureInfo.CurrentCulture, out b))
+                                                {
+                                                    bat = b;
+                                                }
+                                            }
                                             DroneTrackingService.Instance.UpdateFromTelemetry(droneId!, lat, lon, alt, bat, status, ts);
                                         }
                                         catch { }
@@ -555,10 +650,13 @@ namespace DroneSurveillanceSystem.Services
         {
             try
             {
+                // Generate WebSocket URL for logging
+                var wsUrl = GenerateWebSocketUrl();
                 var logHeader = $"\n{'='*80}\n" +
                                $"WebSocket Communication Log - {DateTime.Now:yyyy-MM-dd HH:mm:ss}\n" +
                                $"Application: Drone Surveillance System\n" +
-                               $"WebSocket URL: {_wsUrl}\n" +
+                               $"App Client ID: {_currentAppClientId}\n" +
+                               $"WebSocket URL: {wsUrl}\n" +
                                $"{'='*80}\n\n";
                 
                 File.WriteAllText(_logFilePath, logHeader);
@@ -618,11 +716,13 @@ namespace DroneSurveillanceSystem.Services
             {
                 if (_client != null && _isConnected && _client.IsRunning)
                 {
-                    var heartbeat = new { type = "ping", timestamp = DateTime.UtcNow.ToString("o") };
+                    // Include AppClientId in heartbeat message
+                    var appId = GetCurrentAppClientId();
+                    var heartbeat = new { type = "ping", app_id = appId, timestamp = DateTime.UtcNow.ToString("o") };
                     var json = JsonConvert.SerializeObject(heartbeat);
                     _client.SendInstant(json);
                     LogToFile("SENT", $"Heartbeat: {json}");
-                    Console.WriteLine($"[WebSocket] 💓 Heartbeat sent");
+                    Console.WriteLine($"[WebSocket] 💓 Heartbeat sent (App ID: {appId})");
                 }
                 else
                 {
@@ -700,6 +800,69 @@ namespace DroneSurveillanceSystem.Services
             {
                 Console.WriteLine($"[WebSocket] ❌ Error sending message: {ex.Message}");
                 throw;
+            }
+        }
+
+        /// <summary>
+        /// Processes coordinates using Python script and sends the processed coordinates back to the server
+        /// </summary>
+        private async Task ProcessAndSendCoordinatesAsync(
+            Tuple<double, double, double>? coordinates, 
+            string? alertId, 
+            string? droneId)
+        {
+            if (coordinates == null)
+            {
+                Console.WriteLine("[CoordinateProcessing] No coordinates to process");
+                return;
+            }
+
+            try
+            {
+                Console.WriteLine($"[CoordinateProcessing] Processing coordinates: [{coordinates.Item1}, {coordinates.Item2}, {coordinates.Item3}]");
+                
+                // Process coordinates using the Python script
+                var processedCoords = await CoordinateProcessingService.Instance.ProcessCoordinatesAsync(
+                    coordinates.Item1,
+                    coordinates.Item2,
+                    coordinates.Item3,
+                    alertId,
+                    droneId
+                );
+
+                if (processedCoords != null)
+                {
+                    Console.WriteLine($"[CoordinateProcessing] Processed coordinates: [{processedCoords.Item1}, {processedCoords.Item2}, {processedCoords.Item3}]");
+                    
+                    // Send processed coordinates back to the server with actual app_id
+                    var appId = GetCurrentAppClientId();
+                    var message = new
+                    {
+                        type = "processed_coordinates",
+                        app_id = appId,
+                        data = new
+                        {
+                            alert_id = alertId,
+                            drone_id = droneId,
+                            original_location = new[] { coordinates.Item1, coordinates.Item2, coordinates.Item3 },
+                            processed_location = new[] { processedCoords.Item1, processedCoords.Item2, processedCoords.Item3 },
+                            timestamp = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ")
+                        }
+                    };
+
+                    var jsonMessage = JsonConvert.SerializeObject(message);
+                    SendMessage(jsonMessage);
+                    Console.WriteLine($"[CoordinateProcessing] ✅ Processed coordinates sent to server (App ID: {appId})");
+                }
+                else
+                {
+                    Console.WriteLine("[CoordinateProcessing] ⚠️ Coordinate processing failed or returned null");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[CoordinateProcessing] ❌ Error processing coordinates: {ex.Message}");
+                Console.WriteLine($"[CoordinateProcessing] Stack trace: {ex.StackTrace}");
             }
         }
 

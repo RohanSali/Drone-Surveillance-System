@@ -2,12 +2,14 @@ using System;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Threading;
 using DroneSurveillanceSystem.Models;
 using DroneSurveillanceSystem.Services;
 using Newtonsoft.Json;
+using System.Globalization;
 
 namespace DroneSurveillanceSystem.Views
 {
@@ -16,20 +18,29 @@ namespace DroneSurveillanceSystem.Views
         // Services
         private readonly NetworkService _networkService;
         private readonly DroneControlService _droneControlService;
-        private readonly DataProcessingService _dataProcessingService;
-        private readonly AIModelService _aiModelService;
 
         // UI update timer
         private readonly DispatcherTimer _uiUpdateTimer;
 
-        // Collections for data binding
-        public ObservableCollection<string> ProcessingEvents { get; set; }
-        public ObservableCollection<AIModel> AIModels { get; set; }
-        public ObservableCollection<string> ActiveModels { get; set; }
-
         // Status tracking
         private bool _isDroneConnected = false;
         private bool _isRecording = false;
+
+        // Validation state tracking
+        private bool _isValidationActive = false;
+        private ValidationState _validationState = ValidationState.Idle;
+        private double _initialLatitude = 0.0;
+        private double _initialLongitude = 0.0;
+        private double _initialAltitude = 0.0;
+
+        // Validation states enum
+        private enum ValidationState
+        {
+            Idle,
+            Moving,
+            Hovering,
+            Returning
+        }
 
         public ControlPanelWindow()
         {
@@ -41,18 +52,6 @@ namespace DroneSurveillanceSystem.Views
             // Initialize services
             _networkService = new NetworkService();
             _droneControlService = new DroneControlService(_networkService);
-            _dataProcessingService = new DataProcessingService();
-            _aiModelService = new AIModelService();
-
-            // Initialize collections
-            ProcessingEvents = new ObservableCollection<string>();
-            AIModels = new ObservableCollection<AIModel>();
-            ActiveModels = new ObservableCollection<string>();
-
-            // Set data context
-            ProcessingEventsListBox.ItemsSource = ProcessingEvents;
-            AIModelsDataGrid.ItemsSource = AIModels;
-            ActiveModelsListBox.ItemsSource = ActiveModels;
 
             // Setup event handlers
             SetupEventHandlers();
@@ -71,40 +70,18 @@ namespace DroneSurveillanceSystem.Views
 
         private void SetupEventHandlers()
         {
-            // Network service events - commented out due to new NetworkService structure
-            // _networkService.NetworkStatusChanged += OnNetworkStatusChanged;
-
-            // Drone control service events
-            _droneControlService.DroneStatusChanged += OnDroneStatusChanged;
-            _droneControlService.CommandExecuted += OnCommandExecuted;
-
-            // Data processing service events
-            _dataProcessingService.DataProcessed += OnDataProcessed;
-            _dataProcessingService.ProcessingAlert += OnProcessingAlert;
+            // Drone service events - removed event handlers since ProcessingEvents collection is removed
         }
 
         private void InitializeUIData()
         {
-            // Load AI models
-            foreach (var model in _aiModelService.AvailableModels)
-            {
-                AIModels.Add(model);
-            }
-
-            // Update active models list
-            RefreshActiveModels();
-
-            // Set initial flight mode
-            FlightModeComboBox.SelectedIndex = 0; // Manual
+            // Initialize with drone default data
         }
 
         private void UpdateUI(object? sender, EventArgs e)
         {
             // Update flight data
             UpdateFlightData();
-
-            // Update processing statistics
-            UpdateProcessingStatistics();
 
             // Update network status
             UpdateNetworkStatus();
@@ -128,88 +105,33 @@ namespace DroneSurveillanceSystem.Views
             else
                 BatteryProgressBar.Foreground = new SolidColorBrush(Colors.Green);
 
-            // Update recording status
-            RecordingStatusText.Text = _isRecording ? "Recording" : "Stopped";
-            RecordingIndicator.Fill = new SolidColorBrush(_isRecording ? Colors.Red : Colors.Gray);
+            // Update validation panel with current drone position (auto-fill on first load)
+            if (!_isValidationActive)
+            {
+                ValidationLatitudeTextBox.Text = _droneControlService.Latitude.ToString("F6");
+                ValidationLongitudeTextBox.Text = _droneControlService.Longitude.ToString("F6");
+                ValidationAltitudeTextBox.Text = _droneControlService.Altitude.ToString("F1");
+            }
         }
 
         private void UpdateProcessingStatistics()
         {
-            var stats = _dataProcessingService.GetStatistics();
-            PacketsProcessedText.Text = stats.PacketsProcessed.ToString();
-            QueueSizeText.Text = stats.QueueSize.ToString();
-            AvgProcessingTimeText.Text = $"{stats.AverageProcessingTime:F1} ms";
         }
 
         private void UpdateNetworkStatus()
         {
-            // Network status update - simplified for new NetworkService structure
-            NetworkStatusText.Text = "Monitoring";
-            SignalStrengthBar.Value = 85; // Default value
-            SignalStrengthText.Text = "85%";
-
-            // Update network status indicator
-            NetworkStatusIndicator.Fill = new SolidColorBrush(Colors.Green);
+            // Network status update - network monitoring UI controls removed
         }
 
-        private void RefreshActiveModels()
-        {
-            ActiveModels.Clear();
-            foreach (var model in _aiModelService.ActiveModels)
-            {
-                ActiveModels.Add($"{model.Name} - {model.Status}");
-            }
-        }
-
-        // Event handlers for service events
-        private void OnNetworkStatusChanged(object? sender, EventArgs e)
-        {
-            Dispatcher.Invoke(() =>
-            {
-                ProcessingEvents.Insert(0, $"[{DateTime.Now:HH:mm:ss}] Network: Statistics Updated");
-                if (ProcessingEvents.Count > 100)
-                    ProcessingEvents.RemoveAt(ProcessingEvents.Count - 1);
-            });
-        }
-
+        // Event handlers for service events - removed (ProcessingEvents collection removed)
         private void OnDroneStatusChanged(object? sender, DroneStatusEventArgs e)
         {
-            Dispatcher.Invoke(() =>
-            {
-                ProcessingEvents.Insert(0, $"[{e.Timestamp:HH:mm:ss}] Drone: {e.FlightMode} - Alt: {e.Altitude:F1}m");
-                if (ProcessingEvents.Count > 100)
-                    ProcessingEvents.RemoveAt(ProcessingEvents.Count - 1);
-            });
+            // Event handler removed
         }
 
         private void OnCommandExecuted(object? sender, string message)
         {
-            Dispatcher.Invoke(() =>
-            {
-                ProcessingEvents.Insert(0, $"[{DateTime.Now:HH:mm:ss}] Command: {message}");
-                if (ProcessingEvents.Count > 100)
-                    ProcessingEvents.RemoveAt(ProcessingEvents.Count - 1);
-            });
-        }
-
-        private void OnDataProcessed(object? sender, DataProcessedEventArgs e)
-        {
-            Dispatcher.Invoke(() =>
-            {
-                ProcessingEvents.Insert(0, $"[{e.Timestamp:HH:mm:ss}] Processed: {e.ProcessedData.Type} ({e.ProcessingTime.TotalMilliseconds:F1}ms)");
-                if (ProcessingEvents.Count > 100)
-                    ProcessingEvents.RemoveAt(ProcessingEvents.Count - 1);
-            });
-        }
-
-        private void OnProcessingAlert(object? sender, string alert)
-        {
-            Dispatcher.Invoke(() =>
-            {
-                ProcessingEvents.Insert(0, $"[{DateTime.Now:HH:mm:ss}] ALERT: {alert}");
-                if (ProcessingEvents.Count > 100)
-                    ProcessingEvents.RemoveAt(ProcessingEvents.Count - 1);
-            });
+            // Event handler removed
         }
 
         // Flight Control Event Handlers
@@ -266,283 +188,72 @@ namespace DroneSurveillanceSystem.Views
             }
         }
 
+        // Connection & Recording Handlers - REMOVED with Connection & Recording panel
         private async void ConnectDroneButton_Click(object sender, RoutedEventArgs e)
         {
-            if (!_isDroneConnected)
-            {
-                // Simulate connection for new NetworkService structure
-                await Task.Delay(1000); // Simulate connection delay
-                var success = true; // Simulate successful connection
-                if (success)
-                {
-                    _isDroneConnected = true;
-                    ConnectDroneButton.Content = "Disconnect Drone";
-                    DroneConnectionText.Text = "Connected";
-                    DroneConnectionIndicator.Fill = new SolidColorBrush(Colors.Green);
-                    MessageBox.Show("Drone connected successfully!", "Connection Status", MessageBoxButton.OK, MessageBoxImage.Information);
-                }
-                else
-                {
-                    MessageBox.Show("Failed to connect to drone.", "Connection Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                }
-            }
-            else
-            {
-                // Simulate disconnection for new NetworkService structure
-                _isDroneConnected = false;
-                ConnectDroneButton.Content = "Connect Drone";
-                DroneConnectionText.Text = "Disconnected";
-                DroneConnectionIndicator.Fill = new SolidColorBrush(Colors.Red);
-                MessageBox.Show("Drone disconnected.", "Connection Status", MessageBoxButton.OK, MessageBoxImage.Information);
-            }
+            // Removed with Connection & Recording panel
         }
 
         private async void StartRecordingButton_Click(object sender, RoutedEventArgs e)
         {
-            if (!_isRecording)
-            {
-                await _droneControlService.ExecuteCommandAsync(DroneCommand.StartRecording);
-                _isRecording = true;
-                StartRecordingButton.Content = "Stop Recording";
-            }
-            else
-            {
-                await _droneControlService.ExecuteCommandAsync(DroneCommand.StopRecording);
-                _isRecording = false;
-                StartRecordingButton.Content = "Start Recording";
-            }
+            // Removed with Connection & Recording panel
         }
 
         private async void CalibrateGPSButton_Click(object sender, RoutedEventArgs e)
         {
-            await _droneControlService.ExecuteCommandAsync(DroneCommand.CalibrateGPS);
-            MessageBox.Show("GPS calibration initiated.", "GPS Calibration", MessageBoxButton.OK, MessageBoxImage.Information);
+            // Removed with Connection & Recording panel
         }
 
-        // Data Processing Event Handlers
+        // Data Processing Event Handlers - REMOVED
         private void StartProcessingButton_Click(object sender, RoutedEventArgs e)
         {
-            _dataProcessingService.StartProcessing();
-            MessageBox.Show("Data processing started.", "Processing Status", MessageBoxButton.OK, MessageBoxImage.Information);
+            // Removed with Data Processing tab
         }
 
         private void StopProcessingButton_Click(object sender, RoutedEventArgs e)
         {
-            _dataProcessingService.StopProcessing();
-            MessageBox.Show("Data processing stopped.", "Processing Status", MessageBoxButton.OK, MessageBoxImage.Information);
+            // Removed with Data Processing tab
         }
 
         private void SimulateDataButton_Click(object sender, RoutedEventArgs e)
         {
-            // Simulate different types of data packets
-            var random = new Random();
-            
-            if (TelemetryCheckBox.IsChecked == true)
-            {
-                var telemetryData = new TelemetryData
-                {
-                    Altitude = _droneControlService.Altitude,
-                    Speed = _droneControlService.Speed,
-                    BatteryLevel = _droneControlService.BatteryLevel,
-                    Temperature = 25 + random.NextDouble() * 15,
-                    Humidity = 40 + random.NextDouble() * 30
-                };
-                
-                _dataProcessingService.EnqueueData(new DataPacket
-                {
-                    Type = DataType.TelemetryData,
-                    Data = JsonConvert.SerializeObject(telemetryData),
-                    Source = "Drone-001"
-                });
-            }
-
-            if (SensorCheckBox.IsChecked == true)
-            {
-                _dataProcessingService.EnqueueData(new DataPacket
-                {
-                    Type = DataType.SensorData,
-                    Data = "sensor_data_payload",
-                    Source = "Sensors"
-                });
-            }
-
-            if (ImageCheckBox.IsChecked == true)
-            {
-                _dataProcessingService.EnqueueData(new DataPacket
-                {
-                    Type = DataType.ImageData,
-                    Data = new string('X', random.Next(1000, 5000)),
-                    Source = "Camera"
-                });
-            }
-
-            if (GPSCheckBox.IsChecked == true)
-            {
-                var gpsData = new GPSData
-                {
-                    Latitude = _droneControlService.Latitude,
-                    Longitude = _droneControlService.Longitude,
-                    Altitude = _droneControlService.Altitude,
-                    Accuracy = random.NextDouble() * 5,
-                    SatelliteCount = random.Next(4, 12)
-                };
-                
-                _dataProcessingService.EnqueueData(new DataPacket
-                {
-                    Type = DataType.GPSData,
-                    Data = JsonConvert.SerializeObject(gpsData),
-                    Source = "GPS"
-                });
-            }
-
-            if (BatteryCheckBox.IsChecked == true)
-            {
-                var batteryData = new BatteryData
-                {
-                    Level = _droneControlService.BatteryLevel,
-                    Voltage = 11.5 + random.NextDouble() * 1.0,
-                    Current = 1.5 + random.NextDouble() * 2.0,
-                    Temperature = 25 + random.NextDouble() * 15
-                };
-                
-                _dataProcessingService.EnqueueData(new DataPacket
-                {
-                    Type = DataType.BatteryData,
-                    Data = JsonConvert.SerializeObject(batteryData),
-                    Source = "Battery"
-                });
-            }
+            // Removed with Data Processing tab
         }
 
         private void ClearQueueButton_Click(object sender, RoutedEventArgs e)
         {
-            // Note: This would require adding a method to DataProcessingService
-            ProcessingEvents.Clear();
-            MessageBox.Show("Processing queue and events cleared.", "Queue Cleared", MessageBoxButton.OK, MessageBoxImage.Information);
+            // Removed with Data Processing tab
         }
 
-        // AI Models Event Handlers
+        // AI Models Event Handlers - REMOVED
         private async void InstallModelButton_Click(object sender, RoutedEventArgs e)
         {
-            if (AIModelsDataGrid.SelectedItem is AIModel selectedModel)
-            {
-                var success = await _aiModelService.InstallModelAsync(selectedModel.Id);
-                if (success)
-                {
-                    MessageBox.Show($"Model '{selectedModel.Name}' installed successfully!", "Installation Complete", MessageBoxButton.OK, MessageBoxImage.Information);
-                    RefreshActiveModels();
-                }
-                else
-                {
-                    MessageBox.Show($"Failed to install model '{selectedModel.Name}'.", "Installation Failed", MessageBoxButton.OK, MessageBoxImage.Error);
-                }
-            }
-            else
-            {
-                MessageBox.Show("Please select a model to install.", "No Model Selected", MessageBoxButton.OK, MessageBoxImage.Warning);
-            }
+            // Removed with AI Models tab
         }
 
         private void ActivateModelButton_Click(object sender, RoutedEventArgs e)
         {
-            if (AIModelsDataGrid.SelectedItem is AIModel selectedModel)
-            {
-                var success = _aiModelService.ActivateModel(selectedModel.Id);
-                if (success)
-                {
-                    MessageBox.Show($"Model '{selectedModel.Name}' activated.", "Model Activated", MessageBoxButton.OK, MessageBoxImage.Information);
-                    RefreshActiveModels();
-                }
-                else
-                {
-                    MessageBox.Show($"Failed to activate model '{selectedModel.Name}'. Make sure it's installed first.", "Activation Failed", MessageBoxButton.OK, MessageBoxImage.Error);
-                }
-            }
-            else
-            {
-                MessageBox.Show("Please select a model to activate.", "No Model Selected", MessageBoxButton.OK, MessageBoxImage.Warning);
-            }
+            // Removed with AI Models tab
         }
 
         private void DeactivateModelButton_Click(object sender, RoutedEventArgs e)
         {
-            if (AIModelsDataGrid.SelectedItem is AIModel selectedModel)
-            {
-                var success = _aiModelService.DeactivateModel(selectedModel.Id);
-                if (success)
-                {
-                    MessageBox.Show($"Model '{selectedModel.Name}' deactivated.", "Model Deactivated", MessageBoxButton.OK, MessageBoxImage.Information);
-                    RefreshActiveModels();
-                }
-                else
-                {
-                    MessageBox.Show($"Failed to deactivate model '{selectedModel.Name}'.", "Deactivation Failed", MessageBoxButton.OK, MessageBoxImage.Error);
-                }
-            }
-            else
-            {
-                MessageBox.Show("Please select a model to deactivate.", "No Model Selected", MessageBoxButton.OK, MessageBoxImage.Warning);
-            }
+            // Removed with AI Models tab
         }
 
         private void UninstallModelButton_Click(object sender, RoutedEventArgs e)
         {
-            if (AIModelsDataGrid.SelectedItem is AIModel selectedModel)
-            {
-                var result = MessageBox.Show($"Are you sure you want to uninstall '{selectedModel.Name}'?", 
-                                           "Confirm Uninstall", 
-                                           MessageBoxButton.YesNo, 
-                                           MessageBoxImage.Question);
-                if (result == MessageBoxResult.Yes)
-                {
-                    var success = _aiModelService.UninstallModel(selectedModel.Id);
-                    if (success)
-                    {
-                        MessageBox.Show($"Model '{selectedModel.Name}' uninstalled.", "Model Uninstalled", MessageBoxButton.OK, MessageBoxImage.Information);
-                        RefreshActiveModels();
-                    }
-                    else
-                    {
-                        MessageBox.Show($"Failed to uninstall model '{selectedModel.Name}'.", "Uninstall Failed", MessageBoxButton.OK, MessageBoxImage.Error);
-                    }
-                }
-            }
-            else
-            {
-                MessageBox.Show("Please select a model to uninstall.", "No Model Selected", MessageBoxButton.OK, MessageBoxImage.Warning);
-            }
+            // Removed with AI Models tab
         }
 
         private async void ProcessTestImageButton_Click(object sender, RoutedEventArgs e)
         {
-            var activeModelIds = _aiModelService.ActiveModels.Select(m => m.Id).ToList();
-            if (activeModelIds.Count == 0)
-            {
-                MessageBox.Show("No active AI models. Please activate at least one model first.", "No Active Models", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
-            }
-
-            var result = await _aiModelService.ProcessImageAsync("test_image.jpg", activeModelIds);
-            
-            var message = $"Test Image Processing Results:\n\n" +
-                         $"Objects Detected: {result.ObjectCount}\n" +
-                         $"Detection Confidence: {result.Confidence:P1}\n" +
-                         $"Detected Objects: {result.DetectedObjects}\n" +
-                         $"Bounding Boxes: {result.BoundingBoxes.Count}\n" +
-                         $"Models Used: {result.ModelUsed}";
-            
-            MessageBox.Show(message, "Processing Results", MessageBoxButton.OK, MessageBoxImage.Information);
+            // Removed with AI Models tab
         }
 
         private void RefreshModelsButton_Click(object sender, RoutedEventArgs e)
         {
-            AIModels.Clear();
-            foreach (var model in _aiModelService.AvailableModels)
-            {
-                AIModels.Add(model);
-            }
-            RefreshActiveModels();
-            MessageBox.Show("AI models list refreshed.", "Models Refreshed", MessageBoxButton.OK, MessageBoxImage.Information);
+            // Removed with AI Models tab
         }
 
         private void CloseButton_Click(object sender, RoutedEventArgs e)
@@ -550,12 +261,168 @@ namespace DroneSurveillanceSystem.Views
             Close();
         }
 
+        private void SendTargetPositionButton_Click(object sender, RoutedEventArgs e)
+        {
+            // This handler is removed - replaced with new validation system
+        }
+
+        // Alert Validation Event Handlers
+        private void GoToPositionButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                // Parse input values
+                var droneId = (ValidationDroneIdTextBox.Text ?? "").Trim();
+                if (string.IsNullOrWhiteSpace(droneId))
+                {
+                    MessageBox.Show("Please enter a Drone ID.", "Missing Drone ID", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                if (!TryParseDouble(ValidationLatitudeTextBox.Text, out var targetLat) ||
+                    !TryParseDouble(ValidationLongitudeTextBox.Text, out var targetLon))
+                {
+                    MessageBox.Show("Please enter valid Latitude and Longitude values.", "Invalid Coordinates", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                if (!TryParseDouble(ValidationAltitudeTextBox.Text, out var targetAlt))
+                {
+                    MessageBox.Show("Please enter a valid Altitude value.", "Invalid Altitude", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                // First click: Moving to alert position for validation
+                if (!_isValidationActive)
+                {
+                    // Capture current position as initial position
+                    _initialLatitude = _droneControlService.Latitude;
+                    _initialLongitude = _droneControlService.Longitude;
+                    _initialAltitude = _droneControlService.Altitude;
+
+                    // Update initial position display
+                    InitialLatitudeText.Text = _initialLatitude.ToString("F6");
+                    InitialLongitudeText.Text = _initialLongitude.ToString("F6");
+                    InitialAltitudeText.Text = _initialAltitude.ToString("F1") + " m";
+
+                    // Send move command via WebSocket
+                    SendDroneValidationTask(droneId, targetLat, targetLon, targetAlt, "move");
+
+                    _isValidationActive = true;
+                    _validationState = ValidationState.Moving;
+
+                    // Update UI
+                    GoToPositionButton.Content = "Return to Base";
+                    ValidationStatusText.Text = "Moving to Alert Location";
+                    ValidationStatusIndicator.Fill = new SolidColorBrush(Colors.Yellow);
+
+                    MessageBox.Show($"Drone moving to alert position: {targetLat:F6}, {targetLon:F6}, {targetAlt:F1}m", "Validation Started", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+                else
+                {
+                    // Second click: Returning to initial position
+                    SendDroneValidationTask(droneId, _initialLatitude, _initialLongitude, _initialAltitude, "move");
+
+                    _validationState = ValidationState.Returning;
+
+                    // Update UI
+                    GoToPositionButton.Content = "Go to Position";
+                    _isValidationActive = false;
+                    ValidationStatusText.Text = "Returning to Base";
+                    ValidationStatusIndicator.Fill = new SolidColorBrush(Colors.Cyan);
+
+                    MessageBox.Show($"Drone returning to initial position: {_initialLatitude:F6}, {_initialLongitude:F6}, {_initialAltitude:F1}m", "Return to Base", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error: {ex.Message}", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void StopValidationButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var droneId = (ValidationDroneIdTextBox.Text ?? "").Trim();
+                if (string.IsNullOrWhiteSpace(droneId))
+                {
+                    MessageBox.Show("Please enter a Drone ID.", "Missing Drone ID", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                // Send hover command at current position
+                var currentLat = _droneControlService.Latitude;
+                var currentLon = _droneControlService.Longitude;
+                var currentAlt = _droneControlService.Altitude;
+
+                SendDroneValidationTask(droneId, currentLat, currentLon, currentAlt, "hover");
+
+                _validationState = ValidationState.Hovering;
+
+                // Update UI
+                ValidationStatusText.Text = "Hovering (Validation)";
+                ValidationStatusIndicator.Fill = new SolidColorBrush(Colors.Orange);
+                GoToPositionButton.IsEnabled = true;
+
+                MessageBox.Show($"Drone hovering at position for validation: {currentLat:F6}, {currentLon:F6}, {currentAlt:F1}m", "Validation Paused", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error: {ex.Message}", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void SendDroneValidationTask(string droneId, double latitude, double longitude, double altitude, string action)
+        {
+            try
+            {
+                var payload = new
+                {
+                    type = "drone_task",
+                    data = new
+                    {
+                        drone_id = droneId,
+                        latitude = latitude,
+                        longitude = longitude,
+                        altitude = altitude,
+                        action = action,
+                        timestamp = DateTime.UtcNow.ToString("o"),
+                        validation_type = "alert"
+                    }
+                };
+
+                string jsonMessage = JsonConvert.SerializeObject(payload);
+                
+                // Send via WebSocket
+                if (ApiService.Instance != null)
+                {
+                    ApiService.Instance.SendMessage(jsonMessage);
+                }
+
+                // Log the action
+                System.Diagnostics.Debug.WriteLine($"[Validation] Sent {action} command: {jsonMessage}");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[Validation Error] {ex.Message}");
+                throw;
+            }
+        }
+
+        private static bool TryParseDouble(string? text, out double value)
+        {
+            value = 0;
+            var raw = (text ?? "").Trim();
+            if (string.IsNullOrWhiteSpace(raw)) return false;
+            return double.TryParse(raw, NumberStyles.Float, CultureInfo.InvariantCulture, out value) ||
+                   double.TryParse(raw, NumberStyles.Float, CultureInfo.CurrentCulture, out value);
+        }
+
         protected override void OnClosed(EventArgs e)
         {
             _uiUpdateTimer?.Stop();
-            // _networkService?.Dispose(); // Commented out - new NetworkService doesn't implement IDisposable
             _droneControlService?.Dispose();
-            _dataProcessingService?.Dispose();
             base.OnClosed(e);
         }
 

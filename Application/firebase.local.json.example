@@ -1,0 +1,9 @@
+{
+  "FirebaseApiKey": "YOUR_FIREBASE_WEB_API_KEY",
+  "FirebaseDatabaseUrl": "https://YOUR_PROJECT_ID.firebaseio.com",
+  "GoogleClientId": "YOUR_GOOGLE_OAUTH_CLIENT_ID.apps.googleusercontent.com",
+  "GoogleClientSecret": "YOUR_GOOGLE_OAUTH_CLIENT_SECRET",
+  "GoogleRedirectUri": "http://localhost:5005/",
+  "UserRole": "User"
+}
+

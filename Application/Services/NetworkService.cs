@@ -4,14 +4,16 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Linq; // Added for .FirstOrDefault() and .Sum()
-using System.IO;
-using System.Text.Json;
 using DroneSurveillanceSystem.Services; // For DroneFlightStatus
+using DroneSurveillanceSystem.Services.Firebase;
+using System.Net.Http;
+using System.Threading;
 
 namespace DroneSurveillanceSystem.Services
 {
     public class Network : INotifyPropertyChanged
     {
+        private string _networkId;
         private string _name;
         private string _description;
         private string _status;
@@ -28,6 +30,12 @@ namespace DroneSurveillanceSystem.Services
         private List<SurveillanceDevice> _assignedCctvs;
         private DateTime _createdDate;
         private DateTime _lastModified;
+
+        public string NetworkId
+        {
+            get => _networkId;
+            set => SetProperty(ref _networkId, value);
+        }
 
         public string Name
         {
@@ -127,6 +135,7 @@ namespace DroneSurveillanceSystem.Services
         
         public Network()
         {
+            _networkId = Guid.NewGuid().ToString("N");
             _name = "";
             _description = "";
             _status = "Active";
@@ -211,16 +220,8 @@ namespace DroneSurveillanceSystem.Services
         private readonly NetworkStatistics _statistics;
         private static string _currentUserKey = "guest";
         private static readonly object _lockObject = new object();
-
-        private string StorageFile => Path.Combine("assets","networks",$"networks_{Sanitize(_currentUserKey)}.json");
-
-        private static string Sanitize(string input)
-        {
-            if (string.IsNullOrWhiteSpace(input)) return "guest";
-            var invalidChars = Path.GetInvalidFileNameChars();
-            var chars = input.Select(c => invalidChars.Contains(c) || !(char.IsLetterOrDigit(c) || c == '@' || c == '.') ? '_' : c).ToArray();
-            return new string(chars);
-        }
+        private readonly HttpClient _httpClient;
+        private readonly FirebaseAuthConfig? _firebaseConfig;
 
         public static void SetCurrentUser(string? userEmailOrId)
         {
@@ -239,12 +240,16 @@ namespace DroneSurveillanceSystem.Services
         {
             _networks = new ObservableCollection<Network>();
             _statistics = new NetworkStatistics();
-            // Ensure storage directory exists
-            var storageDir = Path.GetDirectoryName(StorageFile);
-            if (!string.IsNullOrEmpty(storageDir) && !Directory.Exists(storageDir))
+            _httpClient = new HttpClient();
+            try
             {
-                Directory.CreateDirectory(storageDir);
+                _firebaseConfig = FirebaseAuthConfig.Load();
             }
+            catch
+            {
+                _firebaseConfig = null;
+            }
+
             LoadNetworks();
             UpdateStatistics();
         }
@@ -252,26 +257,187 @@ namespace DroneSurveillanceSystem.Services
         private void LoadNetworks()
         {
             _networks.Clear();
-            if (File.Exists(StorageFile))
+            var map = ReadNetworksFromFirebase();
+            if (map != null)
             {
-                var json = File.ReadAllText(StorageFile);
-                var loaded = JsonSerializer.Deserialize<List<Network>>(json);
-                if (loaded != null)
+                foreach (var kvp in map)
                 {
-                    foreach (var net in loaded)
-                    {
-                        _networks.Add(net);
-                        net.PropertyChanged += OnNetworkPropertyChanged;
-                    }
+                    var net = FromFirebaseRecord(kvp.Key, kvp.Value);
+                    _networks.Add(net);
+                    net.PropertyChanged += OnNetworkPropertyChanged;
                 }
             }
         }
 
-        private void SaveNetworks()
+        private string ResolveUserId()
         {
-            var list = _networks.ToList();
-            var json = JsonSerializer.Serialize(list, new JsonSerializerOptions { WriteIndented = true });
-            File.WriteAllText(StorageFile, json);
+            var user = FirebaseSession.Current;
+            if (!string.IsNullOrWhiteSpace(user?.AppClientId))
+                return user.AppClientId;
+
+            lock (_lockObject)
+            {
+                return string.IsNullOrWhiteSpace(_currentUserKey) ? "guest" : _currentUserKey;
+            }
+        }
+
+        private bool TryCreateRtdbClient(out FirebaseRtdbRestClient? client, out string? token)
+        {
+            client = null;
+            token = FirebaseSession.Current?.FirebaseIdToken;
+            if (_firebaseConfig == null || string.IsNullOrWhiteSpace(token))
+                return false;
+
+            client = new FirebaseRtdbRestClient(_httpClient, _firebaseConfig);
+            return true;
+        }
+
+        private Dictionary<string, FirebaseNetworkRecord>? ReadNetworksFromFirebase()
+        {
+            try
+            {
+                if (!TryCreateRtdbClient(out var rtdb, out var token) || rtdb == null || string.IsNullOrWhiteSpace(token))
+                    return null;
+
+                var userId = Uri.EscapeDataString(ResolveUserId());
+                return rtdb.GetAsync<Dictionary<string, FirebaseNetworkRecord>>(
+                    $"user_client_mapping/{userId}/networks",
+                    token,
+                    CancellationToken.None).GetAwaiter().GetResult();
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        private void SaveNetwork(Network network)
+        {
+            try
+            {
+                if (!TryCreateRtdbClient(out var rtdb, out var token) || rtdb == null || string.IsNullOrWhiteSpace(token))
+                    return;
+
+                if (string.IsNullOrWhiteSpace(network.NetworkId))
+                {
+                    network.NetworkId = Guid.NewGuid().ToString("N");
+                }
+
+                network.DroneCount = network.Drones?.Count ?? 0;
+                network.LastModified = DateTime.Now;
+                var userId = Uri.EscapeDataString(ResolveUserId());
+                var networkId = Uri.EscapeDataString(network.NetworkId);
+                var payload = ToFirebaseRecord(network);
+
+                rtdb.PutAsync($"user_client_mapping/{userId}/networks/{networkId}", payload, token, CancellationToken.None)
+                    .GetAwaiter().GetResult();
+            }
+            catch
+            {
+                // keep UI usable even when Firebase write fails
+            }
+        }
+
+        private void DeleteNetworkFromFirebase(Network network)
+        {
+            try
+            {
+                if (!TryCreateRtdbClient(out var rtdb, out var token) || rtdb == null || string.IsNullOrWhiteSpace(token))
+                    return;
+                if (string.IsNullOrWhiteSpace(network.NetworkId))
+                    return;
+
+                var userId = Uri.EscapeDataString(ResolveUserId());
+                var networkId = Uri.EscapeDataString(network.NetworkId);
+                rtdb.PutAsync<object?>($"user_client_mapping/{userId}/networks/{networkId}", null, token, CancellationToken.None)
+                    .GetAwaiter().GetResult();
+            }
+            catch
+            {
+                // keep UI usable even when Firebase delete fails
+            }
+        }
+
+        private static FirebaseNetworkRecord ToFirebaseRecord(Network network)
+        {
+            return new FirebaseNetworkRecord
+            {
+                Name = network.Name,
+                Description = network.Description,
+                Status = network.Status,
+                StatusColor = network.StatusColor,
+                IconColor = network.IconColor,
+                DroneCount = network.DroneCount,
+                AlertCount = network.AlertCount,
+                CoverageRegion = network.CoverageRegion,
+                PriorityLevel = network.PriorityLevel,
+                OperationMode = network.OperationMode,
+                AutoActivate = network.AutoActivate,
+                AlertNotifications = network.AlertNotifications,
+                Drones = (network.Drones ?? new List<DronePosition>())
+                    .Select(d => d.Id)
+                    .Where(id => !string.IsNullOrWhiteSpace(id))
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToList(),
+                Cctvs = (network.Cctvs ?? new List<SurveillanceDevice>())
+                    .Select(c => c.Id)
+                    .Where(id => !string.IsNullOrWhiteSpace(id))
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToList(),
+                CreatedDate = network.CreatedDate,
+                LastModified = network.LastModified
+            };
+        }
+
+        private static Network FromFirebaseRecord(string networkId, FirebaseNetworkRecord? record)
+        {
+            record ??= new FirebaseNetworkRecord();
+            var droneLookup = DeviceDataManager.GetAllDrones()
+                .Where(d => !string.IsNullOrWhiteSpace(d.DeviceId))
+                .ToDictionary(d => d.DeviceId, d => d, StringComparer.OrdinalIgnoreCase);
+            var cctvLookup = DeviceDataManager.GetAllCctvs()
+                .Where(c => !string.IsNullOrWhiteSpace(c.DeviceId))
+                .ToDictionary(c => c.DeviceId, c => c, StringComparer.OrdinalIgnoreCase);
+
+            var drones = (record.Drones ?? new List<string>())
+                .Where(id => !string.IsNullOrWhiteSpace(id))
+                .Select(id => new DronePosition
+                {
+                    Id = id,
+                    Name = droneLookup.TryGetValue(id, out var d) ? d.Name : id
+                })
+                .ToList();
+
+            var cctvs = (record.Cctvs ?? new List<string>())
+                .Where(id => !string.IsNullOrWhiteSpace(id))
+                .Select(id => new SurveillanceDevice
+                {
+                    Id = id,
+                    Name = cctvLookup.TryGetValue(id, out var c) ? c.Name : id,
+                    Type = DeviceType.CCTV
+                })
+                .ToList();
+
+            return new Network
+            {
+                NetworkId = networkId,
+                Name = record.Name ?? string.Empty,
+                Description = record.Description ?? string.Empty,
+                Status = record.Status ?? "Active",
+                StatusColor = record.StatusColor ?? "#4ACF50",
+                IconColor = record.IconColor ?? "#4ACF50",
+                DroneCount = drones.Count,
+                AlertCount = record.AlertCount,
+                CoverageRegion = record.CoverageRegion ?? "Urban Zone",
+                PriorityLevel = record.PriorityLevel ?? "Medium Priority",
+                OperationMode = record.OperationMode ?? "Surveillance Mode",
+                AutoActivate = record.AutoActivate,
+                AlertNotifications = record.AlertNotifications,
+                Drones = drones,
+                Cctvs = cctvs,
+                CreatedDate = record.CreatedDate == default ? DateTime.Now : record.CreatedDate,
+                LastModified = record.LastModified == default ? DateTime.Now : record.LastModified
+            };
         }
 
         public void OnNetworkPropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -310,7 +476,7 @@ namespace DroneSurveillanceSystem.Services
                     "Deployed" => "#00BCD4",
                     _ => "#cccccc"
                 };
-                SaveNetworks(); // Save after status change
+                SaveNetwork(network);
             }
         }
 
@@ -320,7 +486,7 @@ namespace DroneSurveillanceSystem.Services
             if (network != null)
             {
                 network.DroneCount = droneCount;
-                SaveNetworks(); // Save after drone count change
+                SaveNetwork(network);
             }
         }
 
@@ -330,36 +496,72 @@ namespace DroneSurveillanceSystem.Services
             if (network != null)
             {
                 network.AlertCount = alertCount;
-                SaveNetworks(); // Save after alert count change
+                SaveNetwork(network);
             }
         }
 
-        // Call SaveNetworks after any add/edit/delete
         public void AddNetwork(Network network)
         {
+            if (string.IsNullOrWhiteSpace(network.NetworkId))
+                network.NetworkId = Guid.NewGuid().ToString("N");
+            if (network.CreatedDate == default)
+                network.CreatedDate = DateTime.Now;
+            network.LastModified = DateTime.Now;
+            network.DroneCount = network.Drones?.Count ?? 0;
+
             _networks.Add(network);
             network.PropertyChanged += OnNetworkPropertyChanged;
-            SaveNetworks();
+            SaveNetwork(network);
             UpdateStatistics();
         }
 
         public void RemoveNetwork(Network network)
         {
+            network.PropertyChanged -= OnNetworkPropertyChanged;
             _networks.Remove(network);
-            SaveNetworks();
+            DeleteNetworkFromFirebase(network);
             UpdateStatistics();
         }
 
         public void UpdateNetwork(Network updatedNetwork)
         {
-            var existing = _networks.FirstOrDefault(n => n.Name == updatedNetwork.Name);
+            var existing = _networks.FirstOrDefault(n =>
+                (!string.IsNullOrWhiteSpace(updatedNetwork.NetworkId) && n.NetworkId == updatedNetwork.NetworkId) ||
+                n.Name == updatedNetwork.Name);
             if (existing != null)
             {
                 var idx = _networks.IndexOf(existing);
+                if (string.IsNullOrWhiteSpace(updatedNetwork.NetworkId))
+                    updatedNetwork.NetworkId = existing.NetworkId;
+                if (updatedNetwork.CreatedDate == default)
+                    updatedNetwork.CreatedDate = existing.CreatedDate;
+                updatedNetwork.LastModified = DateTime.Now;
+                updatedNetwork.DroneCount = updatedNetwork.Drones?.Count ?? 0;
                 _networks[idx] = updatedNetwork;
-                SaveNetworks();
+                updatedNetwork.PropertyChanged += OnNetworkPropertyChanged;
+                SaveNetwork(updatedNetwork);
                 UpdateStatistics();
             }
         }
+    }
+
+    internal class FirebaseNetworkRecord
+    {
+        public string? Name { get; set; }
+        public string? Description { get; set; }
+        public string? Status { get; set; }
+        public string? StatusColor { get; set; }
+        public string? IconColor { get; set; }
+        public int DroneCount { get; set; }
+        public int AlertCount { get; set; }
+        public string? CoverageRegion { get; set; }
+        public string? PriorityLevel { get; set; }
+        public string? OperationMode { get; set; }
+        public bool AutoActivate { get; set; }
+        public bool AlertNotifications { get; set; }
+        public List<string>? Drones { get; set; }
+        public List<string>? Cctvs { get; set; }
+        public DateTime CreatedDate { get; set; }
+        public DateTime LastModified { get; set; }
     }
 }

@@ -7,6 +7,7 @@ using System.Collections.ObjectModel;
 using System.Collections.Generic;
 using System.ComponentModel;
 using DroneSurveillanceSystem.Services;
+using DroneSurveillanceSystem.Services.Firebase;
 
 namespace DroneSurveillanceSystem.Views
 {
@@ -15,6 +16,8 @@ namespace DroneSurveillanceSystem.Views
         private readonly NetworkService _networkService;
         private readonly DroneTrackingService _droneTrackingService;
         private readonly DeviceRegistryService _deviceRegistryService;
+        private readonly Dictionary<string, DronePosition> _availableDroneByName;
+        private readonly Dictionary<string, SurveillanceDevice> _availableCctvByName;
         private Network? _currentEditingNetwork;
 
         public NetworkProfileManager(NetworkService networkService, DroneTrackingService droneTrackingService)
@@ -28,6 +31,9 @@ namespace DroneSurveillanceSystem.Views
             var availableDrones = DeviceDataManager.GetAllDrones()
                 .Select(d => new DronePosition { Id = d.DeviceId, Name = d.Name, Status = DroneFlightStatus.Grounded })
                 .ToList();
+            _availableDroneByName = availableDrones
+                .Where(d => !string.IsNullOrWhiteSpace(d.Name))
+                .ToDictionary(d => d.Name, d => d, StringComparer.OrdinalIgnoreCase);
             AvailableDronesComboBox.ItemsSource = availableDrones;
             AvailableDronesComboBox.DisplayMemberPath = "Name";
 
@@ -35,6 +41,9 @@ namespace DroneSurveillanceSystem.Views
             var availableCctvs = DeviceDataManager.GetAllCctvs()
                 .Select(c => new SurveillanceDevice { Id = c.DeviceId, Name = c.Name, Type = DeviceType.CCTV })
                 .ToList();
+            _availableCctvByName = availableCctvs
+                .Where(c => !string.IsNullOrWhiteSpace(c.Name))
+                .ToDictionary(c => c.Name, c => c, StringComparer.OrdinalIgnoreCase);
             AvailableCctvsComboBox.ItemsSource = availableCctvs;
             AvailableCctvsComboBox.DisplayMemberPath = "Name";
 
@@ -276,108 +285,14 @@ namespace DroneSurveillanceSystem.Views
             AssignedDronesPanel.Children.Clear();
             foreach(var drone in network.Drones)
             {
-                // Create a styled drone item with remove button
-                var droneItem = new Border
-                {
-                    Background = new SolidColorBrush(System.Windows.Media.Color.FromRgb(45, 45, 45)),
-                    CornerRadius = new CornerRadius(6),
-                    Padding = new Thickness(10, 8, 10, 8),
-                    Margin = new Thickness(0, 2, 0, 2)
-                };
-
-                var grid = new Grid();
-                grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-                grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-
-                // Drone name
-                var droneNameText = new TextBlock
-                {
-                    Text = drone.Name,
-                    Foreground = System.Windows.Media.Brushes.White,
-                    FontSize = 14,
-                    FontWeight = FontWeights.Medium,
-                    VerticalAlignment = VerticalAlignment.Center
-                };
-                Grid.SetColumn(droneNameText, 0);
-                grid.Children.Add(droneNameText);
-
-                // Remove button
-                var removeButton = new Button
-                {
-                    Content = "✖",
-                    Background = new SolidColorBrush(System.Windows.Media.Color.FromRgb(220, 53, 69)),
-                    Foreground = System.Windows.Media.Brushes.White,
-                    BorderThickness = new Thickness(0),
-                    Width = 24,
-                    Height = 24,
-                    FontSize = 12,
-                    FontWeight = FontWeights.Bold,
-                    Margin = new Thickness(5, 0, 0, 0),
-                    Cursor = System.Windows.Input.Cursors.Hand
-                };
-                Grid.SetColumn(removeButton, 1);
-                grid.Children.Add(removeButton);
-
-                // Add click event to remove the drone
-                removeButton.Click += (s, args) =>
-                {
-                    AssignedDronesPanel.Children.Remove(droneItem);
-                };
-
-                droneItem.Child = grid;
-                AssignedDronesPanel.Children.Add(droneItem);
+                AssignedDronesPanel.Children.Add(CreateAssignedDeviceItem(drone.Name, drone.Id));
             }
 
             // Populate assigned CCTVs
             AssignedCctvsPanel.Children.Clear();
             foreach (var cam in network.Cctvs)
             {
-                var item = new Border
-                {
-                    Background = new SolidColorBrush(System.Windows.Media.Color.FromRgb(45, 45, 45)),
-                    CornerRadius = new CornerRadius(6),
-                    Padding = new Thickness(10, 8, 10, 8),
-                    Margin = new Thickness(0, 2, 0, 2)
-                };
-
-                var grid = new Grid();
-                grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-                grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-
-                var nameText = new TextBlock
-                {
-                    Text = cam.Name,
-                    Foreground = System.Windows.Media.Brushes.White,
-                    FontSize = 14,
-                    FontWeight = FontWeights.Medium,
-                    VerticalAlignment = VerticalAlignment.Center
-                };
-                Grid.SetColumn(nameText, 0);
-                grid.Children.Add(nameText);
-
-                var removeButton = new Button
-                {
-                    Content = "✖",
-                    Background = new SolidColorBrush(System.Windows.Media.Color.FromRgb(220, 53, 69)),
-                    Foreground = System.Windows.Media.Brushes.White,
-                    BorderThickness = new Thickness(0),
-                    Width = 24,
-                    Height = 24,
-                    FontSize = 12,
-                    FontWeight = FontWeights.Bold,
-                    Margin = new Thickness(5, 0, 0, 0),
-                    Cursor = System.Windows.Input.Cursors.Hand
-                };
-                Grid.SetColumn(removeButton, 1);
-                grid.Children.Add(removeButton);
-
-                removeButton.Click += (s, args) =>
-                {
-                    AssignedCctvsPanel.Children.Remove(item);
-                };
-
-                item.Child = grid;
-                AssignedCctvsPanel.Children.Add(item);
+                AssignedCctvsPanel.Children.Add(CreateAssignedDeviceItem(cam.Name, cam.Id));
             }
 
             // Update editor header with editing styling
@@ -404,9 +319,10 @@ namespace DroneSurveillanceSystem.Views
             var selectedDrone = AvailableDronesComboBox.SelectedItem as DronePosition;
             if (selectedDrone != null)
             {
-                // Check if drone is already assigned to this network (prevent duplicates within same network)
-                var isAlreadyAssigned = AssignedDronesPanel.Children.OfType<Border>().Any(border => 
-                    border.Child is Grid grid && grid.Children.OfType<TextBlock>().FirstOrDefault()?.Text == selectedDrone.Name);
+                // Check duplicate by ID first, then by display name.
+                var isAlreadyAssigned = AssignedDronesPanel.Children.OfType<Border>().Any(border =>
+                    string.Equals(border.Tag as string, selectedDrone.Id, StringComparison.OrdinalIgnoreCase) ||
+                    (border.Child is Grid grid && grid.Children.OfType<TextBlock>().FirstOrDefault()?.Text == selectedDrone.Name));
                 
                 if (isAlreadyAssigned)
                 {
@@ -414,56 +330,7 @@ namespace DroneSurveillanceSystem.Views
                     return;
                 }
 
-                // Create a styled drone item with remove button
-                var droneItem = new Border
-                {
-                    Background = new SolidColorBrush(System.Windows.Media.Color.FromRgb(45, 45, 45)),
-                    CornerRadius = new CornerRadius(6),
-                    Padding = new Thickness(10, 8, 10, 8),
-                    Margin = new Thickness(0, 2, 0, 2)
-                };
-
-                var grid = new Grid();
-                grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-                grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-
-                // Drone name
-                var droneNameText = new TextBlock
-                {
-                    Text = selectedDrone.Name,
-                    Foreground = System.Windows.Media.Brushes.White,
-                    FontSize = 14,
-                    FontWeight = FontWeights.Medium,
-                    VerticalAlignment = VerticalAlignment.Center
-                };
-                Grid.SetColumn(droneNameText, 0);
-                grid.Children.Add(droneNameText);
-
-                // Remove button
-                var removeButton = new Button
-                {
-                    Content = "✖",
-                    Background = new SolidColorBrush(System.Windows.Media.Color.FromRgb(220, 53, 69)),
-                    Foreground = System.Windows.Media.Brushes.White,
-                    BorderThickness = new Thickness(0),
-                    Width = 24,
-                    Height = 24,
-                    FontSize = 12,
-                    FontWeight = FontWeights.Bold,
-                    Margin = new Thickness(5, 0, 0, 0),
-                    Cursor = System.Windows.Input.Cursors.Hand
-                };
-                Grid.SetColumn(removeButton, 1);
-                grid.Children.Add(removeButton);
-
-                // Add click event to remove the drone
-                removeButton.Click += (s, args) =>
-                {
-                    AssignedDronesPanel.Children.Remove(droneItem);
-                };
-
-                droneItem.Child = grid;
-                AssignedDronesPanel.Children.Add(droneItem);
+                AssignedDronesPanel.Children.Add(CreateAssignedDeviceItem(selectedDrone.Name, selectedDrone.Id));
             }
         }
 
@@ -474,7 +341,8 @@ namespace DroneSurveillanceSystem.Views
             {
                 // Check if CCTV is already assigned to this network (prevent duplicates within same network)
                 var isAlreadyAssigned = AssignedCctvsPanel.Children.OfType<Border>().Any(border =>
-                    border.Child is Grid grid && grid.Children.OfType<TextBlock>().FirstOrDefault()?.Text == selectedCctv.Name);
+                    string.Equals(border.Tag as string, selectedCctv.Id, StringComparison.OrdinalIgnoreCase) ||
+                    (border.Child is Grid grid && grid.Children.OfType<TextBlock>().FirstOrDefault()?.Text == selectedCctv.Name));
                 
                 if (isAlreadyAssigned)
                 {
@@ -482,56 +350,11 @@ namespace DroneSurveillanceSystem.Views
                     return;
                 }
 
-                var item = new Border
-                {
-                    Background = new SolidColorBrush(System.Windows.Media.Color.FromRgb(45, 45, 45)),
-                    CornerRadius = new CornerRadius(6),
-                    Padding = new Thickness(10, 8, 10, 8),
-                    Margin = new Thickness(0, 2, 0, 2)
-                };
-
-                var grid = new Grid();
-                grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-                grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-
-                var nameText = new TextBlock
-                {
-                    Text = selectedCctv.Name,
-                    Foreground = System.Windows.Media.Brushes.White,
-                    FontSize = 14,
-                    FontWeight = FontWeights.Medium,
-                    VerticalAlignment = VerticalAlignment.Center
-                };
-                Grid.SetColumn(nameText, 0);
-                grid.Children.Add(nameText);
-
-                var removeButton = new Button
-                {
-                    Content = "✖",
-                    Background = new SolidColorBrush(System.Windows.Media.Color.FromRgb(220, 53, 69)),
-                    Foreground = System.Windows.Media.Brushes.White,
-                    BorderThickness = new Thickness(0),
-                    Width = 24,
-                    Height = 24,
-                    FontSize = 12,
-                    FontWeight = FontWeights.Bold,
-                    Margin = new Thickness(5, 0, 0, 0),
-                    Cursor = System.Windows.Input.Cursors.Hand
-                };
-                Grid.SetColumn(removeButton, 1);
-                grid.Children.Add(removeButton);
-
-                removeButton.Click += (s, args) =>
-                {
-                    AssignedCctvsPanel.Children.Remove(item);
-                };
-
-                item.Child = grid;
-                AssignedCctvsPanel.Children.Add(item);
+                AssignedCctvsPanel.Children.Add(CreateAssignedDeviceItem(selectedCctv.Name, selectedCctv.Id));
             }
         }
 
-        private void SaveNetworkButton_Click(object sender, RoutedEventArgs e)
+        private async void SaveNetworkButton_Click(object sender, RoutedEventArgs e)
         {
             // Validate required fields
             if (string.IsNullOrWhiteSpace(NetworkNameTextBox.Text))
@@ -556,26 +379,28 @@ namespace DroneSurveillanceSystem.Views
                 Drones = AssignedDronesPanel.Children.OfType<Border>()
                     .Select(border => 
                     {
-                        if (border.Child is Grid grid)
+                        var id = border.Tag as string;
+                        var name = ExtractAssignedName(border);
+                        if (string.IsNullOrWhiteSpace(id) && !string.IsNullOrWhiteSpace(name) && _availableDroneByName.TryGetValue(name, out var found))
                         {
-                            var textBlock = grid.Children.OfType<TextBlock>().FirstOrDefault();
-                            return new DronePosition { Name = textBlock?.Text ?? "" };
+                            id = found.Id;
                         }
-                        return new DronePosition { Name = "" };
+                        return new DronePosition { Id = id ?? string.Empty, Name = name };
                     })
-                    .Where(drone => !string.IsNullOrEmpty(drone.Name))
+                    .Where(drone => !string.IsNullOrWhiteSpace(drone.Id) || !string.IsNullOrWhiteSpace(drone.Name))
                     .ToList(),
                 Cctvs = AssignedCctvsPanel.Children.OfType<Border>()
                     .Select(border =>
                     {
-                        if (border.Child is Grid grid)
+                        var id = border.Tag as string;
+                        var name = ExtractAssignedName(border);
+                        if (string.IsNullOrWhiteSpace(id) && !string.IsNullOrWhiteSpace(name) && _availableCctvByName.TryGetValue(name, out var found))
                         {
-                            var textBlock = grid.Children.OfType<TextBlock>().FirstOrDefault();
-                            return new SurveillanceDevice { Name = textBlock?.Text ?? string.Empty, Type = DeviceType.CCTV };
+                            id = found.Id;
                         }
-                        return new SurveillanceDevice { Name = string.Empty, Type = DeviceType.CCTV };
+                        return new SurveillanceDevice { Id = id ?? string.Empty, Name = name, Type = DeviceType.CCTV };
                     })
-                    .Where(cam => !string.IsNullOrEmpty(cam.Name))
+                    .Where(cam => !string.IsNullOrWhiteSpace(cam.Id) || !string.IsNullOrWhiteSpace(cam.Name))
                     .ToList()
             };
 
@@ -594,6 +419,10 @@ namespace DroneSurveillanceSystem.Views
                 _networkService.AddNetwork(networkData);
                 successMessage = "Network created successfully";
             }
+
+            // Sync static device metadata (including network assignments) to RTDB.
+            await SyncAllDroneMetadataToFirebaseAsync();
+            await SyncAllCctvMetadataToFirebaseAsync();
 
             LoadNetworkProfiles();
             ClearEditor();
@@ -634,6 +463,84 @@ namespace DroneSurveillanceSystem.Views
             }
         }
 
+        private async System.Threading.Tasks.Task SyncAllDroneMetadataToFirebaseAsync()
+        {
+            try
+            {
+                var user = FirebaseSession.Current;
+                if (user == null || string.IsNullOrWhiteSpace(user.FirebaseIdToken))
+                    return;
+
+                var config = FirebaseAuthConfig.Load();
+                using var http = new System.Net.Http.HttpClient();
+                var rtdb = new FirebaseRtdbRestClient(http, config);
+                var metadataService = new FirebaseDroneMetadataService(rtdb);
+
+                var allDrones = DeviceDataManager.GetAllDrones();
+                foreach (var drone in allDrones)
+                {
+                    if (string.IsNullOrWhiteSpace(drone.DeviceId)) continue;
+
+                    var assignments = _networkService.Networks
+                        .Where(n => n.Drones.Any(d =>
+                            (!string.IsNullOrWhiteSpace(d.Id) && d.Id.Equals(drone.DeviceId, StringComparison.OrdinalIgnoreCase)) ||
+                            (!string.IsNullOrWhiteSpace(d.Name) && d.Name.Equals(drone.Name, StringComparison.OrdinalIgnoreCase))))
+                        .Select(n => n.Name)
+                        .Distinct(StringComparer.OrdinalIgnoreCase)
+                        .ToList();
+
+                    await metadataService.UpsertDroneMetadataAsync(
+                        drone,
+                        assignments,
+                        user.FirebaseIdToken,
+                        System.Threading.CancellationToken.None);
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Drone metadata sync failed: {ex.Message}");
+            }
+        }
+
+        private async System.Threading.Tasks.Task SyncAllCctvMetadataToFirebaseAsync()
+        {
+            try
+            {
+                var user = FirebaseSession.Current;
+                if (user == null || string.IsNullOrWhiteSpace(user.FirebaseIdToken))
+                    return;
+
+                var config = FirebaseAuthConfig.Load();
+                using var http = new System.Net.Http.HttpClient();
+                var rtdb = new FirebaseRtdbRestClient(http, config);
+                var metadataService = new FirebaseCctvMetadataService(rtdb);
+
+                var allCctvs = DeviceDataManager.GetAllCctvs();
+                foreach (var cctv in allCctvs)
+                {
+                    if (string.IsNullOrWhiteSpace(cctv.DeviceId)) continue;
+
+                    var assignments = _networkService.Networks
+                        .Where(n => n.Cctvs.Any(c =>
+                            (!string.IsNullOrWhiteSpace(c.Id) && c.Id.Equals(cctv.DeviceId, StringComparison.OrdinalIgnoreCase)) ||
+                            (!string.IsNullOrWhiteSpace(c.Name) && c.Name.Equals(cctv.Name, StringComparison.OrdinalIgnoreCase))))
+                        .Select(n => n.Name)
+                        .Distinct(StringComparer.OrdinalIgnoreCase)
+                        .ToList();
+
+                    await metadataService.UpsertCctvMetadataAsync(
+                        cctv,
+                        assignments,
+                        user.FirebaseIdToken,
+                        System.Threading.CancellationToken.None);
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"CCTV metadata sync failed: {ex.Message}");
+            }
+        }
+
         private void CancelEditButton_Click(object sender, RoutedEventArgs e)
         {
             // Hide the network editor panel with animation
@@ -665,7 +572,9 @@ namespace DroneSurveillanceSystem.Views
             if (result == MessageBoxResult.Yes)
             {
                 // Remove the network from the service
-                var networkToRemove = _networkService.Networks.FirstOrDefault(n => n.Name == _currentEditingNetwork.Name);
+                var networkToRemove = _networkService.Networks.FirstOrDefault(n =>
+                    (!string.IsNullOrWhiteSpace(_currentEditingNetwork.NetworkId) && n.NetworkId == _currentEditingNetwork.NetworkId) ||
+                    n.Name == _currentEditingNetwork.Name);
                 if (networkToRemove != null)
                 {
                     _networkService.RemoveNetwork(networkToRemove);
@@ -748,5 +657,62 @@ namespace DroneSurveillanceSystem.Views
             timer.Start();
         }
         public event EventHandler? CloseRequested;
+
+        private static string ExtractAssignedName(Border border)
+        {
+            if (border.Child is Grid grid)
+            {
+                return grid.Children.OfType<TextBlock>().FirstOrDefault()?.Text ?? string.Empty;
+            }
+            return string.Empty;
+        }
+
+        private static Border CreateAssignedDeviceItem(string name, string? deviceId)
+        {
+            var item = new Border
+            {
+                Background = new SolidColorBrush(System.Windows.Media.Color.FromRgb(45, 45, 45)),
+                CornerRadius = new CornerRadius(6),
+                Padding = new Thickness(10, 8, 10, 8),
+                Margin = new Thickness(0, 2, 0, 2),
+                Tag = deviceId ?? string.Empty
+            };
+
+            var grid = new Grid();
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+            var nameText = new TextBlock
+            {
+                Text = name,
+                Foreground = System.Windows.Media.Brushes.White,
+                FontSize = 14,
+                FontWeight = FontWeights.Medium,
+                VerticalAlignment = VerticalAlignment.Center
+            };
+            Grid.SetColumn(nameText, 0);
+            grid.Children.Add(nameText);
+
+            var removeButton = new Button
+            {
+                Content = "✖",
+                Background = new SolidColorBrush(System.Windows.Media.Color.FromRgb(220, 53, 69)),
+                Foreground = System.Windows.Media.Brushes.White,
+                BorderThickness = new Thickness(0),
+                Width = 24,
+                Height = 24,
+                FontSize = 12,
+                FontWeight = FontWeights.Bold,
+                Margin = new Thickness(5, 0, 0, 0),
+                Cursor = System.Windows.Input.Cursors.Hand
+            };
+            Grid.SetColumn(removeButton, 1);
+            grid.Children.Add(removeButton);
+
+            removeButton.Click += (s, args) => { if (item.Parent is Panel p) p.Children.Remove(item); };
+
+            item.Child = grid;
+            return item;
+        }
     }
 }

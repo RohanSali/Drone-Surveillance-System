@@ -46,9 +46,8 @@ namespace DroneSurveillanceSystem.Views
             
             _pendingRequests = new ObservableCollection<PendingRequest>();
             
-            // Initialize LostFindingManager with current user
-            // For now, we'll use a placeholder user ID - this should be passed from the main window
-            LostFindingManager.Instance.SetCurrentUser("current_user");
+            // Initialize LostFindingManager with the active user context (guest or signed-in Firebase user).
+            LostFindingManager.Instance.SetCurrentUser(DeviceDataManager.GetCurrentUser());
             // Copy requests from manager to local collection
             foreach (var request in LostFindingManager.Instance.PendingRequests)
             {
@@ -115,10 +114,14 @@ namespace DroneSurveillanceSystem.Views
                 var timestamp = DateTime.UtcNow.ToString("yyyyMMddHHmmss");
                 var uniqueName = $"LostFinding_{timestamp}_{Guid.NewGuid().ToString("N")[..8]}";
                 
-                // Create the WebSocket message
+                // Get actual app_id from ApiService
+                var appId = ApiService.Instance.GetAppClientId();
+                
+                // Create the WebSocket message with actual app_id
                 var message = new
                 {
                     type = "alert_image",
+                    app_id = appId,
                     data = new
                     {
                         found = 0,
@@ -133,6 +136,7 @@ namespace DroneSurveillanceSystem.Views
 
                 // Send message via WebSocket
                 var jsonMessage = JsonConvert.SerializeObject(message);
+                Console.WriteLine($"[LostFindingPage] Sending alert_image with app_id: {appId}");
                 ApiService.Instance.SendMessage(jsonMessage);
 
                 // Add to pending requests

@@ -8,7 +8,9 @@ sim2.py
 # Ignore a folder and its contents
 __pycache__/
 /.vscode
+/.vs
 /gym_pybullet_drones
+/AirSim
 /temp_my
 /results
 
@@ -18,3 +20,10 @@ __pycache__/
 # Ignore all files in temp folder but not the folder itself
 temp/*
 !temp/.gitkeep  # Keep the folder structure if needed
+
+# Ignore MyAppinstaller files
+bin/
+Debug/
+Release/
+*.msi
+*.exe

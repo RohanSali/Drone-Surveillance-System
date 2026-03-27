@@ -11,17 +11,13 @@ namespace DroneSurveillanceSystem
     public partial class App : Application
     {
         private ApiService? _apiService;
-        private AuthService? _authService;
 
         protected override void OnStartup(StartupEventArgs e)
         {
             base.OnStartup(e);
             
-            // Initialize authentication service
-            _authService = new AuthService();
-            
             // Show login window first
-            var loginWindow = new LoginWindow(_authService);
+            var loginWindow = new LoginWindow();
             loginWindow.ShowDialog();
             
             // Check authentication result

@@ -3,7 +3,8 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Alert Details" Height="700" Width="800"
         WindowStartupLocation="CenterOwner"
-        Background="#1A1A1A">
+        Background="#1A1A1A"
+        WindowStyle="None">
     <Window.Resources>
         <Style x:Key="PopupButtonStyle" TargetType="Button">
             <Setter Property="Background" Value="#0078d4" />

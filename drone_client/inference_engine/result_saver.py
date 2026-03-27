@@ -20,11 +20,11 @@ async def save_to_machine(payload,type="alert"):
         if type == "alert":
             with open(ALERT_LOGGER, 'a') as f:
                 f.write(str(payload) + '\n')
-            print(f"✅ Saved to machine: {payload['alert']}")
+            # print(f"✅ Saved to machine: {payload['alert']}")
         elif type == "alert_image":
             with open(PERSON_FOUND_LOGGER, 'a') as f:
                 f.write(str(payload) + '\n')
-            print(f"✅ Saved to machine: Found - {payload['name']}")
+            # print(f"✅ Saved to machine: Found - {payload['name']}")
         else:
             print("❌ Unknown type specified for saving to machine.")
     except Exception as e:
