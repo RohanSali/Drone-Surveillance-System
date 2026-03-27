@@ -8,7 +8,9 @@ sim2.py
 # Ignore a folder and its contents
 __pycache__/
 /.vscode
+/.vs
 /gym_pybullet_drones
+/AirSim
 /temp_my
 /results
 
