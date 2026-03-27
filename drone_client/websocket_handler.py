@@ -13,7 +13,7 @@ TARGETS_FILE = os.path.join(current_dir, "capture_engine", "drone_targets.txt")
 LOST_PERSON_FOLDER = os.path.join(current_dir, "inference_engine", "lost_person")
 DRONE_POS_UPDATE_INTERVAL = 10 # seconds
 
-SERVER_URL = "wss://new-server-5iyd.onrender.com"
+SERVER_URL = "wss://vira-communication-server.onrender.com"
 
 class DroneWebSocketHandler:
     def __init__(self, drone_id: str):

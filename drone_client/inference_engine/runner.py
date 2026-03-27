@@ -69,7 +69,15 @@ def match_face_worker():
         # Sort (optional) and loop
         for image_file in sorted(image_files):
             LOST_FINDING_IMG_PATH = os.path.join(LOST_FINDING_IMG_FOLDER, image_file)
-            image = cv2.imread(LOST_FINDING_IMG_PATH)
+            
+            try:
+                image = cv2.imread(LOST_FINDING_IMG_PATH)
+                if image is None:
+                    print(f"Failed to load or empty file: {image_file}")
+                    continue
+            except cv2.error as e:
+                print(f"OpenCV error loading {image_file}: {e}")
+                continue
 
             if image is not None:
                 print(f"Loaded: {image_file}, shape: {image.shape}")

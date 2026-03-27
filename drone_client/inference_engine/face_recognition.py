@@ -65,7 +65,6 @@ def get_middle_point(box,name):
     x1, y1, x2, y2 = box
     cx = int((x1 + x2) / 2)
     cy = int((y1 + y2) / 2)
-    print(f"▶️ Detected {name} at center: ({cx}, {cy})")
     return cx, cy  
 
 def get_depth(image, x_img, y_img):
@@ -157,7 +156,6 @@ def compare_faces(frame1, frame2, name, capture_timestamp, intrinsic_matrix, dro
 
             if timestamp :
                 time_difference = (capture_timestamp - timestamp).total_seconds()
-                print(f"Time difference between last found for  is : {time_difference} ⏳")
                 if time_difference > TIME_THRESHOLD:
                     x,y,z = get_alert_location(frame1,box,name,intrinsic_matrix,drone_rotation_matrix,drone_pos)
                     if x is not None and y is not None and z is not None :
