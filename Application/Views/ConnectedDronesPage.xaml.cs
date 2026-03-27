@@ -520,7 +520,7 @@ namespace DroneSurveillanceSystem.Views
                     {
                         moduleSelectionPopup.Owner = ownerWindow;
                     }
-                    moduleSelectionPopup.ShowDialog();
+                    moduleSelectionPopup.Show();
                 }
                 catch (Exception ex)
                 {

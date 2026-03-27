@@ -284,10 +284,10 @@ namespace DroneSurveillanceSystem.Views
         private void UpdateUI(object? sender, EventArgs e)
         {
             // Update drone status cards
-            // UpdateDroneStatusCards();
+            UpdateDroneStatusCards();
             
             // Update map
-            // UpdateMapDrones();
+            UpdateMapDrones();
         }
 
         private void UpdateSessionTime(object? sender, EventArgs e)

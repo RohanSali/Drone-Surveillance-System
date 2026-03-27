@@ -52,6 +52,27 @@
             <Setter Property="Margin" Value="5"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="Height" Value="44"/>
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
+            <Setter Property="UseLayoutRounding" Value="True"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="10"
+                                SnapsToDevicePixels="True"
+                                UseLayoutRounding="True"
+                                Effect="{x:Null}">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"
+                                              Margin="{TemplateBinding Padding}"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
             <Style.Triggers>
                 <Trigger Property="IsMouseOver" Value="True">
                     <Setter Property="Background" Value="#FF505050"/>
@@ -66,6 +87,56 @@
                     <Setter Property="BorderBrush" Value="#FF404040"/>
                 </Trigger>
             </Style.Triggers>
+        </Style>
+
+        <Style x:Key="PrimaryActionButton" TargetType="Button" BasedOn="{StaticResource ModernButtonStyle}">
+            <Setter Property="Background" Value="#1D4ED8"/>
+            <Setter Property="BorderBrush" Value="#3B82F6"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+        </Style>
+
+        <Style x:Key="SuccessActionButton" TargetType="Button" BasedOn="{StaticResource ModernButtonStyle}">
+            <Setter Property="Background" Value="#16A34A"/>
+            <Setter Property="BorderBrush" Value="#22C55E"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+        </Style>
+
+        <Style x:Key="DangerActionButton" TargetType="Button" BasedOn="{StaticResource ModernButtonStyle}">
+            <Setter Property="Background" Value="#B91C1C"/>
+            <Setter Property="BorderBrush" Value="#EF4444"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+        </Style>
+
+        <Style x:Key="MutedButton" TargetType="Button" BasedOn="{StaticResource ModernButtonStyle}">
+            <Setter Property="Background" Value="#262626"/>
+            <Setter Property="BorderBrush" Value="#525252"/>
+        </Style>
+
+        <Style x:Key="DarkTextBox" TargetType="TextBox">
+            <Setter Property="Background" Value="#FF1E1E1E"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderBrush" Value="#FF404040"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="10,8"/>
+            <Setter Property="Margin" Value="0,6,0,10"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="CaretBrush" Value="White"/>
+        </Style>
+
+        <Style x:Key="SectionTitle" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Margin" Value="0,0,0,10"/>
+        </Style>
+
+        <Style x:Key="CardSubtle" TargetType="Border">
+            <Setter Property="Background" Value="#1F2937"/>
+            <Setter Property="BorderBrush" Value="#334155"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="12"/>
+            <Setter Property="Padding" Value="14"/>
+            <Setter Property="Margin" Value="0,0,0,12"/>
         </Style>
 
         <Style x:Key="DarkProgressBar" TargetType="ProgressBar">
@@ -441,10 +512,17 @@
                         Margin="15"
                         Width="120"
                         Height="45"
+                        SnapsToDevicePixels="True"
+                        UseLayoutRounding="True"
+                        FocusVisualStyle="{x:Null}"
                         Click="CloseButton_Click">
                     <Button.Template>
                         <ControlTemplate TargetType="Button">
-                            <Border Background="{TemplateBinding Background}" CornerRadius="8">
+                            <Border Background="{TemplateBinding Background}" 
+                                    CornerRadius="8"
+                                    SnapsToDevicePixels="True"
+                                    UseLayoutRounding="True"
+                                    Effect="{x:Null}">
                                 <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="{TemplateBinding Padding}"/>
                             </Border>
                             <ControlTemplate.Triggers>
@@ -462,57 +540,72 @@
         </Border>
         <!-- Main Content -->
         <Border Grid.Row="1" Background="#1A1A1A" CornerRadius="16" Padding="24" Margin="24,24,24,24">
-            <TabControl Background="Transparent" BorderBrush="Transparent" Style="{StaticResource DarkTabControl}">
-                <!-- Flight Control Tab -->
-                <TabItem Header="Flight Control" Foreground="White" Style="{StaticResource DarkTabItem}">
-                    <Grid Margin="10">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="320"/>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="320"/>
-                        </Grid.ColumnDefinitions>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="300"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="340"/>
+                </Grid.ColumnDefinitions>
                         <!-- Flight Controls -->
                         <Border Grid.Column="0" Background="#2D2D2D" BorderBrush="#475569" BorderThickness="1" CornerRadius="10" Margin="0,0,16,0" Padding="18">
                             <StackPanel>
-                                <TextBlock Text="Flight Controls" Style="{StaticResource HeaderTextStyle}" FontSize="16"/>
-                                <Grid Margin="0,10">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="*"/>
-                                    </Grid.ColumnDefinitions>
-                                    <Button Grid.Column="0" Name="TakeOffButton" Content="Take Off" Style="{StaticResource ModernButtonStyle}" Background="#28a745" Foreground="White" Click="TakeOffButton_Click"/>
-                                    <Button Grid.Column="1" Name="LandButton" Content="Land" Style="{StaticResource ModernButtonStyle}" Click="LandButton_Click"/>
-                                </Grid>
-                                <Grid Margin="0,5">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="*"/>
-                                    </Grid.ColumnDefinitions>
-                                    <Button Grid.Column="0" Name="MoveUpButton" Content="↑ Up" Style="{StaticResource ModernButtonStyle}" Click="MoveUpButton_Click"/>
-                                    <Button Grid.Column="1" Name="MoveDownButton" Content="↓ Down" Style="{StaticResource ModernButtonStyle}" Click="MoveDownButton_Click"/>
-                                </Grid>
-                                <Grid Margin="0,5">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="*"/>
-                                    </Grid.ColumnDefinitions>
-                                    <Button Grid.Column="0" Name="StartPatrolButton" Content="Start Patrol" Style="{StaticResource ModernButtonStyle}" Click="StartPatrolButton_Click"/>
-                                    <Button Grid.Column="1" Name="StopPatrolButton" Content="Stop Patrol" Style="{StaticResource ModernButtonStyle}" Click="StopPatrolButton_Click"/>
-                                </Grid>
-                                <Button Name="ReturnHomeButton" Content="Return to Base" Style="{StaticResource ModernButtonStyle}" Click="ReturnHomeButton_Click"/>
-                                <Button Name="EmergencyStopButton" Content="EMERGENCY STOP" Background="#dc3545" Foreground="White" Style="{StaticResource ModernButtonStyle}" Click="EmergencyStopButton_Click"/>
-                                <Separator Style="{StaticResource DarkSeparator}"/>
-                                <TextBlock Text="Flight Mode" Style="{StaticResource HeaderTextStyle}" FontSize="14"/>
-                                <ComboBox Name="FlightModeComboBox" Style="{StaticResource DarkComboBox}">
-                                    <ComboBoxItem Content="Manual" Style="{StaticResource DarkComboBoxItem}"/>
-                                    <ComboBoxItem Content="Autonomous" Style="{StaticResource DarkComboBoxItem}"/>
-                                    <ComboBoxItem Content="Patrol Route" Style="{StaticResource DarkComboBoxItem}"/>
-                                    <ComboBoxItem Content="Return to Base" Style="{StaticResource DarkComboBoxItem}"/>
-                                </ComboBox>
+                                <TextBlock Text="Flight Controls" Style="{StaticResource HeaderTextStyle}" FontSize="18" Margin="0,0,0,14"/>
+
+                                <Border Style="{StaticResource CardSubtle}">
+                                    <StackPanel>
+                                        <TextBlock Text="Core Actions" Style="{StaticResource SectionTitle}"/>
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <Button Grid.Column="0" Name="TakeOffButton" Content="Take Off" Style="{StaticResource SuccessActionButton}" Click="TakeOffButton_Click" Margin="0,0,8,0"/>
+                                            <Button Grid.Column="1" Name="LandButton" Content="Land" Style="{StaticResource MutedButton}" Click="LandButton_Click" Margin="8,0,0,0"/>
+                                        </Grid>
+                                        <TextBlock Text="Tip: Take Off enables live telemetry + battery drain." Foreground="#9CA3AF" FontSize="11" Margin="0,10,0,0"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Style="{StaticResource CardSubtle}">
+                                    <StackPanel>
+                                        <TextBlock Text="Altitude" Style="{StaticResource SectionTitle}"/>
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <Button Grid.Column="0" Name="MoveUpButton" Content="Increase (↑)" Style="{StaticResource ModernButtonStyle}" Click="MoveUpButton_Click" Margin="0,0,8,0"/>
+                                            <Button Grid.Column="1" Name="MoveDownButton" Content="Decrease (↓)" Style="{StaticResource ModernButtonStyle}" Click="MoveDownButton_Click" Margin="8,0,0,0"/>
+                                        </Grid>
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Style="{StaticResource CardSubtle}">
+                                    <StackPanel>
+                                        <TextBlock Text="Missions" Style="{StaticResource SectionTitle}"/>
+                                        <Grid Margin="0,0,0,6">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <Button Grid.Column="0" Name="StartPatrolButton" Content="Start Patrol" Style="{StaticResource PrimaryActionButton}" Click="StartPatrolButton_Click" Margin="0,0,8,0"/>
+                                            <Button Grid.Column="1" Name="StopPatrolButton" Content="Stop Patrol" Style="{StaticResource MutedButton}" Click="StopPatrolButton_Click" Margin="8,0,0,0"/>
+                                        </Grid>
+                                        <Button Name="ReturnHomeButton" Content="Return to Base" Style="{StaticResource ModernButtonStyle}" Click="ReturnHomeButton_Click"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Style="{StaticResource CardSubtle}">
+                                    <StackPanel>
+                                        <TextBlock Text="Emergency" Style="{StaticResource SectionTitle}"/>
+                                        <Button Name="EmergencyStopButton" Content="EMERGENCY STOP" Style="{StaticResource DangerActionButton}" Click="EmergencyStopButton_Click"/>
+                                    </StackPanel>
+                                </Border>
+
                             </StackPanel>
                         </Border>
                         <!-- Live Data Display -->
-                        <Border Grid.Column="1" Background="#2D2D2D" BorderBrush="#475569" BorderThickness="1" CornerRadius="10" Margin="0,0,0,0" Padding="18">
+                        <Border Grid.Column="1" Background="#2D2D2D" BorderBrush="#475569" BorderThickness="1" CornerRadius="10" Margin="16,0,16,0" Padding="18">
                             <Grid>
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto"/>
@@ -583,217 +676,102 @@
                                             <TextBlock Grid.Column="0" Text="Current Zone:" Style="{StaticResource DataLabelStyle}"/>
                                             <TextBlock Grid.Column="1" Name="CurrentZoneText" Text="Zone-A" Style="{StaticResource DataValueStyle}"/>
                                         </Grid>
-
-                                        <Grid Margin="0,15">
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="120"/>
-                                                <ColumnDefinition Width="*"/>
-                                            </Grid.ColumnDefinitions>
-                                            <TextBlock Grid.Column="0" Text="Recording:" Style="{StaticResource DataLabelStyle}"/>
-                                            <StackPanel Grid.Column="1" Orientation="Horizontal">
-                                                <Ellipse Name="RecordingIndicator" Fill="Gray" Style="{StaticResource StatusIndicatorStyle}"/>
-                                                <TextBlock Name="RecordingStatusText" Text="Stopped" Style="{StaticResource DataValueStyle}"/>
-                                            </StackPanel>
-                                        </Grid>
                                     </StackPanel>
                                 </ScrollViewer>
                             </Grid>
                         </Border>
-                        <!-- Connection & Recording -->
-                        <Border Grid.Column="2" Background="#2D2D2D" BorderBrush="#475569" BorderThickness="1" CornerRadius="10" Margin="16,0,0,0" Padding="18">
+                        
+                        <!-- Alert Validation Panel -->
+                        <Border Grid.Column="2" Background="#2D2D2D" BorderBrush="#475569" BorderThickness="1" CornerRadius="10" Margin="0,0,0,0" Padding="18">
                             <StackPanel>
-                                <TextBlock Text="Connection &amp; Recording" Style="{StaticResource HeaderTextStyle}" FontSize="16"/>
-                                <Grid Margin="0,10">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto"/>
-                                        <ColumnDefinition Width="*"/>
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock Grid.Column="0" Text="Status:" Style="{StaticResource DataLabelStyle}"/>
-                                    <StackPanel Grid.Column="1" Orientation="Horizontal">
-                                        <Ellipse Name="DroneConnectionIndicator" Fill="Red" Style="{StaticResource StatusIndicatorStyle}"/>
-                                        <TextBlock Name="DroneConnectionText" Text="Disconnected" Style="{StaticResource DataValueStyle}"/>
+                                <TextBlock Text="Alert Validation" Style="{StaticResource HeaderTextStyle}" FontSize="16" Margin="0,0,0,15"/>
+                                
+                                <Border Style="{StaticResource CardSubtle}">
+                                    <StackPanel>
+                                        <TextBlock Text="Validation Status" Style="{StaticResource SectionTitle}"/>
+                                        <Grid Margin="0,5">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Grid.Column="0" Text="Status:" Style="{StaticResource DataLabelStyle}"/>
+                                            <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                                <Ellipse Name="ValidationStatusIndicator" Fill="Gray" Style="{StaticResource StatusIndicatorStyle}"/>
+                                                <TextBlock Name="ValidationStatusText" Text="Idle" Style="{StaticResource DataValueStyle}"/>
+                                            </StackPanel>
+                                        </Grid>
                                     </StackPanel>
-                                </Grid>
-                                <Button Name="ConnectDroneButton" Content="Connect Drone" Style="{StaticResource ModernButtonStyle}" Click="ConnectDroneButton_Click"/>
-                                <Button Name="StartRecordingButton" Content="Start Recording" Style="{StaticResource ModernButtonStyle}" Click="StartRecordingButton_Click"/>
-                                <Button Name="CalibrateGPSButton" Content="Calibrate GPS" Style="{StaticResource ModernButtonStyle}" Click="CalibrateGPSButton_Click"/>
-                                <Separator Style="{StaticResource DarkSeparator}"/>
-                                <Grid Margin="0,10">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto"/>
-                                        <ColumnDefinition Width="*"/>
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock Grid.Column="0" Text="Status:" Style="{StaticResource DataLabelStyle}"/>
-                                    <StackPanel Grid.Column="1" Orientation="Horizontal">
-                                        <Ellipse Name="NetworkStatusIndicator" Fill="Green" Style="{StaticResource StatusIndicatorStyle}"/>
-                                        <TextBlock Name="NetworkStatusText" Text="Connected" Style="{StaticResource DataValueStyle}"/>
+                                </Border>
+
+                                <Border Style="{StaticResource CardSubtle}">
+                                    <StackPanel>
+                                        <TextBlock Text="Drone Configuration" Style="{StaticResource SectionTitle}"/>
+                                        <TextBlock Text="Drone ID" Style="{StaticResource DataLabelStyle}"/>
+                                        <TextBox Name="ValidationDroneIdTextBox" Style="{StaticResource DarkTextBox}" Margin="0,6,0,10" Text="drone_001"/>
+
+                                        <Grid Margin="0,5">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <StackPanel Grid.Column="0" Margin="0,0,8,0">
+                                                <TextBlock Text="Latitude" Style="{StaticResource DataLabelStyle}"/>
+                                                <TextBox Name="ValidationLatitudeTextBox" Style="{StaticResource DarkTextBox}" Margin="0,6,0,0" Text="0.0"/>
+                                            </StackPanel>
+                                            <StackPanel Grid.Column="1" Margin="8,0,0,0">
+                                                <TextBlock Text="Longitude" Style="{StaticResource DataLabelStyle}"/>
+                                                <TextBox Name="ValidationLongitudeTextBox" Style="{StaticResource DarkTextBox}" Margin="0,6,0,0" Text="0.0"/>
+                                            </StackPanel>
+                                        </Grid>
+
+                                        <TextBlock Text="Altitude (m)" Style="{StaticResource DataLabelStyle}"/>
+                                        <TextBox Name="ValidationAltitudeTextBox" Style="{StaticResource DarkTextBox}" Margin="0,6,0,10" Text="50"/>
                                     </StackPanel>
-                                </Grid>
-                                <Grid Margin="0,5">
+                                </Border>
+
+                                <Border Style="{StaticResource CardSubtle}">
+                                    <StackPanel>
+                                        <TextBlock Text="Initial Position (Current)" Style="{StaticResource SectionTitle}"/>
+                                        <Grid Margin="0,5">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Grid.Column="0" Text="Latitude:" Style="{StaticResource DataLabelStyle}"/>
+                                            <TextBlock Grid.Column="1" Name="InitialLatitudeText" Text="0.000000" Style="{StaticResource DataValueStyle}"/>
+                                        </Grid>
+                                        <Grid Margin="0,5">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Grid.Column="0" Text="Longitude:" Style="{StaticResource DataLabelStyle}"/>
+                                            <TextBlock Grid.Column="1" Name="InitialLongitudeText" Text="0.000000" Style="{StaticResource DataValueStyle}"/>
+                                        </Grid>
+                                        <Grid Margin="0,5">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Grid.Column="0" Text="Altitude:" Style="{StaticResource DataLabelStyle}"/>
+                                            <TextBlock Grid.Column="1" Name="InitialAltitudeText" Text="0.0 m" Style="{StaticResource DataValueStyle}"/>
+                                        </Grid>
+                                    </StackPanel>
+                                </Border>
+
+                                <Grid Margin="0,0,0,6">
                                     <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
                                         <ColumnDefinition Width="*"/>
                                     </Grid.ColumnDefinitions>
-                                    <TextBlock Grid.Column="0" Text="Signal:" Style="{StaticResource DataLabelStyle}"/>
-                                    <ProgressBar Name="SignalStrengthBar" Grid.Column="1" Height="15" Maximum="100" Value="85" Style="{StaticResource DarkProgressBar}" Margin="5,0"/>
-                                </Grid>
-                                <Grid Margin="0,5">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto"/>
-                                        <ColumnDefinition Width="*"/>
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock Grid.Column="0" Text="Strength:" Style="{StaticResource DataLabelStyle}"/>
-                                    <TextBlock Grid.Column="1" Name="SignalStrengthText" Text="85%" Style="{StaticResource DataValueStyle}"/>
-                                </Grid>
-                            </StackPanel>
-                        </Border>
-                    </Grid>
-                </TabItem>
-
-                <!-- Data Processing Tab -->
-                <TabItem Header="Data Processing" Foreground="White" Style="{StaticResource DarkTabItem}">
-                    <Grid Margin="10">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="300"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-
-                        <!-- Processing Controls -->
-                        <Border Grid.Column="0" Background="#2D2D2D" BorderBrush="#FF404040" BorderThickness="1" CornerRadius="5">
-                            <StackPanel Margin="15">
-                                <TextBlock Text="Processing Controls" Style="{StaticResource HeaderTextStyle}"/>
-                                
-                                <Button Name="StartProcessingButton" Content="Start Processing" Style="{StaticResource ModernButtonStyle}" Click="StartProcessingButton_Click"/>
-                                <Button Name="StopProcessingButton" Content="Stop Processing" Style="{StaticResource ModernButtonStyle}" Click="StopProcessingButton_Click"/>
-                                <Button Name="ClearQueueButton" Content="Clear Queue" Style="{StaticResource ModernButtonStyle}" Click="ClearQueueButton_Click"/>
-
-                                <Separator Style="{StaticResource DarkSeparator}"/>
-
-                                <TextBlock Text="Statistics" Style="{StaticResource HeaderTextStyle}"/>
-                                
-                                <Grid Margin="0,5">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto"/>
-                                        <ColumnDefinition Width="*"/>
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock Grid.Column="0" Text="Processed:" Style="{StaticResource DataLabelStyle}"/>
-                                    <TextBlock Grid.Column="1" Name="PacketsProcessedText" Text="0" Style="{StaticResource DataValueStyle}"/>
+                                    <Button Grid.Column="0" Name="GoToPositionButton" Content="Go to Position" Style="{StaticResource PrimaryActionButton}" Click="GoToPositionButton_Click" Margin="0,0,8,0"/>
+                                    <Button Grid.Column="1" Name="StopValidationButton" Content="Stop Validation" Style="{StaticResource DangerActionButton}" Click="StopValidationButton_Click" Margin="8,0,0,0"/>
                                 </Grid>
 
-                                <Grid Margin="0,5">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto"/>
-                                        <ColumnDefinition Width="*"/>
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock Grid.Column="0" Text="Queue Size:" Style="{StaticResource DataLabelStyle}"/>
-                                    <TextBlock Grid.Column="1" Name="QueueSizeText" Text="0" Style="{StaticResource DataValueStyle}"/>
-                                </Grid>
-
-                                <Grid Margin="0,5">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto"/>
-                                        <ColumnDefinition Width="*"/>
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock Grid.Column="0" Text="Avg Time:" Style="{StaticResource DataLabelStyle}"/>
-                                    <TextBlock Grid.Column="1" Name="AvgProcessingTimeText" Text="0.0 ms" Style="{StaticResource DataValueStyle}"/>
-                                </Grid>
-
-                                <Separator Style="{StaticResource DarkSeparator}"/>
-
-                                <TextBlock Text="Simulate Data" Style="{StaticResource HeaderTextStyle}"/>
-                                
-                                <CheckBox Name="TelemetryCheckBox" Content="Telemetry" Style="{StaticResource DarkCheckBox}" IsChecked="True" Margin="0,5"/>
-                                <CheckBox Name="SensorCheckBox" Content="Sensor Data" Style="{StaticResource DarkCheckBox}" IsChecked="True" Margin="0,2"/>
-                                <CheckBox Name="ImageCheckBox" Content="Image Data" Style="{StaticResource DarkCheckBox}" IsChecked="False" Margin="0,2"/>
-                                <CheckBox Name="GPSCheckBox" Content="GPS Data" Style="{StaticResource DarkCheckBox}" IsChecked="True" Margin="0,2"/>
-                                <CheckBox Name="BatteryCheckBox" Content="Battery Data" Style="{StaticResource DarkCheckBox}" IsChecked="True" Margin="0,2"/>
-
-                                <Button Name="SimulateDataButton" Content="Simulate Data Packets" Style="{StaticResource ModernButtonStyle}" Click="SimulateDataButton_Click"/>
                             </StackPanel>
                         </Border>
 
-                        <!-- Processing Events -->
-                        <Border Grid.Column="1" Background="#2D2D2D" BorderBrush="#FF404040" BorderThickness="1" CornerRadius="5" Margin="10,0,0,0">
-                            <Grid>
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="*"/>
-                                </Grid.RowDefinitions>
-
-                                <TextBlock Grid.Row="0" Text="Processing Events" Style="{StaticResource HeaderTextStyle}" Margin="15"/>
-                                
-                                <ListBox Grid.Row="1" Name="ProcessingEventsListBox" Style="{StaticResource DarkListBox}" 
-                                         Margin="15" FontFamily="Consolas" FontSize="11"/>
-                            </Grid>
-                        </Border>
                     </Grid>
-                </TabItem>
-
-                <!-- AI Models Tab -->
-                <TabItem Header="AI Models" Foreground="White" Style="{StaticResource DarkTabItem}">
-                    <Grid Margin="10">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="300"/>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="200"/>
-                        </Grid.ColumnDefinitions>
-
-                        <!-- Model Controls -->
-                        <Border Grid.Column="0" Background="#2D2D2D" BorderBrush="#FF404040" BorderThickness="1" CornerRadius="5">
-                            <StackPanel Margin="15">
-                                <TextBlock Text="Model Management" Style="{StaticResource HeaderTextStyle}"/>
-                                
-                                <Button Name="InstallModelButton" Content="Install Model" Style="{StaticResource ModernButtonStyle}" Click="InstallModelButton_Click"/>
-                                <Button Name="ActivateModelButton" Content="Activate Model" Style="{StaticResource ModernButtonStyle}" Click="ActivateModelButton_Click"/>
-                                <Button Name="DeactivateModelButton" Content="Deactivate Model" Style="{StaticResource ModernButtonStyle}" Click="DeactivateModelButton_Click"/>
-                                <Button Name="UninstallModelButton" Content="Uninstall Model" Style="{StaticResource ModernButtonStyle}" Click="UninstallModelButton_Click"/>
-
-                                <Separator Style="{StaticResource DarkSeparator}"/>
-
-                                <Button Name="ProcessTestImageButton" Content="Process Test Image" Style="{StaticResource ModernButtonStyle}" Click="ProcessTestImageButton_Click"/>
-                                <Button Name="RefreshModelsButton" Content="Refresh List" Style="{StaticResource ModernButtonStyle}" Click="RefreshModelsButton_Click"/>
-                            </StackPanel>
-                        </Border>
-
-                        <!-- AI Models List -->
-                        <Border Grid.Column="1" Background="#2D2D2D" BorderBrush="#FF404040" BorderThickness="1" CornerRadius="5" Margin="10,0">
-                            <Grid>
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="*"/>
-                                </Grid.RowDefinitions>
-
-                                <TextBlock Grid.Row="0" Text="Available AI Models" Style="{StaticResource HeaderTextStyle}" Margin="15"/>
-                                
-                                <DataGrid Grid.Row="1" Name="AIModelsDataGrid" Style="{StaticResource DarkDataGrid}" 
-                                          Margin="15">
-                                    <DataGrid.ColumnHeaderStyle>
-                                        <Style TargetType="DataGridColumnHeader" BasedOn="{StaticResource DarkDataGridColumnHeader}"/>
-                                    </DataGrid.ColumnHeaderStyle>
-                                    <DataGrid.CellStyle>
-                                        <Style TargetType="DataGridCell" BasedOn="{StaticResource DarkDataGridCell}"/>
-                                    </DataGrid.CellStyle>
-                                </DataGrid>
-                            </Grid>
-                        </Border>
-
-                        <!-- Active Models -->
-                        <Border Grid.Column="2" Background="#2D2D2D" BorderBrush="#FF404040" BorderThickness="1" CornerRadius="5">
-                            <Grid>
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="*"/>
-                                </Grid.RowDefinitions>
-
-                                <TextBlock Grid.Row="0" Text="Active Models" Style="{StaticResource HeaderTextStyle}" Margin="15"/>
-                                
-                                <ListBox Grid.Row="1" Name="ActiveModelsListBox" Style="{StaticResource DarkListBox}" 
-                                         Margin="15" FontSize="11"/>
-                            </Grid>
-                        </Border>
-                    </Grid>
-                </TabItem>
-            </TabControl>
         </Border>
     </Grid>
 </Window>

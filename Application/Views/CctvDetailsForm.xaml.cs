@@ -73,7 +73,7 @@ namespace DroneSurveillanceSystem.Views
             }
         }
 
-        private void CancelButton_Click(object sender, RoutedEventArgs e)
+        private void CloseButton_Click(object sender, RoutedEventArgs e)
         {
             DialogResult = false;
             this.Close();

@@ -2,10 +2,11 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         WindowStartupLocation="CenterScreen"
-        WindowState="Maximized"
+        WindowState="Normal"
         ResizeMode="CanResize"
+        WindowStyle="None"
         Background="#1A1A1A"
-        MinHeight="800" MinWidth="1200">
+        Height="700" Width="900">
 
     <Window.Resources>
         <Style x:Key="ModernTextBox" TargetType="TextBox">
@@ -223,19 +224,33 @@
 
         <!-- Header -->
         <Border Grid.Row="0" Background="#2d2d2d" CornerRadius="8" Padding="20" Margin="0,0,0,30">
-            <StackPanel HorizontalAlignment="Center">
-                <TextBlock Text="📷" FontSize="48" HorizontalAlignment="Center" Margin="0,0,0,10"/>
-                <TextBlock Text="CCTV Details Form" 
-                           Foreground="White" 
-                           FontSize="24" 
-                           FontWeight="Bold" 
-                           HorizontalAlignment="Center"/>
-                <TextBlock Text="Enter camera configuration details" 
-                           Foreground="#ccc" 
-                           FontSize="14" 
-                           HorizontalAlignment="Center" 
-                           Margin="0,5,0,0"/>
-            </StackPanel>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0" HorizontalAlignment="Center">
+                    <TextBlock Text="📷" FontSize="48" HorizontalAlignment="Center" Margin="0,0,0,10"/>
+                    <TextBlock Text="CCTV Details Form" 
+                               Foreground="White" 
+                               FontSize="24" 
+                               FontWeight="Bold" 
+                               HorizontalAlignment="Center"/>
+                    <TextBlock Text="Enter camera configuration details" 
+                               Foreground="#ccc" 
+                               FontSize="14" 
+                               HorizontalAlignment="Center" 
+                               Margin="0,5,0,0"/>
+                </StackPanel>
+                <Button Grid.Column="1" x:Name="CloseButton" 
+                        Content="Close" 
+                        Background="#FF5252" 
+                        Foreground="White" 
+                        FontWeight="Bold"
+                        Padding="12,8"
+                        Click="CloseButton_Click"
+                        Style="{StaticResource PrimaryButton}"/>
+            </Grid>
         </Border>
 
         <!-- Form Content -->
@@ -336,11 +351,8 @@
                         Content="💾 Save Configuration" 
                         Style="{StaticResource PrimaryButton}" 
                         Click="SaveButton_Click" 
-                        Margin="0,0,15,0"/>
-                <Button x:Name="CancelButton" 
-                        Content="❌ Cancel" 
-                        Style="{StaticResource SecondaryButton}" 
-                        Click="CancelButton_Click"/>
+                        Margin="0,0,15,0"
+                        Width="160"/>
             </StackPanel>
         </Border>
     </Grid>

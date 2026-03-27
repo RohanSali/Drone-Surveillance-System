@@ -633,13 +633,21 @@ namespace DroneSurveillanceSystem.Services
                 }
 
                 // Try to parse battery if numeric (ignore unknown)
-                if (!string.IsNullOrWhiteSpace(batteryStatus) && int.TryParse(batteryStatus, out var batteryPct))
+                if (!string.IsNullOrWhiteSpace(batteryStatus))
                 {
-                    var clamped = Math.Max(0, Math.Min(100, batteryPct));
-                    if (drone.BatteryLevel != clamped)
+                    var raw = batteryStatus.Trim();
+                    if (raw.EndsWith("%", StringComparison.Ordinal)) raw = raw[..^1].Trim();
+
+                    if (double.TryParse(raw, NumberStyles.Float, CultureInfo.InvariantCulture, out var batteryPct) ||
+                        double.TryParse(raw, NumberStyles.Float, CultureInfo.CurrentCulture, out batteryPct))
                     {
-                        drone.BatteryLevel = clamped;
-                        changed = true;
+                        var clamped = Math.Max(0, Math.Min(100, batteryPct));
+                        var asInt = (int)Math.Round(clamped, MidpointRounding.AwayFromZero);
+                        if (drone.BatteryLevel != asInt)
+                        {
+                            drone.BatteryLevel = asInt;
+                            changed = true;
+                        }
                     }
                 }
 

@@ -14,6 +14,7 @@ using System.Linq; // Added for .OfType() and .FirstOrDefault()
 using System.Windows; // Added for Window
 using System.Threading; // Added for Timer
 using System.Net.WebSockets; // Added for WebSocketCloseStatus
+using System.Globalization;
 
 namespace DroneSurveillanceSystem.Services
 {
@@ -521,9 +522,45 @@ namespace DroneSurveillanceSystem.Services
                                         {
                                             var posVal = dataObj["position"];
                                             if (posVal is Newtonsoft.Json.Linq.JArray arr)
+                                            {
                                                 position = arr.ToObject<double[]>();
+                                            }
+                                            else if (posVal is Newtonsoft.Json.Linq.JObject obj)
+                                            {
+                                                // Python drone client can send "position" as an object/dict.
+                                                // Support common key variants: lat/lon/alt, latitude/longitude/altitude.
+                                                double? lat = obj["lat"]?.ToObject<double?>() ?? obj["latitude"]?.ToObject<double?>();
+                                                double? lon = obj["lon"]?.ToObject<double?>() ?? obj["lng"]?.ToObject<double?>() ?? obj["longitude"]?.ToObject<double?>();
+                                                double? alt = obj["alt"]?.ToObject<double?>() ?? obj["altitude"]?.ToObject<double?>();
+
+                                                if (lat.HasValue && lon.HasValue)
+                                                {
+                                                    position = new[] { lat.Value, lon.Value, alt ?? 0.0 };
+                                                }
+                                            }
                                             else if (posVal != null)
-                                                position = JsonConvert.DeserializeObject<double[]>(posVal.ToString());
+                                            {
+                                                // Could be JSON array or JSON object serialized as string.
+                                                var posStr = posVal.ToString();
+                                                if (!string.IsNullOrWhiteSpace(posStr))
+                                                {
+                                                    if (posStr.TrimStart().StartsWith("{", StringComparison.Ordinal))
+                                                    {
+                                                        var jobj = JsonConvert.DeserializeObject<Newtonsoft.Json.Linq.JObject>(posStr);
+                                                        double? lat = jobj?["lat"]?.ToObject<double?>() ?? jobj?["latitude"]?.ToObject<double?>();
+                                                        double? lon = jobj?["lon"]?.ToObject<double?>() ?? jobj?["lng"]?.ToObject<double?>() ?? jobj?["longitude"]?.ToObject<double?>();
+                                                        double? alt = jobj?["alt"]?.ToObject<double?>() ?? jobj?["altitude"]?.ToObject<double?>();
+                                                        if (lat.HasValue && lon.HasValue)
+                                                        {
+                                                            position = new[] { lat.Value, lon.Value, alt ?? 0.0 };
+                                                        }
+                                                    }
+                                                    else
+                                                    {
+                                                        position = JsonConvert.DeserializeObject<double[]>(posStr);
+                                                    }
+                                                }
+                                            }
                                         }
                                     }
                                     catch { }
@@ -551,7 +588,16 @@ namespace DroneSurveillanceSystem.Services
                                                 lat = position[0]; lon = position[1]; alt = position[2];
                                             }
                                             double? bat = null;
-                                            if (!string.IsNullOrWhiteSpace(battery) && double.TryParse(battery, out var b)) bat = b;
+                                            if (!string.IsNullOrWhiteSpace(battery))
+                                            {
+                                                var raw = battery.Trim();
+                                                if (raw.EndsWith("%", StringComparison.Ordinal)) raw = raw[..^1].Trim();
+                                                if (double.TryParse(raw, NumberStyles.Float, CultureInfo.InvariantCulture, out var b) ||
+                                                    double.TryParse(raw, NumberStyles.Float, CultureInfo.CurrentCulture, out b))
+                                                {
+                                                    bat = b;
+                                                }
+                                            }
                                             DroneTrackingService.Instance.UpdateFromTelemetry(droneId!, lat, lon, alt, bat, status, ts);
                                         }
                                         catch { }
