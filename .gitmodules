@@ -1,1 +1,4 @@
 
+[submodule "Vira-Communication-Server"]
+	path = Vira-Communication-Server
+	url = https://github.com/ViraDss/Vira-Communication-Server.git
