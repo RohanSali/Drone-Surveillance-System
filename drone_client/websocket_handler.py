@@ -145,7 +145,7 @@ class DroneWebSocketHandler:
         try:
             with open(TARGETS_FILE, "a") as f:
                 f.write(json.dumps(data.get("data", {})) + "\n")
-            print(f"🎯 Target saved to {TARGETS_FILE}: {data}")
+            print(f"🎯 Target received: {data}")
         except Exception as e:
             print(f"❌ Error saving target: {e}")
 

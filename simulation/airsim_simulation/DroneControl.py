@@ -21,7 +21,7 @@ from drone_client.capture_engine import validate_error
 current_dir = os.path.dirname(os.path.abspath(__file__))
 project_dir = os.path.abspath(os.path.join(current_dir, '..', '..'))
 
-DRONE_NAME = "Drone_Rohan"
+DRONE_NAME = "Drone1"
 DRONE_CORDS_PATH = os.path.join(project_dir,"drone_client","capture_engine","drone_targets.txt")
 DRONE_INFO_PATH = os.path.join(project_dir, "drone_client", "drone_info.json")
 DRONE_TASKS_PATH = os.path.join(project_dir, "drone_client", "drone_tasks.txt")
@@ -310,6 +310,9 @@ def execute_coordinate_queue(coords):
             break
 
         name, x, y, z, yaw, alert_name, alert_id = coord
+        # AirSim uses NED: negative Z = above ground. Ensure Z is always negative.
+        if z > 0:
+            z = -z
         targets_remaining_count = len(coords) - i
         print(f"\n🎯 Going to position {i+1}/{len(coords)}: {name}")
         print(f"   → Coordinates: ({x}, {y}, {z}) | Yaw: {yaw}°")
@@ -400,6 +403,9 @@ def execute_drone_task(task):
     if action == "move":
         x, y, z = pos[0], pos[1], pos[2]
         yaw = pos[3] if len(pos) > 3 else 0
+        # AirSim uses NED: negative Z = above ground. Ensure Z is always negative.
+        if z > 0:
+            z = -z
 
         print(f"\n🔴 HIGH-PRIORITY TASK: Move to ({x}, {y}, {z}) | Yaw: {yaw}°")
         print(f"   Timestamp: {timestamp}")
