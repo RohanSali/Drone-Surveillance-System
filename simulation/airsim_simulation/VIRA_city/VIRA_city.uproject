@@ -13,14 +13,18 @@
 			]
 		}
 	],
-	"TargetPlatforms": [
-		"MacNoEditor",
-		"WindowsNoEditor"
-	],
 	"Plugins": [
 		{
 			"Name": "AirSim",
 			"Enabled": true
+		},
+		{
+			"Name": "GLTFImporter",
+			"Enabled": true
 		}
+	],
+	"TargetPlatforms": [
+		"MacNoEditor",
+		"WindowsNoEditor"
 	]
 }
