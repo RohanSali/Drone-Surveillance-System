@@ -6,13 +6,13 @@
         WindowStyle="None"
         WindowStartupLocation="CenterScreen"
         Background="{StaticResource DarkBackgroundBrush}">
-    
+
     <Window.Resources>
         <!-- Global style to remove focus visual styles -->
         <Style TargetType="Control">
             <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
         </Style>
-        
+
         <!-- Global style for ScrollBar -->
         <Style TargetType="ScrollBar">
             <Setter Property="Background" Value="#FF2D2D30"/>
@@ -137,6 +137,15 @@
             <Setter Property="CornerRadius" Value="12"/>
             <Setter Property="Padding" Value="14"/>
             <Setter Property="Margin" Value="0,0,0,12"/>
+        </Style>
+
+        <Style x:Key="DroneChipButtonStyle" TargetType="Button" BasedOn="{StaticResource ModernButtonStyle}">
+            <Setter Property="MinWidth" Value="110"/>
+            <Setter Property="Height" Value="52"/>
+            <Setter Property="Padding" Value="12,8"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Background" Value="#374151"/>
+            <Setter Property="BorderBrush" Value="#4B5563"/>
         </Style>
 
         <Style x:Key="DarkProgressBar" TargetType="ProgressBar">
@@ -541,237 +550,225 @@
         <!-- Main Content -->
         <Border Grid.Row="1" Background="#1A1A1A" CornerRadius="16" Padding="24" Margin="24,24,24,24">
             <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="300"/>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="340"/>
-                </Grid.ColumnDefinitions>
-                        <!-- Flight Controls -->
-                        <Border Grid.Column="0" Background="#2D2D2D" BorderBrush="#475569" BorderThickness="1" CornerRadius="10" Margin="0,0,16,0" Padding="18">
-                            <StackPanel>
-                                <TextBlock Text="Flight Controls" Style="{StaticResource HeaderTextStyle}" FontSize="18" Margin="0,0,0,14"/>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
 
-                                <Border Style="{StaticResource CardSubtle}">
-                                    <StackPanel>
-                                        <TextBlock Text="Core Actions" Style="{StaticResource SectionTitle}"/>
-                                        <Grid>
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="*"/>
-                                                <ColumnDefinition Width="*"/>
-                                            </Grid.ColumnDefinitions>
-                                            <Button Grid.Column="0" Name="TakeOffButton" Content="Take Off" Style="{StaticResource SuccessActionButton}" Click="TakeOffButton_Click" Margin="0,0,8,0"/>
-                                            <Button Grid.Column="1" Name="LandButton" Content="Land" Style="{StaticResource MutedButton}" Click="LandButton_Click" Margin="8,0,0,0"/>
-                                        </Grid>
-                                        <TextBlock Text="Tip: Take Off enables live telemetry + battery drain." Foreground="#9CA3AF" FontSize="11" Margin="0,10,0,0"/>
-                                    </StackPanel>
-                                </Border>
-
-                                <Border Style="{StaticResource CardSubtle}">
-                                    <StackPanel>
-                                        <TextBlock Text="Altitude" Style="{StaticResource SectionTitle}"/>
-                                        <Grid>
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="*"/>
-                                                <ColumnDefinition Width="*"/>
-                                            </Grid.ColumnDefinitions>
-                                            <Button Grid.Column="0" Name="MoveUpButton" Content="Increase (↑)" Style="{StaticResource ModernButtonStyle}" Click="MoveUpButton_Click" Margin="0,0,8,0"/>
-                                            <Button Grid.Column="1" Name="MoveDownButton" Content="Decrease (↓)" Style="{StaticResource ModernButtonStyle}" Click="MoveDownButton_Click" Margin="8,0,0,0"/>
-                                        </Grid>
-                                    </StackPanel>
-                                </Border>
-
-                                <Border Style="{StaticResource CardSubtle}">
-                                    <StackPanel>
-                                        <TextBlock Text="Missions" Style="{StaticResource SectionTitle}"/>
-                                        <Grid Margin="0,0,0,6">
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="*"/>
-                                                <ColumnDefinition Width="*"/>
-                                            </Grid.ColumnDefinitions>
-                                            <Button Grid.Column="0" Name="StartPatrolButton" Content="Start Patrol" Style="{StaticResource PrimaryActionButton}" Click="StartPatrolButton_Click" Margin="0,0,8,0"/>
-                                            <Button Grid.Column="1" Name="StopPatrolButton" Content="Stop Patrol" Style="{StaticResource MutedButton}" Click="StopPatrolButton_Click" Margin="8,0,0,0"/>
-                                        </Grid>
-                                        <Button Name="ReturnHomeButton" Content="Return to Base" Style="{StaticResource ModernButtonStyle}" Click="ReturnHomeButton_Click"/>
-                                    </StackPanel>
-                                </Border>
-
-                                <Border Style="{StaticResource CardSubtle}">
-                                    <StackPanel>
-                                        <TextBlock Text="Emergency" Style="{StaticResource SectionTitle}"/>
-                                        <Button Name="EmergencyStopButton" Content="EMERGENCY STOP" Style="{StaticResource DangerActionButton}" Click="EmergencyStopButton_Click"/>
-                                    </StackPanel>
-                                </Border>
-
-                            </StackPanel>
+                <!-- Drone Selection Panel (Top) -->
+                <Border Grid.Row="0" Background="#2D2D2D" BorderBrush="#475569" BorderThickness="1" CornerRadius="10" Padding="18" Margin="0,0,0,20">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="🚁 Drone Selection:" Style="{StaticResource HeaderTextStyle}" FontSize="14" VerticalAlignment="Center" Margin="0,0,15,0"/>
+                        <Border Grid.Column="1" Background="#1F2937" BorderBrush="#334155" BorderThickness="1" CornerRadius="8" Padding="8" MaxHeight="90">
+                            <WrapPanel Name="DroneSelectionPanel" Orientation="Horizontal"/>
                         </Border>
-                        <!-- Live Data Display -->
-                        <Border Grid.Column="1" Background="#2D2D2D" BorderBrush="#475569" BorderThickness="1" CornerRadius="10" Margin="16,0,16,0" Padding="18">
-                            <Grid>
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="*"/>
-                                </Grid.RowDefinitions>
-                                <TextBlock Grid.Row="0" Text="Live Flight Data" Style="{StaticResource HeaderTextStyle}" Margin="0,0,0,10" FontSize="16"/>
-                                <ScrollViewer Grid.Row="1" Style="{StaticResource DarkScrollViewer}">
-                                    <StackPanel>
-                                        <Grid Margin="0,5">
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="120"/>
-                                                <ColumnDefinition Width="*"/>
-                                            </Grid.ColumnDefinitions>
-                                            <TextBlock Grid.Column="0" Text="Altitude:" Style="{StaticResource DataLabelStyle}"/>
-                                            <TextBlock Grid.Column="1" Name="AltitudeText" Text="0.0 m" Style="{StaticResource DataValueStyle}"/>
-                                        </Grid>
+                        <StackPanel Grid.Column="2" Orientation="Vertical" VerticalAlignment="Center" Margin="20,0,0,0">
+                            <TextBlock Name="SelectedDroneStatusText" Text="Status: No Drone Selected" Foreground="#9CA3AF" FontSize="11"/>
+                            <TextBlock Name="SelectedDroneInfoText" Text="Select a drone card to activate controls." Foreground="#9CA3AF" FontSize="10" Margin="0,3,0,0"/>
+                        </StackPanel>
+                    </Grid>
+                </Border>
 
-                                        <Grid Margin="0,5">
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="120"/>
-                                                <ColumnDefinition Width="*"/>
-                                            </Grid.ColumnDefinitions>
-                                            <TextBlock Grid.Column="0" Text="Speed:" Style="{StaticResource DataLabelStyle}"/>
-                                            <TextBlock Grid.Column="1" Name="SpeedText" Text="0.0 m/s" Style="{StaticResource DataValueStyle}"/>
-                                        </Grid>
+                <!-- Main Panels -->
+                <Grid Grid.Row="1">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="1.15*"/>
+                        <ColumnDefinition Width="1.85*"/>
+                    </Grid.ColumnDefinitions>
 
-                                        <Grid Margin="0,5">
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="120"/>
-                                                <ColumnDefinition Width="*"/>
-                                            </Grid.ColumnDefinitions>
-                                            <TextBlock Grid.Column="0" Text="GPS:" Style="{StaticResource DataLabelStyle}"/>
-                                            <TextBlock Grid.Column="1" Name="GPSText" Text="0.000000, 0.000000" Style="{StaticResource DataValueStyle}"/>
-                                        </Grid>
+                    <!-- Flight Controls Panel -->
+                    <Border Grid.Column="0" Background="#2D2D2D" BorderBrush="#475569" BorderThickness="1" CornerRadius="10" Margin="0,0,20,0" Padding="18">
+                        <StackPanel>
+                            <TextBlock Text="Flight Controls" Style="{StaticResource HeaderTextStyle}" FontSize="18" Margin="0,0,0,14"/>
 
-                                        <Grid Margin="0,5">
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="120"/>
-                                                <ColumnDefinition Width="*"/>
-                                            </Grid.ColumnDefinitions>
-                                            <TextBlock Grid.Column="0" Text="Battery:" Style="{StaticResource DataLabelStyle}"/>
-                                            <ProgressBar Name="BatteryProgressBar" Grid.Column="1" Height="20" Maximum="100" Value="85" Style="{StaticResource DarkProgressBar}"/>
-                                        </Grid>
+                            <Border Style="{StaticResource CardSubtle}">
+                                <StackPanel>
+                                    <TextBlock Text="Core Actions" Style="{StaticResource SectionTitle}"/>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Button Grid.Column="0" Name="TakeOffButton" Content="Take Off" Style="{StaticResource SuccessActionButton}" Click="TakeOffButton_Click" Margin="0,0,8,0"/>
+                                        <Button Grid.Column="1" Name="LandButton" Content="Land" Style="{StaticResource MutedButton}" Click="LandButton_Click" Margin="8,0,0,0"/>
+                                    </Grid>
+                                    <TextBlock Text="Tip: Take Off enables live telemetry + battery drain." Foreground="#9CA3AF" FontSize="11" Margin="0,10,0,0"/>
+                                </StackPanel>
+                            </Border>
 
-                                        <Grid Margin="0,5">
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="120"/>
-                                                <ColumnDefinition Width="*"/>
-                                            </Grid.ColumnDefinitions>
-                                            <TextBlock Grid.Column="0" Text="Battery %:" Style="{StaticResource DataLabelStyle}"/>
-                                            <TextBlock Grid.Column="1" Name="BatteryPercentText" Text="85.0%" Style="{StaticResource DataValueStyle}"/>
-                                        </Grid>
+                            <Border Style="{StaticResource CardSubtle}">
+                                <StackPanel>
+                                    <TextBlock Text="Altitude" Style="{StaticResource SectionTitle}"/>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Button Grid.Column="0" Name="MoveUpButton" Content="Increase (↑)" Style="{StaticResource ModernButtonStyle}" Click="MoveUpButton_Click" Margin="0,0,8,0"/>
+                                        <Button Grid.Column="1" Name="MoveDownButton" Content="Decrease (↓)" Style="{StaticResource ModernButtonStyle}" Click="MoveDownButton_Click" Margin="8,0,0,0"/>
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
 
-                                        <Grid Margin="0,5">
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="120"/>
-                                                <ColumnDefinition Width="*"/>
-                                            </Grid.ColumnDefinitions>
-                                            <TextBlock Grid.Column="0" Text="Flight Mode:" Style="{StaticResource DataLabelStyle}"/>
-                                            <TextBlock Grid.Column="1" Name="CurrentFlightModeText" Text="Manual" Style="{StaticResource DataValueStyle}"/>
-                                        </Grid>
+                            <Border Style="{StaticResource CardSubtle}">
+                                <StackPanel>
+                                    <TextBlock Text="Missions" Style="{StaticResource SectionTitle}"/>
+                                    <Grid Margin="0,0,0,6">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Button Grid.Column="0" Name="StartPatrolButton" Content="Start Patrol" Style="{StaticResource PrimaryActionButton}" Click="StartPatrolButton_Click" Margin="0,0,8,0"/>
+                                        <Button Grid.Column="1" Name="StopPatrolButton" Content="Stop Patrol" Style="{StaticResource MutedButton}" Click="StopPatrolButton_Click" Margin="8,0,0,0"/>
+                                    </Grid>
+                                    <Button Name="ReturnHomeButton" Content="Return Home" Style="{StaticResource ModernButtonStyle}" Click="ReturnHomeButton_Click"/>
+                                </StackPanel>
+                            </Border>
 
-                                        <Grid Margin="0,5">
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="120"/>
-                                                <ColumnDefinition Width="*"/>
-                                            </Grid.ColumnDefinitions>
-                                            <TextBlock Grid.Column="0" Text="Current Zone:" Style="{StaticResource DataLabelStyle}"/>
-                                            <TextBlock Grid.Column="1" Name="CurrentZoneText" Text="Zone-A" Style="{StaticResource DataValueStyle}"/>
-                                        </Grid>
-                                    </StackPanel>
-                                </ScrollViewer>
-                            </Grid>
-                        </Border>
-                        
-                        <!-- Alert Validation Panel -->
-                        <Border Grid.Column="2" Background="#2D2D2D" BorderBrush="#475569" BorderThickness="1" CornerRadius="10" Margin="0,0,0,0" Padding="18">
-                            <StackPanel>
-                                <TextBlock Text="Alert Validation" Style="{StaticResource HeaderTextStyle}" FontSize="16" Margin="0,0,0,15"/>
-                                
-                                <Border Style="{StaticResource CardSubtle}">
-                                    <StackPanel>
-                                        <TextBlock Text="Validation Status" Style="{StaticResource SectionTitle}"/>
-                                        <Grid Margin="0,5">
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="Auto"/>
-                                                <ColumnDefinition Width="*"/>
-                                            </Grid.ColumnDefinitions>
-                                            <TextBlock Grid.Column="0" Text="Status:" Style="{StaticResource DataLabelStyle}"/>
-                                            <StackPanel Grid.Column="1" Orientation="Horizontal">
-                                                <Ellipse Name="ValidationStatusIndicator" Fill="Gray" Style="{StaticResource StatusIndicatorStyle}"/>
-                                                <TextBlock Name="ValidationStatusText" Text="Idle" Style="{StaticResource DataValueStyle}"/>
-                                            </StackPanel>
-                                        </Grid>
-                                    </StackPanel>
-                                </Border>
+                            <Border Style="{StaticResource CardSubtle}">
+                                <StackPanel>
+                                    <TextBlock Text="Emergency" Style="{StaticResource SectionTitle}"/>
+                                    <Button Name="EmergencyStopButton" Content="EMERGENCY STOP" Style="{StaticResource DangerActionButton}" Click="EmergencyStopButton_Click"/>
+                                </StackPanel>
+                            </Border>
 
-                                <Border Style="{StaticResource CardSubtle}">
-                                    <StackPanel>
-                                        <TextBlock Text="Drone Configuration" Style="{StaticResource SectionTitle}"/>
-                                        <TextBlock Text="Drone ID" Style="{StaticResource DataLabelStyle}"/>
-                                        <TextBox Name="ValidationDroneIdTextBox" Style="{StaticResource DarkTextBox}" Margin="0,6,0,10" Text="drone_001"/>
+                            <Border Style="{StaticResource CardSubtle}">
+                                <StackPanel>
+                                    <TextBlock Text="Current Drone State" Style="{StaticResource SectionTitle}"/>
+                                    <Grid Margin="0,3">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="110"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0" Text="Altitude:" Style="{StaticResource DataLabelStyle}"/>
+                                        <TextBlock Grid.Column="1" Name="AltitudeText" Text="0.0 m" Style="{StaticResource DataValueStyle}"/>
+                                    </Grid>
+                                    <Grid Margin="0,3">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="110"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0" Text="Speed:" Style="{StaticResource DataLabelStyle}"/>
+                                        <TextBlock Grid.Column="1" Name="SpeedText" Text="0.0 m/s" Style="{StaticResource DataValueStyle}"/>
+                                    </Grid>
+                                    <Grid Margin="0,3">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="110"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0" Text="GPS:" Style="{StaticResource DataLabelStyle}"/>
+                                        <TextBlock Grid.Column="1" Name="GPSText" Text="0.000000, 0.000000" Style="{StaticResource DataValueStyle}"/>
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
 
-                                        <Grid Margin="0,5">
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="*"/>
-                                                <ColumnDefinition Width="*"/>
-                                            </Grid.ColumnDefinitions>
-                                            <StackPanel Grid.Column="0" Margin="0,0,8,0">
-                                                <TextBlock Text="Latitude" Style="{StaticResource DataLabelStyle}"/>
-                                                <TextBox Name="ValidationLatitudeTextBox" Style="{StaticResource DarkTextBox}" Margin="0,6,0,0" Text="0.0"/>
-                                            </StackPanel>
-                                            <StackPanel Grid.Column="1" Margin="8,0,0,0">
-                                                <TextBlock Text="Longitude" Style="{StaticResource DataLabelStyle}"/>
-                                                <TextBox Name="ValidationLongitudeTextBox" Style="{StaticResource DarkTextBox}" Margin="0,6,0,0" Text="0.0"/>
-                                            </StackPanel>
-                                        </Grid>
+                        </StackPanel>
+                    </Border>
 
-                                        <TextBlock Text="Altitude (m)" Style="{StaticResource DataLabelStyle}"/>
-                                        <TextBox Name="ValidationAltitudeTextBox" Style="{StaticResource DarkTextBox}" Margin="0,6,0,10" Text="50"/>
-                                    </StackPanel>
-                                </Border>
+                    <!-- Alert Validation Panel -->
+                    <Border Grid.Column="1" Background="#2D2D2D" BorderBrush="#475569" BorderThickness="1" CornerRadius="10" Padding="18">
+                        <ScrollViewer VerticalScrollBarVisibility="Hidden" HorizontalScrollBarVisibility="Hidden" PanningMode="VerticalOnly">
+                        <StackPanel>
+                            <TextBlock Text="Alert Validation" Style="{StaticResource HeaderTextStyle}" FontSize="18" Margin="0,0,0,12"/>
 
-                                <Border Style="{StaticResource CardSubtle}">
-                                    <StackPanel>
-                                        <TextBlock Text="Initial Position (Current)" Style="{StaticResource SectionTitle}"/>
-                                        <Grid Margin="0,5">
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="Auto"/>
-                                                <ColumnDefinition Width="*"/>
-                                            </Grid.ColumnDefinitions>
-                                            <TextBlock Grid.Column="0" Text="Latitude:" Style="{StaticResource DataLabelStyle}"/>
-                                            <TextBlock Grid.Column="1" Name="InitialLatitudeText" Text="0.000000" Style="{StaticResource DataValueStyle}"/>
-                                        </Grid>
-                                        <Grid Margin="0,5">
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="Auto"/>
-                                                <ColumnDefinition Width="*"/>
-                                            </Grid.ColumnDefinitions>
-                                            <TextBlock Grid.Column="0" Text="Longitude:" Style="{StaticResource DataLabelStyle}"/>
-                                            <TextBlock Grid.Column="1" Name="InitialLongitudeText" Text="0.000000" Style="{StaticResource DataValueStyle}"/>
-                                        </Grid>
-                                        <Grid Margin="0,5">
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="Auto"/>
-                                                <ColumnDefinition Width="*"/>
-                                            </Grid.ColumnDefinitions>
-                                            <TextBlock Grid.Column="0" Text="Altitude:" Style="{StaticResource DataLabelStyle}"/>
-                                            <TextBlock Grid.Column="1" Name="InitialAltitudeText" Text="0.0 m" Style="{StaticResource DataValueStyle}"/>
-                                        </Grid>
-                                    </StackPanel>
-                                </Border>
+                            <Border Style="{StaticResource CardSubtle}">
+                                <StackPanel>
+                                    <TextBlock Text="Validation Status" Style="{StaticResource SectionTitle}"/>
+                                    <Grid Margin="0,5">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0" Text="Status:" Style="{StaticResource DataLabelStyle}"/>
+                                        <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                            <Ellipse Name="ValidationStatusIndicator" Fill="Gray" Style="{StaticResource StatusIndicatorStyle}"/>
+                                            <TextBlock Name="ValidationStatusText" Text="Idle" Style="{StaticResource DataValueStyle}"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Style="{StaticResource CardSubtle}">
+                                <StackPanel>
+                                    <TextBlock Text="Alert Position" Style="{StaticResource SectionTitle}"/>
+                                    <TextBlock Text="Where to send the drone" Foreground="#9CA3AF" FontSize="10" Margin="0,0,0,6"/>
+                                    <Grid Margin="0,5">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Grid.Column="0" Margin="0,0,8,0">
+                                            <TextBlock Text="Latitude" Style="{StaticResource DataLabelStyle}"/>
+                                            <TextBox Name="ValidationLatitudeTextBox" Style="{StaticResource DarkTextBox}" Margin="0,6,0,0" Text="" Padding="8,6"/>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="1" Margin="8,0,0,0">
+                                            <TextBlock Text="Longitude" Style="{StaticResource DataLabelStyle}"/>
+                                            <TextBox Name="ValidationLongitudeTextBox" Style="{StaticResource DarkTextBox}" Margin="0,6,0,0" Text="" Padding="8,6"/>
+                                        </StackPanel>
+                                    </Grid>
+
+                                    <TextBlock Text="Altitude (m)" Style="{StaticResource DataLabelStyle}"/>
+                                    <TextBox Name="ValidationAltitudeTextBox" Style="{StaticResource DarkTextBox}" Margin="0,6,0,10" Text="" Padding="8,6"/>
+                                        <TextBlock Text="Yaw (deg)" Style="{StaticResource DataLabelStyle}"/>
+                                        <TextBox Name="ValidationYawTextBox" Style="{StaticResource DarkTextBox}" Margin="0,6,0,0" Text="" Padding="8,6"/>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Style="{StaticResource CardSubtle}">
+                                <StackPanel>
+                                    <TextBlock Text="Starting Position" Style="{StaticResource SectionTitle}"/>
+                                    <TextBlock Text="Drone's current location" Foreground="#9CA3AF" FontSize="10" Margin="0,0,0,6"/>
+                                    <Grid Margin="0,5">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0" Text="Latitude:" Style="{StaticResource DataLabelStyle}"/>
+                                        <TextBlock Grid.Column="1" Name="InitialLatitudeText" Text="--" Style="{StaticResource DataValueStyle}"/>
+                                    </Grid>
+                                    <Grid Margin="0,5">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0" Text="Longitude:" Style="{StaticResource DataLabelStyle}"/>
+                                        <TextBlock Grid.Column="1" Name="InitialLongitudeText" Text="--" Style="{StaticResource DataValueStyle}"/>
+                                    </Grid>
+                                    <Grid Margin="0,5">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0" Text="Altitude:" Style="{StaticResource DataLabelStyle}"/>
+                                        <TextBlock Grid.Column="1" Name="InitialAltitudeText" Text="-- m" Style="{StaticResource DataValueStyle}"/>
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
 
                                 <Grid Margin="0,0,0,6">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*"/>
                                         <ColumnDefinition Width="*"/>
                                     </Grid.ColumnDefinitions>
-                                    <Button Grid.Column="0" Name="GoToPositionButton" Content="Go to Position" Style="{StaticResource PrimaryActionButton}" Click="GoToPositionButton_Click" Margin="0,0,8,0"/>
-                                    <Button Grid.Column="1" Name="StopValidationButton" Content="Stop Validation" Style="{StaticResource DangerActionButton}" Click="StopValidationButton_Click" Margin="8,0,0,0"/>
+                                    <Button Grid.Row="0" Grid.Column="0" Name="GoToPositionButton" Content="Go to Position" Style="{StaticResource PrimaryActionButton}" Click="GoToPositionButton_Click" Margin="0,0,8,8"/>
+                                    <Button Grid.Row="0" Grid.Column="1" Name="StopValidationButton" Content="Stop Validation" Style="{StaticResource DangerActionButton}" Click="StopValidationButton_Click" Margin="8,0,0,8"/>
+                                    <Button Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Name="ValidationReturnToBaseButton" Content="Return to Base" Style="{StaticResource MutedButton}" Click="ValidationReturnToBaseButton_Click" Margin="0,0,0,0"/>
                                 </Grid>
 
-                            </StackPanel>
-                        </Border>
-
-                    </Grid>
+                        </StackPanel>
+                        </ScrollViewer>
+                    </Border>
+                </Grid>
+            </Grid>
         </Border>
     </Grid>
 </Window>

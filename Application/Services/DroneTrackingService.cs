@@ -143,7 +143,7 @@ namespace DroneSurveillanceSystem.Services
 
         // Simulation removed: telemetry updates provided via UpdateFromTelemetry
 
-        public void UpdateFromTelemetry(string droneId, double latitude, double longitude, double altitude, double? batteryPercent, string? status, DateTime? seenUtc = null)
+        public void UpdateFromTelemetry(string droneId, double latitude, double longitude, double altitude, double? batteryPercent, string? status, DateTime? seenUtc = null, double? yawDegrees = null)
         {
             if (string.IsNullOrWhiteSpace(droneId)) return;
             var id = droneId.Trim();
@@ -156,6 +156,8 @@ namespace DroneSurveillanceSystem.Services
             drone.Latitude = latitude;
             drone.Longitude = longitude;
             drone.Altitude = altitude;
+            if (yawDegrees.HasValue)
+                drone.Yaw = yawDegrees.Value;
             if (batteryPercent.HasValue)
             {
                 drone.BatteryLevel = Math.Max(0, Math.Min(100, batteryPercent.Value));
@@ -337,6 +339,8 @@ namespace DroneSurveillanceSystem.Services
         public double Latitude { get; set; }
         public double Longitude { get; set; }
         public double Altitude { get; set; }
+        /// <summary>Heading/yaw in degrees when provided by telemetry (e.g. 4th element of position array).</summary>
+        public double Yaw { get; set; }
         public double Speed { get; set; }
         public double BatteryLevel { get; set; } = 100;
         public double SignalStrength { get; set; } = 85;

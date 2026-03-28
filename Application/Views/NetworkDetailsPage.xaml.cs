@@ -334,6 +334,18 @@ namespace DroneSurveillanceSystem.Views
                 var alert = AlertManager.Instance.ActiveAlerts.FirstOrDefault(a => a.Timestamp == alertTag);
                 if (alert != null)
                 {
+                    /* EXAMPLE: How to use the loading indicator during validation:
+                     * 
+                     * // Show loading indicator
+                     * ShowValidationLoading();
+                     * 
+                     * // Simulate validation task (replace with actual validation code)
+                     * await Task.Delay(3000); // Simulates long-running validation
+                     * 
+                     * // Hide loading indicator when done
+                     * HideValidationLoading();
+                     */
+
                     var alertPopup = new AlertInfoPopup(alert);
                     
                     // Get the parent window instead of using 'this'
@@ -402,6 +414,81 @@ namespace DroneSurveillanceSystem.Views
             
             // Raise the event to notify the parent to close this page
             CloseRequested?.Invoke(this, EventArgs.Empty);
+        }
+
+        // ==================== VALIDATION LOADING INDICATOR METHODS ====================
+        
+        /// <summary>
+        /// Shows the loading indicator during validation process
+        /// </summary>
+        public void ShowValidationLoading()
+        {
+            if (ValidationLoadingOverlay != null)
+            {
+                ValidationLoadingOverlay.Visibility = Visibility.Visible;
+                StartLoadingAnimation();
+            }
+        }
+
+        /// <summary>
+        /// Hides the loading indicator when validation completes
+        /// </summary>
+        public void HideValidationLoading()
+        {
+            if (ValidationLoadingOverlay != null)
+            {
+                ValidationLoadingOverlay.Visibility = Visibility.Collapsed;
+                StopLoadingAnimation();
+            }
+        }
+
+        /// <summary>
+        /// Starts the animated loading circles
+        /// </summary>
+        private void StartLoadingAnimation()
+        {
+            var animationTimer = new DispatcherTimer();
+            animationTimer.Interval = TimeSpan.FromMilliseconds(150);
+            int animationStep = 0;
+
+            animationTimer.Tick += (s, e) =>
+            {
+                if (ValidationLoadingOverlay?.Visibility != Visibility.Visible)
+                {
+                    animationTimer.Stop();
+                    return;
+                }
+
+                animationStep = (animationStep + 1) % 6;
+
+                // Animate circles with scale effect
+                if (LoadingCircle1 != null && LoadingCircle1.RenderTransform is ScaleTransform scale1)
+                {
+                    scale1.ScaleX = scale1.ScaleY = animationStep == 0 ? 1.2 : 1.0;
+                }
+                if (LoadingCircle2 != null && LoadingCircle2.RenderTransform is ScaleTransform scale2)
+                {
+                    scale2.ScaleX = scale2.ScaleY = animationStep == 2 ? 1.2 : 1.0;
+                }
+                if (LoadingCircle3 != null && LoadingCircle3.RenderTransform is ScaleTransform scale3)
+                {
+                    scale3.ScaleX = scale3.ScaleY = animationStep == 4 ? 1.2 : 1.0;
+                }
+            };
+
+            animationTimer.Start();
+            Tag = animationTimer; // Store timer reference to stop it later
+        }
+
+        /// <summary>
+        /// Stops the animated loading circles
+        /// </summary>
+        private void StopLoadingAnimation()
+        {
+            if (Tag is DispatcherTimer timer)
+            {
+                timer.Stop();
+            }
         }
 
         // Event to notify when the network details page should be closed

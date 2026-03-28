@@ -2,7 +2,9 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
+using System.Linq;
 using Newtonsoft.Json;
+using DroneSurveillanceSystem.Views;
 
 namespace DroneSurveillanceSystem.Services
 {
@@ -219,6 +221,108 @@ namespace DroneSurveillanceSystem.Services
         }
 
         /// <summary>
+        /// Dummy RL module: computes a validation midpoint from local cache data.
+        ///
+        /// Cache sources:
+        /// - AlertManager.Instance.ActiveAlerts (alerts, alert_id, alert_location, drone_id)
+        /// - DroneTrackingService.Instance.GetDronePosition(drone_id) (drone_position)
+        /// </summary>
+        public Task<TargetPosMessage?> ComputeValidationMidpointFromCacheAsync(
+            string? alertId,
+            string? droneId,
+            Tuple<double, double, double>? fallbackAlertLocation = null,
+            string? serverAlertId = null,
+            string? serverAlertName = null)
+        {
+            try
+            {
+                var activeAlerts = AlertManager.Instance.ActiveAlerts;
+                AlertData? alert = null;
+
+                if (!string.IsNullOrWhiteSpace(alertId))
+                {
+                    alert = activeAlerts.FirstOrDefault(a =>
+                        !string.IsNullOrWhiteSpace(a.AlertId) &&
+                        string.Equals(a.AlertId, alertId, StringComparison.OrdinalIgnoreCase));
+                }
+
+                if (alert == null && !string.IsNullOrWhiteSpace(droneId))
+                {
+                    alert = activeAlerts
+                        .Where(a => !string.IsNullOrWhiteSpace(a.DroneId) &&
+                                    string.Equals(a.DroneId, droneId, StringComparison.OrdinalIgnoreCase))
+                        .OrderByDescending(a =>
+                        {
+                            if (DateTime.TryParse(a.Timestamp, out var parsed)) return parsed;
+                            return DateTime.MinValue;
+                        })
+                        .FirstOrDefault();
+                }
+
+                var effectiveAlertLocation = alert?.AlertLocation ?? fallbackAlertLocation;
+                if (effectiveAlertLocation == null)
+                {
+                    Console.WriteLine("[DummyRL] Missing alert_location from local cache.");
+                    return Task.FromResult<TargetPosMessage?>(null);
+                }
+
+                var effectiveDroneId = !string.IsNullOrWhiteSpace(droneId)
+                    ? droneId!
+                    : (alert?.DroneId ?? string.Empty);
+
+                if (string.IsNullOrWhiteSpace(effectiveDroneId))
+                {
+                    Console.WriteLine("[DummyRL] Missing drone_id for local cache lookup.");
+                    return Task.FromResult<TargetPosMessage?>(null);
+                }
+
+                var dronePosition = DroneTrackingService.Instance.GetDronePosition(effectiveDroneId);
+                if (dronePosition == null)
+                {
+                    Console.WriteLine($"[DummyRL] Missing drone_position in local cache for {effectiveDroneId}.");
+                    return Task.FromResult<TargetPosMessage?>(null);
+                }
+
+                // midpoint = [(x1+x2)/2, (y1+y2)/2, (z1+z2)/2]
+                var midX = (dronePosition.Latitude + effectiveAlertLocation.Item1) / 2.0;
+                var midY = (dronePosition.Longitude + effectiveAlertLocation.Item2) / 2.0;
+                var midZ = (dronePosition.Altitude + effectiveAlertLocation.Item3) / 2.0;
+                var yawOut = dronePosition.Yaw;
+
+                var resolvedAlertId = !string.IsNullOrWhiteSpace(serverAlertId)
+                    ? serverAlertId!
+                    : (!string.IsNullOrWhiteSpace(alert?.AlertId) ? alert.AlertId! : (alertId ?? string.Empty));
+                var resolvedAlertName = serverAlertName ?? alert?.Alert ?? "Unknown Alert";
+
+                var data = new DummyRlCoordinateOutput
+                {
+                    TargetId = $"target_{Guid.NewGuid():N}",
+                    Location = new[] { midX, midY, midZ, yawOut },
+                    AlertName = resolvedAlertName,
+                    AlertId = resolvedAlertId,
+                    DroneId = effectiveDroneId
+                };
+
+                var output = new TargetPosMessage
+                {
+                    Type = "target_pos",
+                    Data = data
+                };
+
+                Console.WriteLine(
+                    $"[DummyRL] midpoint computed | alert_id={data.AlertId} drone_id={data.DroneId} " +
+                    $"location=[{data.Location[0]:F6}, {data.Location[1]:F6}, {data.Location[2]:F2}, {data.Location[3]:F2}]");
+
+                return Task.FromResult<TargetPosMessage?>(output);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[DummyRL] midpoint processing failed: {ex.Message}");
+                return Task.FromResult<TargetPosMessage?>(null);
+            }
+        }
+
+        /// <summary>
         /// Result model for Python script output
         /// </summary>
         private class CoordinateResult
@@ -232,5 +336,35 @@ namespace DroneSurveillanceSystem.Services
             [JsonProperty("altitude")]
             public double? Altitude { get; set; }
         }
+    }
+
+    public class DummyRlCoordinateOutput
+    {
+        [JsonProperty("target_id")]
+        public string TargetId { get; set; } = string.Empty;
+
+        [JsonProperty("location")]
+        public double[] Location { get; set; } = Array.Empty<double>();
+
+        [JsonProperty("alert_name")]
+        public string AlertName { get; set; } = string.Empty;
+
+        [JsonProperty("alert_id")]
+        public string AlertId { get; set; } = string.Empty;
+
+        [JsonProperty("drone_id")]
+        public string DroneId { get; set; } = string.Empty;
+    }
+
+    /// <summary>
+    /// Message wrapper for target position with message type
+    /// </summary>
+    public class TargetPosMessage
+    {
+        [JsonProperty("type")]
+        public string Type { get; set; } = "target_pos";
+
+        [JsonProperty("data")]
+        public DummyRlCoordinateOutput? Data { get; set; }
     }
 }

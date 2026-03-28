@@ -815,7 +815,7 @@
                     </StackPanel>
 
                     <!-- Networks Section - Fixed to take remaining space and connect to bottom -->
-                    <Border Grid.Row="1" Background="{StaticResource LightGreyBrush}" CornerRadius="8" Padding="12" Margin="0,0,0,8">
+                    <Border Grid.Row="1" Background="{StaticResource LightGreyBrush}" CornerRadius="8" Padding="8" Margin="0,0,0,8">
                         <Grid>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto"/>
@@ -825,41 +825,43 @@
                             <TextBlock Grid.Row="0" Text="NETWORKS" 
                                     Foreground="{StaticResource TextSecondaryBrush}" 
                                     FontSize="12" FontWeight="Bold" 
-                                    Margin="0,0,0,8"/>
+                                    Margin="4,0,0,8"/>
                             
                             <ScrollViewer Grid.Row="1" 
                                         VerticalScrollBarVisibility="Auto" 
                                         HorizontalScrollBarVisibility="Disabled"
-                                        VerticalAlignment="Stretch">
+                                        VerticalAlignment="Stretch"
+                                        Padding="0">
                                 <ItemsControl ItemsSource="{Binding Networks}">
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
                                             <Expander Background="{StaticResource MediumGreyBrush}" 
                                                     BorderBrush="#555555" 
                                                     BorderThickness="1"
-                                                    Margin="0,4"
+                                                    Margin="0,4,0,4"
                                                     Foreground="{StaticResource TextPrimaryBrush}"
                                                     FontSize="11"
                                                     FontWeight="Bold"
-                                                    IsExpanded="True">
+                                                    IsExpanded="True"
+                                                    Padding="0">
                                                 <Expander.HeaderTemplate>
                                                     <DataTemplate>
-                                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="4,0">
                                                             <!-- Network Icon -->
-                                                            <TextBlock Text="🌐" FontSize="14" Foreground="{StaticResource SuccessGreenBrush}" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                                            <!-- Network Name -->
-                                                            <TextBlock Text="{Binding Name}" Foreground="{StaticResource TextPrimaryBrush}" FontSize="12" FontWeight="Bold" VerticalAlignment="Center"/>
+                                                            <TextBlock Text="🌐" FontSize="12" Foreground="{StaticResource SuccessGreenBrush}" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                                            <!-- Network Name - with TextTrimming for overflow -->
+                                                            <TextBlock Text="{Binding Name}" Foreground="{StaticResource TextPrimaryBrush}" FontSize="11" FontWeight="Bold" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
                                                         </StackPanel>
                                                     </DataTemplate>
                                                 </Expander.HeaderTemplate>
                                                 
                                                 <!-- Devices under this network -->
-                                                <StackPanel Margin="8,0,0,0">
+                                                <StackPanel Margin="6,0,4,4">
                                                     <!-- Drones List -->
                                                     <ItemsControl ItemsSource="{Binding Drones}">
                                                         <ItemsControl.ItemTemplate>
                                                             <DataTemplate>
-                                                                <Border Background="{StaticResource DarkGreyBrush}" CornerRadius="6" Padding="8" Margin="0,2">
+                                                                <Border Background="{StaticResource DarkGreyBrush}" CornerRadius="4" Padding="6" Margin="0,1,0,1">
                                                                     <Grid>
                                                                         <Grid.ColumnDefinitions>
                                                                             <ColumnDefinition Width="Auto"/>
@@ -867,14 +869,14 @@
                                                                             <ColumnDefinition Width="Auto"/>
                                                                         </Grid.ColumnDefinitions>
                                                                         <!-- Drone Icon -->
-                                                                        <TextBlock Grid.Column="0" Text="🚁" FontSize="12" Foreground="{StaticResource SuccessGreenBrush}" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                                                        <TextBlock Grid.Column="0" Text="🚁" FontSize="11" Foreground="{StaticResource SuccessGreenBrush}" VerticalAlignment="Center" Margin="0,0,5,0"/>
                                                                         <!-- Drone Info -->
                                                                         <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                                                            <TextBlock Text="{Binding Name}" Foreground="{StaticResource TextPrimaryBrush}" FontSize="10" FontWeight="Bold"/>
-                                                                            <TextBlock Text="{Binding StatusText}" Foreground="{StaticResource TextTertiaryBrush}" FontSize="8"/>
+                                                                            <TextBlock Text="{Binding Name}" Foreground="{StaticResource TextPrimaryBrush}" FontSize="9" FontWeight="Bold" TextTrimming="CharacterEllipsis"/>
+                                                                            <TextBlock Text="{Binding StatusText}" Foreground="{StaticResource TextTertiaryBrush}" FontSize="7" TextTrimming="CharacterEllipsis"/>
                                                                         </StackPanel>
                                                                         <!-- Status Indicator -->
-                                                                        <Ellipse Grid.Column="2" Width="6" Height="6" Fill="{Binding StatusText, Converter={StaticResource ActiveStatusDotConverter}}" VerticalAlignment="Center"/>
+                                                                        <Ellipse Grid.Column="2" Width="5" Height="5" Fill="{Binding StatusText, Converter={StaticResource ActiveStatusDotConverter}}" VerticalAlignment="Center" Margin="4,0,0,0"/>
                                                                     </Grid>
                                                                 </Border>
                                                             </DataTemplate>
@@ -882,10 +884,10 @@
                                                     </ItemsControl>
 
                                                     <!-- CCTVs List -->
-                                                    <ItemsControl ItemsSource="{Binding Cctvs}" Margin="0,6,0,0">
+                                                    <ItemsControl ItemsSource="{Binding Cctvs}" Margin="0,4,0,0">
                                                         <ItemsControl.ItemTemplate>
                                                             <DataTemplate>
-                                                                <Border Background="{StaticResource DarkGreyBrush}" CornerRadius="6" Padding="8" Margin="0,2">
+                                                                <Border Background="{StaticResource DarkGreyBrush}" CornerRadius="4" Padding="6" Margin="0,1,0,1">
                                                                     <Grid>
                                                                         <Grid.ColumnDefinitions>
                                                                             <ColumnDefinition Width="Auto"/>
@@ -893,14 +895,14 @@
                                                                             <ColumnDefinition Width="Auto"/>
                                                                         </Grid.ColumnDefinitions>
                                                                         <!-- CCTV Icon -->
-                                                                        <TextBlock Grid.Column="0" Text="📷" FontSize="12" Foreground="{StaticResource WarningOrangeBrush}" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                                                        <TextBlock Grid.Column="0" Text="📷" FontSize="11" Foreground="{StaticResource WarningOrangeBrush}" VerticalAlignment="Center" Margin="0,0,5,0"/>
                                                                         <!-- CCTV Info -->
                                                                         <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                                                            <TextBlock Text="{Binding Name}" Foreground="{StaticResource TextPrimaryBrush}" FontSize="10" FontWeight="Bold"/>
-                                                                            <TextBlock Text="CCTV" Foreground="{StaticResource TextTertiaryBrush}" FontSize="8"/>
+                                                                            <TextBlock Text="{Binding Name}" Foreground="{StaticResource TextPrimaryBrush}" FontSize="9" FontWeight="Bold" TextTrimming="CharacterEllipsis"/>
+                                                                            <TextBlock Text="CCTV" Foreground="{StaticResource TextTertiaryBrush}" FontSize="7"/>
                                                                         </StackPanel>
                                                                         <!-- Status Dot -->
-                                                                        <Ellipse Grid.Column="2" Width="6" Height="6" Fill="{Binding IsOnline, Converter={StaticResource BoolStatusDotConverter}}" VerticalAlignment="Center"/>
+                                                                        <Ellipse Grid.Column="2" Width="5" Height="5" Fill="{Binding IsOnline, Converter={StaticResource BoolStatusDotConverter}}" VerticalAlignment="Center" Margin="4,0,0,0"/>
                                                                     </Grid>
                                                                 </Border>
                                                             </DataTemplate>

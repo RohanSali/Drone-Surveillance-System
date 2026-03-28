@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Windows;
 using System.Windows.Media.Imaging;
 
@@ -15,6 +16,75 @@ namespace DroneSurveillanceSystem.Views
         }
 
         public string? CurrentAlertId => _alertData.AlertId;
+
+        /// <summary>
+        /// Builds a frozen <see cref="BitmapImage"/> from alert image data (data-URI base64, raw base64, or http(s) URL).
+        /// Must run on the UI thread (uses WPF imaging).
+        /// </summary>
+        public static BitmapImage? TryLoadBitmapFromAlertImage(string? raw)
+        {
+            if (string.IsNullOrWhiteSpace(raw))
+                return null;
+
+            var img = raw.Trim();
+
+            try
+            {
+                if (img.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
+                    img.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+                {
+                    var uriBmp = new BitmapImage();
+                    uriBmp.BeginInit();
+                    uriBmp.UriSource = new Uri(img, UriKind.Absolute);
+                    uriBmp.CacheOption = BitmapCacheOption.OnLoad;
+                    uriBmp.CreateOptions = BitmapCreateOptions.IgnoreColorProfile;
+                    uriBmp.EndInit();
+                    uriBmp.Freeze();
+                    return uriBmp;
+                }
+
+                var base64 = img;
+                if (img.StartsWith("data:", StringComparison.OrdinalIgnoreCase))
+                {
+                    var commaIdx = base64.IndexOf(',');
+                    if (commaIdx >= 0)
+                        base64 = base64[(commaIdx + 1)..];
+                }
+
+                base64 = base64.Replace("\r", "").Replace("\n", "").Replace(" ", "");
+                byte[] bytes;
+                try
+                {
+                    bytes = Convert.FromBase64String(base64);
+                }
+                catch (FormatException)
+                {
+                    var alt = base64.Replace('-', '+').Replace('_', '/');
+                    var pad = alt.Length % 4;
+                    if (pad > 0)
+                        alt += new string('=', 4 - pad);
+                    bytes = Convert.FromBase64String(alt);
+                }
+
+                var bmp = new BitmapImage();
+                using (var ms = new MemoryStream(bytes))
+                {
+                    bmp.BeginInit();
+                    bmp.CacheOption = BitmapCacheOption.OnLoad;
+                    bmp.StreamSource = ms;
+                    bmp.CreateOptions = BitmapCreateOptions.IgnoreColorProfile;
+                    bmp.EndInit();
+                }
+
+                bmp.Freeze();
+                return bmp;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[AlertImage] Decode failed: {ex.Message}");
+                return null;
+            }
+        }
 
         private void LoadAlertDetails()
         {
@@ -67,51 +137,20 @@ namespace DroneSurveillanceSystem.Views
                 // RL Response status
                 RLStatusText.Text = _alertData.RLResponsed == 1 ? "✅ Sent" : "❌ Not Sent";
                 
-                // Image status and handling
-                if (_alertData.ImageReceived == 1)
+                var hasPayload = !string.IsNullOrWhiteSpace(_alertData.Image);
+                if (_alertData.ImageReceived == 1 || hasPayload)
                 {
-                    ImageStatusText.Text = "✅ Image Available";
-                    
-                    try
+                    var bmp = TryLoadBitmapFromAlertImage(_alertData.Image);
+                    if (bmp != null)
                     {
-                        BitmapImage bmp;
-                        var img = _alertData.Image ?? string.Empty;
-                        if (img.StartsWith("data:image", StringComparison.OrdinalIgnoreCase) || img.Length > 100)
-                        {
-                            var base64 = img;
-                            var commaIdx = base64.IndexOf(",");
-                            if (commaIdx > 0 && base64.Substring(0, commaIdx).Contains("base64"))
-                            {
-                                base64 = base64[(commaIdx + 1)..];
-                            }
-                            var bytes = Convert.FromBase64String(base64);
-                            using (var ms = new System.IO.MemoryStream(bytes))
-                            {
-                                bmp = new BitmapImage();
-                                bmp.BeginInit();
-                                bmp.CacheOption = BitmapCacheOption.OnLoad;
-                                bmp.StreamSource = ms;
-                                bmp.EndInit();
-                                bmp.Freeze();
-                            }
-                        }
-                        else
-                        {
-                            var imageUri = new Uri(img, UriKind.RelativeOrAbsolute);
-                            bmp = new BitmapImage(imageUri);
-                        }
+                        ImageStatusText.Text = "✅ Image Available";
                         AlertImage.Source = bmp;
-                        
-                        // Show image section and view full image button
                         ImageSection.Visibility = Visibility.Visible;
                         ViewFullImageButton.Visibility = Visibility.Visible;
                     }
-                    catch (Exception ex)
+                    else
                     {
-                        ImageStatusText.Text = "❌ Image failed to load";
-                        System.Diagnostics.Debug.WriteLine($"Error loading image: {ex.Message}");
-                        
-                        // Hide image section and view full image button
+                        ImageStatusText.Text = hasPayload ? "❌ Image failed to decode" : "❌ No image available";
                         ImageSection.Visibility = Visibility.Collapsed;
                         ViewFullImageButton.Visibility = Visibility.Collapsed;
                     }
@@ -119,8 +158,6 @@ namespace DroneSurveillanceSystem.Views
                 else
                 {
                     ImageStatusText.Text = "❌ No image available";
-                    
-                    // Hide image section and view full image button
                     ImageSection.Visibility = Visibility.Collapsed;
                     ViewFullImageButton.Visibility = Visibility.Collapsed;
                 }
@@ -177,18 +214,25 @@ namespace DroneSurveillanceSystem.Views
 
         private void ViewFullImageButton_Click(object sender, RoutedEventArgs e)
         {
-            if (_alertData.ImageReceived == 1 && !string.IsNullOrEmpty(_alertData.Image))
+            if (string.IsNullOrWhiteSpace(_alertData.Image))
+                return;
+
+            try
             {
-                try
-        {
-            var imgViewer = new ImgViewer();
-            imgViewer.Owner = this;
-            imgViewer.Show();
-                }
-                catch (Exception ex)
+                var bmp = TryLoadBitmapFromAlertImage(_alertData.Image);
+                if (bmp == null)
                 {
-                    MessageBox.Show($"Error opening image viewer: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    MessageBox.Show("Could not decode the alert image.", "Image", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
                 }
+
+                var imgViewer = new ImgViewer(bmp);
+                imgViewer.Owner = this;
+                imgViewer.Show();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error opening image viewer: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
