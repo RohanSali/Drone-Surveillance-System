@@ -42,7 +42,7 @@ namespace DroneSurveillanceSystem.Services
         public event EventHandler<AlertReceivedEventArgs>? AlertReceived;
         public event EventHandler<string>? MessageReceived;
 
-        public ApiService(string baseUrl = "wss://new-server-5iyd.onrender.com", string authToken = "")
+        public ApiService(string baseUrl = "wss://vira-communication-server.onrender.com", string authToken = "")
         {
             _baseUrl = baseUrl;
             _authToken = authToken;
@@ -238,7 +238,7 @@ namespace DroneSurveillanceSystem.Services
         private string GenerateWebSocketUrl()
         {
             var appId = GetCurrentAppClientId();
-            var wsUrl = $"wss://new-server-5iyd.onrender.com/ws/application/{appId}";
+            var wsUrl = $"wss://vira-communication-server.onrender.com/ws/application/{appId}";
             return wsUrl;
         }
 
@@ -331,6 +331,42 @@ namespace DroneSurveillanceSystem.Services
             }
         }
 
+        /// <summary>
+        /// Treat non-empty image payload as available; also honor image_received when present.
+        /// </summary>
+        private static int ResolveImageReceivedFromPayload(Dictionary<string, object> data)
+        {
+            if (data.TryGetValue("image", out var imgObj) && imgObj != null)
+            {
+                var imgStr = imgObj is string s ? s : imgObj.ToString();
+                if (!string.IsNullOrWhiteSpace(imgStr))
+                    return 1;
+            }
+
+            if (!data.TryGetValue("image_received", out var flagObj) || flagObj == null)
+                return 0;
+
+            try
+            {
+                if (flagObj is bool b)
+                    return b ? 1 : 0;
+                if (flagObj is long l)
+                    return l != 0 ? 1 : 0;
+                if (flagObj is int i)
+                    return i != 0 ? 1 : 0;
+                var t = flagObj.ToString()?.Trim();
+                if (string.IsNullOrEmpty(t))
+                    return 0;
+                if (t == "1" || t.Equals("true", StringComparison.OrdinalIgnoreCase))
+                    return 1;
+                if (double.TryParse(t, NumberStyles.Float, CultureInfo.InvariantCulture, out var d))
+                    return d != 0 ? 1 : 0;
+            }
+            catch { }
+
+            return 0;
+        }
+
         public void HandleMessage(string message)
         {
             Console.WriteLine($"[WebSocket] Received raw message: {message}");
@@ -369,7 +405,7 @@ namespace DroneSurveillanceSystem.Services
                                     DroneId = alertData.ContainsKey("drone_id") ? alertData["drone_id"]?.ToString() ?? "Unknown" : "Unknown",
                                     Score = alertData.ContainsKey("score") ? Convert.ToDouble(alertData["score"]) : 0.0,
                                     RLResponsed = alertData.ContainsKey("rl_responsed") ? Convert.ToInt32(alertData["rl_responsed"]) : 0,
-                                    ImageReceived = alertData.ContainsKey("image") && !string.IsNullOrEmpty(alertData["image_received"]?.ToString()) ? 1 : 0,
+                                    ImageReceived = ResolveImageReceivedFromPayload(alertData),
                                     Image = alertData.ContainsKey("image") ? alertData["image"]?.ToString() : null,
                                     Timestamp = alertData.ContainsKey("timestamp") ? alertData["timestamp"]?.ToString() ?? DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss.fff") : DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss.fff")
                                 };
@@ -386,7 +422,7 @@ namespace DroneSurveillanceSystem.Services
                                             {
                                                 alert.AlertLocation = new Tuple<double, double, double>(coords[0], coords[1], coords[2]);
                                                 // Process coordinates asynchronously and send back to server
-                                                _ = ProcessAndSendCoordinatesAsync(alert.AlertLocation, alert.AlertId, alert.DroneId);
+                                                _ = ProcessAndSendCoordinatesAsync(alert.AlertLocation, alert.AlertId, alert.DroneId, alert.Alert);
                                             }
                                         }
                                         else
@@ -399,7 +435,7 @@ namespace DroneSurveillanceSystem.Services
                                                 {
                                                     alert.AlertLocation = new Tuple<double, double, double>(coords[0], coords[1], coords[2]);
                                                     // Process coordinates asynchronously and send back to server
-                                                    _ = ProcessAndSendCoordinatesAsync(alert.AlertLocation, alert.AlertId, alert.DroneId);
+                                                    _ = ProcessAndSendCoordinatesAsync(alert.AlertLocation, alert.AlertId, alert.DroneId, alert.Alert);
                                                 }
                                             }
                                         }
@@ -460,11 +496,12 @@ namespace DroneSurveillanceSystem.Services
                                 
                                 var alert = new AlertData
                                 {
+                                    AlertId = dataObj.ContainsKey("alert_id") ? dataObj["alert_id"]?.ToString() : null,
                                     Alert = dataObj.ContainsKey("alert") ? dataObj["alert"]?.ToString() : "Unknown Alert",
                                     DroneId = dataObj.ContainsKey("drone_id") ? dataObj["drone_id"]?.ToString() : "Unknown",
                                     Score = dataObj.ContainsKey("score") ? Convert.ToDouble(dataObj["score"]) : 0.0,
                                     RLResponsed = dataObj.ContainsKey("rl_responsed") ? Convert.ToInt32(dataObj["rl_responsed"]) : 0,
-                                    ImageReceived = dataObj.ContainsKey("image_received") && !string.IsNullOrEmpty(dataObj["image_received"]?.ToString()) ? 1 : 0,
+                                    ImageReceived = ResolveImageReceivedFromPayload(dataObj),
                                     Image = dataObj.ContainsKey("image") ? dataObj["image"]?.ToString() : null,
                                     Timestamp = dataObj.ContainsKey("timestamp") ? dataObj["timestamp"]?.ToString() : DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss.fff")
                                 };
@@ -485,7 +522,7 @@ namespace DroneSurveillanceSystem.Services
                                                 alert.AlertLocation = new Tuple<double, double, double>(coords[0], coords[1], coords[2]);
                                                 Console.WriteLine($"[WebSocket] Parsed location: [{coords[0]}, {coords[1]}, {coords[2]}]");
                                                 // Process coordinates asynchronously and send back to server
-                                                _ = ProcessAndSendCoordinatesAsync(alert.AlertLocation, alert.AlertId, alert.DroneId);
+                                                _ = ProcessAndSendCoordinatesAsync(alert.AlertLocation, alert.AlertId, alert.DroneId, alert.Alert);
                                             }
                                         }
                                     }
@@ -583,9 +620,12 @@ namespace DroneSurveillanceSystem.Services
                                         {
                                             // Also update tracking service for visualization
                                             double lat = 0, lon = 0, alt = 0;
+                                            double? yawDeg = null;
                                             if (position != null && position.Length >= 3)
                                             {
                                                 lat = position[0]; lon = position[1]; alt = position[2];
+                                                if (position.Length >= 4)
+                                                    yawDeg = position[3];
                                             }
                                             double? bat = null;
                                             if (!string.IsNullOrWhiteSpace(battery))
@@ -598,7 +638,7 @@ namespace DroneSurveillanceSystem.Services
                                                     bat = b;
                                                 }
                                             }
-                                            DroneTrackingService.Instance.UpdateFromTelemetry(droneId!, lat, lon, alt, bat, status, ts);
+                                            DroneTrackingService.Instance.UpdateFromTelemetry(droneId!, lat, lon, alt, bat, status, ts, yawDeg);
                                         }
                                         catch { }
                                     }
@@ -807,9 +847,10 @@ namespace DroneSurveillanceSystem.Services
         /// Processes coordinates using Python script and sends the processed coordinates back to the server
         /// </summary>
         private async Task ProcessAndSendCoordinatesAsync(
-            Tuple<double, double, double>? coordinates, 
-            string? alertId, 
-            string? droneId)
+            Tuple<double, double, double>? coordinates,
+            string? alertId,
+            string? droneId,
+            string? alertNameFromServer)
         {
             if (coordinates == null)
             {
@@ -820,43 +861,44 @@ namespace DroneSurveillanceSystem.Services
             try
             {
                 Console.WriteLine($"[CoordinateProcessing] Processing coordinates: [{coordinates.Item1}, {coordinates.Item2}, {coordinates.Item3}]");
-                
-                // Process coordinates using the Python script
-                var processedCoords = await CoordinateProcessingService.Instance.ProcessCoordinatesAsync(
-                    coordinates.Item1,
-                    coordinates.Item2,
-                    coordinates.Item3,
-                    alertId,
-                    droneId
-                );
 
-                if (processedCoords != null)
+                var midpointResult = await CoordinateProcessingService.Instance.ComputeValidationMidpointFromCacheAsync(
+                    alertId,
+                    droneId,
+                    coordinates,
+                    serverAlertId: alertId,
+                    serverAlertName: alertNameFromServer);
+
+                if (midpointResult?.Data != null)
                 {
-                    Console.WriteLine($"[CoordinateProcessing] Processed coordinates: [{processedCoords.Item1}, {processedCoords.Item2}, {processedCoords.Item3}]");
-                    
-                    // Send processed coordinates back to the server with actual app_id
+                    var d = midpointResult.Data;
+                    Console.WriteLine(
+                        $"[CoordinateProcessing] Midpoint location: " +
+                        $"[{d.Location[0]}, {d.Location[1]}, {d.Location[2]}, {d.Location[3]}]");
+
                     var appId = GetCurrentAppClientId();
                     var message = new
                     {
-                        type = "processed_coordinates",
+                        type = "target_pos",
                         app_id = appId,
                         data = new
                         {
-                            alert_id = alertId,
-                            drone_id = droneId,
-                            original_location = new[] { coordinates.Item1, coordinates.Item2, coordinates.Item3 },
-                            processed_location = new[] { processedCoords.Item1, processedCoords.Item2, processedCoords.Item3 },
+                            target_id = d.TargetId,
+                            location = d.Location,
+                            alert_name = d.AlertName,
+                            alert_id = d.AlertId,
+                            drone_id = d.DroneId,
                             timestamp = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ")
                         }
                     };
 
                     var jsonMessage = JsonConvert.SerializeObject(message);
                     SendMessage(jsonMessage);
-                    Console.WriteLine($"[CoordinateProcessing] ✅ Processed coordinates sent to server (App ID: {appId})");
+                    Console.WriteLine($"[CoordinateProcessing] ✅ target_pos sent to server (App ID: {appId})");
                 }
                 else
                 {
-                    Console.WriteLine("[CoordinateProcessing] ⚠️ Coordinate processing failed or returned null");
+                    Console.WriteLine("[CoordinateProcessing] ⚠️ Dummy RL midpoint processing failed or returned null");
                 }
             }
             catch (Exception ex)

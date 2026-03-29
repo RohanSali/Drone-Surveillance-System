@@ -200,9 +200,10 @@ def inference_crowd_density(frame,capture_timestamp, intrinsic_matrix , drone_ro
                 x,y,z = get_crowd_location(frame,result,intrinsic_matrix,drone_rotation_matrix,drone_pos)
                 if x is not None and y is not None and z is not None :
                     payload["alert_location"] = [x, y, z]
-                    
-                asyncio.run(save_to_machine(payload))
-                asyncio.run(send_alert(payload))
+                    asyncio.run(save_to_machine(payload))
+                    asyncio.run(send_alert(payload))
+                else:
+                    pass
                 
         else :
             print(f"🔒 Saving {new_label} for first time!")
@@ -210,6 +211,7 @@ def inference_crowd_density(frame,capture_timestamp, intrinsic_matrix , drone_ro
             x,y,z = get_crowd_location(frame,result,intrinsic_matrix,drone_rotation_matrix,drone_pos)
             if x is not None and y is not None and z is not None :
                 payload["alert_location"] = [x, y, z]
-
-            asyncio.run(save_to_machine(payload))
-            asyncio.run(send_alert(payload))
+                asyncio.run(save_to_machine(payload))
+                asyncio.run(send_alert(payload))
+            else:
+                pass

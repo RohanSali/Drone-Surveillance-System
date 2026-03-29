@@ -5,12 +5,11 @@ import sys
 import json
 from datetime import datetime
 import base64
-import asyncio
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from inference_engine.result_saver import send_alert
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 project_dir = os.path.abspath(os.path.join(current_dir, '..'))
+ALERT_QUEUE_FILE = os.path.join(project_dir, "alert_queue.txt")
 ALERT_MODEL_PATH = os.path.join(project_dir,'models','yolo_alert_detection.pt')
 det_model_alert = YOLO(ALERT_MODEL_PATH)
 CROWD_MODEL_PATH = os.path.join(project_dir,'models','crowd_density_colab.pt')
@@ -107,6 +106,19 @@ def save_to_machine(payload):
         f.write(str(payload) + '\n')
     print(f"✅ Saved Validated Alert to Machine : {payload['alert']}")
 
+def queue_validated_alert(payload):
+    """Queue validated alert to alert_queue.txt for websocket_handler to send."""
+    try:
+        alert_entry = {
+            "type": "validated_alert",
+            "data": payload
+        }
+        with open(ALERT_QUEUE_FILE, "a") as f:
+            f.write(json.dumps(alert_entry) + "\n")
+        print(f"✅ Validated alert queued: {payload.get('alert', 'Unknown')}")
+    except Exception as e:
+        print(f"⚠ Error queuing validated alert: {e}")
+        
 def validate_alert(alert_name,alert_id,frame,capture_timestamp = datetime.now()):
     type = None
     if alert_name in CASULTIES or alert_name in ANAMOLIES:
@@ -139,4 +151,5 @@ def validate_alert(alert_name,alert_id,frame,capture_timestamp = datetime.now())
         }
 
         save_to_machine(payload)
-        asyncio.run(send_alert(payload,type='validated_alert'))
+        # Queue validated alert for websocket_handler to send to server
+        queue_validated_alert(payload)

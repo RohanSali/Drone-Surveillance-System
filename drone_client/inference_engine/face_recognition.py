@@ -161,16 +161,20 @@ def compare_faces(frame1, frame2, name, capture_timestamp, intrinsic_matrix, dro
                     if x is not None and y is not None and z is not None :
                         payload["location"] = [x, y, z]
 
-                    asyncio.run(save_to_machine(payload,type="alert_image"))
-                    asyncio.run(send_alert(payload,type="alert_image"))
+                        asyncio.run(save_to_machine(payload,type="alert_image"))
+                        asyncio.run(send_alert(payload,type="alert_image"))
+                    else:
+                        pass
             else :
                 print(f"🔒 Saving {name} for first time!")
                 x,y,z = get_alert_location(frame1,box,name,intrinsic_matrix,drone_rotation_matrix,drone_pos)
                 if x is not None and y is not None and z is not None :
                     payload["location"] = [x, y, z]
 
-                asyncio.run(save_to_machine(payload,type="alert_image"))
-                asyncio.run(send_alert(payload,type="alert_image"))
+                    asyncio.run(save_to_machine(payload,type="alert_image"))
+                    asyncio.run(send_alert(payload,type="alert_image"))
+                else:
+                    pass
         else:
             print("Faces do not match. Similarity:", cosine_sim)
     else:

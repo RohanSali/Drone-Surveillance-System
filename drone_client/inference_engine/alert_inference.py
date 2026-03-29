@@ -26,7 +26,7 @@ TEMP_TEXT_FILE = os.path.join(current_dir,'alerts.txt')
 DRONE_INFO_FILE_PATH = os.path.join(project_dir,'drone_info.json')
 IMG_HEIGHT = 240
 IMG_WIDTH = 240
-PREDICTION_THRESHOLD = 95 #percent
+PREDICTION_THRESHOLD = 97 #percent
 TIME_THRESHOLD = 60 #sec
 CONFIDENCE_THRESHOLD = 0.159 #percent
 
@@ -223,14 +223,17 @@ def inference_for_alert(frame , capture_timestamp, intrinsic_matrix , drone_rota
                 x,y,z = get_alert_location(frame,label,intrinsic_matrix,drone_rotation_matrix,drone_pos)
                 if x is not None and y is not None and z is not None:
                     payload["alert_location"] = [x, y, z]
+                    asyncio.run(save_to_machine(payload))
+                    asyncio.run(send_alert(payload))
+                else:
+                    pass
 
-                asyncio.run(save_to_machine(payload))
-                asyncio.run(send_alert(payload))
         else :
             print(f"🔒 Saving {new_label} for first time!")
             x,y,z = get_alert_location(frame,label,intrinsic_matrix,drone_rotation_matrix,drone_pos)
             if x is not None and y is not None and z is not None:
                 payload["alert_location"] = [x, y, z]
-                    
-            asyncio.run(save_to_machine(payload))
-            asyncio.run(send_alert(payload))
+                asyncio.run(save_to_machine(payload))
+                asyncio.run(send_alert(payload))
+            else:
+                pass

@@ -11,7 +11,9 @@ DRONE_JSON_FILE_PATH = os.path.join(current_dir, "drone_info.json")
 ALERT_QUEUE_FILE = os.path.join(current_dir, "alert_queue.txt")
 TARGETS_FILE = os.path.join(current_dir, "capture_engine", "drone_targets.txt")
 LOST_PERSON_FOLDER = os.path.join(current_dir, "inference_engine", "lost_person")
-DRONE_POS_UPDATE_INTERVAL = 10 # seconds
+DRONE_TASKS_FILE = os.path.join(current_dir, "drone_tasks.txt")
+DRONE_POS_UPDATE_INTERVAL = 3  # seconds (fast for real-time tracking)
+ALERT_QUEUE_CHECK_INTERVAL = 1  # seconds (alerts are higher priority)
 
 SERVER_URL = "wss://vira-communication-server.onrender.com"
 
@@ -75,7 +77,7 @@ class DroneWebSocketHandler:
             print(f"❌ Error reading alert queue: {e}")
 
     async def send_drone_position(self):
-        """Continuously send drone position from JSON file"""
+        """Continuously send drone telemetry from JSON file"""
         while True:
             try:
                 if self.connected and self.websocket:
@@ -83,24 +85,26 @@ class DroneWebSocketHandler:
                         with open(DRONE_JSON_FILE_PATH, "r") as f:
                             data = json.load(f)
 
-                        position = data.get("location", {})
-                        drone_id = data.get("drone_id", self.drone_id)
-                        battery_status = data.get("battery status", "Unknown")
-                        status = data.get("status", "Unknown")
-
                         message = {
                             "type": "drone_pos",
                             "data": {
-                                "drone_id": drone_id,
-                                "position": position,
-                                "battery_status": battery_status,
-                                "status": status,
+                                "drone_id": data.get("drone_id", self.drone_id),
+                                "drone_name": data.get("drone_name", ""),
+                                "position": data.get("position", [0, 0, 0]),
+                                "yaw": data.get("yaw", 0),
+                                "orientation": data.get("orientation", [0, 0, 0]),
+                                "speed": data.get("speed", 0),
+                                "altitude": data.get("altitude", 0),
+                                "battery": data.get("battery", 100),
+                                "status": data.get("status", "Unknown"),
+                                "current_target": data.get("current_target", None),
+                                "targets_remaining": data.get("targets_remaining", 0),
+                                "uptime_seconds": data.get("uptime_seconds", 0),
                                 "timestamp": datetime.utcnow().isoformat()
                             }
                         }
 
                         await self.websocket.send(json.dumps(message))
-                        print(f"📤 Drone position sent: {message}")
             except Exception as e:
                 print(f"❌ Error sending drone position: {e}")
 
@@ -141,9 +145,18 @@ class DroneWebSocketHandler:
         try:
             with open(TARGETS_FILE, "a") as f:
                 f.write(json.dumps(data.get("data", {})) + "\n")
-            print(f"🎯 Target saved to {TARGETS_FILE}: {data}")
+            print(f"🎯 Target received: {data}")
         except Exception as e:
             print(f"❌ Error saving target: {e}")
+
+    async def handle_drone_task(self, data):
+        """Process incoming drone_task message — append data to drone_tasks.txt"""
+        try:
+            task_data = data.get("data", {})
+            with open(DRONE_TASKS_FILE, "a") as f:
+                f.write(json.dumps(task_data) + "\n")
+        except Exception as e:
+            print(f"❌ Error saving drone task: {e}")
 
     async def listen(self):
         """Listen to server messages"""
@@ -157,6 +170,8 @@ class DroneWebSocketHandler:
                         await self.handle_alert_image(data)
                     elif msg_type == "target_pos":
                         await self.handle_target(data)
+                    elif msg_type == "drone_task":
+                        await self.handle_drone_task(data)
                     elif msg_type == "connection_established":
                         print("✅ Connection established with server")
                     else:
@@ -172,20 +187,28 @@ class DroneWebSocketHandler:
             self.connected = False
 
     async def run(self):
-        """Run main loop"""
+        """Run main loop — alerts checked frequently, position sent on its own timer"""
         drone_pos_task = None
         while True:
             if not self.connected:
                 await self.connect()
 
+            # Start persistent background tasks
             if drone_pos_task is None or drone_pos_task.done():
                 drone_pos_task = asyncio.create_task(self.send_drone_position())
 
-            send_task = asyncio.create_task(self.send_alert_from_queue())
+            # Run alert queue check and listen concurrently
+            # Listen runs until disconnect; alerts checked every cycle
+            async def alert_loop():
+                while self.connected:
+                    await self.send_alert_from_queue()
+                    await asyncio.sleep(ALERT_QUEUE_CHECK_INTERVAL)
+
+            alert_task = asyncio.create_task(alert_loop())
             listen_task = asyncio.create_task(self.listen())
 
             done, pending = await asyncio.wait(
-                [send_task, listen_task],
+                [alert_task, listen_task],
                 return_when=asyncio.FIRST_COMPLETED
             )
 

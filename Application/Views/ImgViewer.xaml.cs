@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
 namespace DroneSurveillanceSystem.Views
@@ -13,15 +14,27 @@ namespace DroneSurveillanceSystem.Views
         private double _currentRotation = 0.0;
         private int _currentImageIndex = 1;
         private int _totalImages = 150;
+        private readonly ImageSource? _providedSource;
 
-        public ImgViewer()
+        public ImgViewer() : this(null)
         {
+        }
+
+        public ImgViewer(ImageSource? providedSource)
+        {
+            _providedSource = providedSource;
             InitializeComponent();
         }
 
         private void ImgViewer_Initialized(object sender, EventArgs e)
         {
-            // Load a default placeholder or first surveillance image
+            if (_providedSource != null)
+            {
+                MainImage.Source = _providedSource;
+                UpdateImageInfo();
+                return;
+            }
+
             LoadImagePlaceholder();
             UpdateImageInfo();
         }

@@ -43,6 +43,14 @@
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="BorderThickness" Value="0"/>
         </Style>
+
+        <!-- Style for completely hidden scrollbar (for Active Alerts) -->
+        <Style x:Key="HiddenScrollViewer" TargetType="ScrollViewer">
+            <Setter Property="VerticalScrollBarVisibility" Value="Hidden"/>
+            <Setter Property="HorizontalScrollBarVisibility" Value="Disabled"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+        </Style>
     </UserControl.Resources>
 
     <Grid>
@@ -251,7 +259,8 @@
                             Foreground="#dc3545">
                         </TextBlock>
                         
-                        <ScrollViewer Grid.Row="1" Style="{StaticResource HiddenSmoothScrollViewer}">
+                        <!-- Main Alerts ScrollViewer with hidden scrollbar -->
+                        <ScrollViewer Grid.Row="1" Style="{StaticResource HiddenScrollViewer}">
                             <ItemsControl ItemsSource="{Binding FilteredAlerts}">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
@@ -275,6 +284,32 @@
                                 </ItemsControl.ItemTemplate>
                             </ItemsControl>
                         </ScrollViewer>
+
+                        <!-- Loading Indicator Overlay (Shown during validation) -->
+                        <Grid Grid.Row="1" Background="#00000080" x:Name="ValidationLoadingOverlay" Visibility="Collapsed">
+                            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                                <!-- Animated Loading Circles -->
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,20">
+                                    <Ellipse Width="12" Height="12" Fill="#4CAF50" Margin="0,0,8,0" x:Name="LoadingCircle1">
+                                        <Ellipse.RenderTransform>
+                                            <ScaleTransform ScaleX="1" ScaleY="1" CenterX="6" CenterY="6"/>
+                                        </Ellipse.RenderTransform>
+                                    </Ellipse>
+                                    <Ellipse Width="12" Height="12" Fill="#FF9800" Margin="0,0,8,0" x:Name="LoadingCircle2">
+                                        <Ellipse.RenderTransform>
+                                            <ScaleTransform ScaleX="1" ScaleY="1" CenterX="6" CenterY="6"/>
+                                        </Ellipse.RenderTransform>
+                                    </Ellipse>
+                                    <Ellipse Width="12" Height="12" Fill="#2196F3" x:Name="LoadingCircle3">
+                                        <Ellipse.RenderTransform>
+                                            <ScaleTransform ScaleX="1" ScaleY="1" CenterX="6" CenterY="6"/>
+                                        </Ellipse.RenderTransform>
+                                    </Ellipse>
+                                </StackPanel>
+                                <TextBlock Text="Validation in Progress..." Foreground="White" FontSize="14" HorizontalAlignment="Center" FontWeight="Bold"/>
+                                <TextBlock Text="Please wait..." Foreground="#cccccc" FontSize="12" HorizontalAlignment="Center" Margin="0,5,0,0"/>
+                            </StackPanel>
+                        </Grid>
                     </Grid>
                 </Grid>
             </Border>

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Threading;
 using DroneSurveillanceSystem.Models;
@@ -26,21 +27,8 @@ namespace DroneSurveillanceSystem.Views
         private bool _isDroneConnected = false;
         private bool _isRecording = false;
 
-        // Validation state tracking
-        private bool _isValidationActive = false;
-        private ValidationState _validationState = ValidationState.Idle;
-        private double _initialLatitude = 0.0;
-        private double _initialLongitude = 0.0;
-        private double _initialAltitude = 0.0;
-
-        // Validation states enum
-        private enum ValidationState
-        {
-            Idle,
-            Moving,
-            Hovering,
-            Returning
-        }
+        private string _selectedDroneId = "";
+        private Button? _selectedDroneButton;
 
         public ControlPanelWindow()
         {
@@ -66,6 +54,31 @@ namespace DroneSurveillanceSystem.Views
             };
             _uiUpdateTimer.Tick += UpdateUI;
             _uiUpdateTimer.Start();
+
+            Loaded += ControlPanelWindow_Loaded;
+        }
+
+        private void ControlPanelWindow_Loaded(object sender, RoutedEventArgs e)
+        {
+            RestoreValidationFields();
+        }
+
+        private void RestoreValidationFields()
+        {
+            var s = ControlPanelValidationState.Instance;
+            ValidationLatitudeTextBox.Text = s.Latitude;
+            ValidationLongitudeTextBox.Text = s.Longitude;
+            ValidationAltitudeTextBox.Text = s.Altitude;
+            ValidationYawTextBox.Text = s.Yaw;
+        }
+
+        private void PersistValidationFields()
+        {
+            var s = ControlPanelValidationState.Instance;
+            s.Latitude = ValidationLatitudeTextBox.Text;
+            s.Longitude = ValidationLongitudeTextBox.Text;
+            s.Altitude = ValidationAltitudeTextBox.Text;
+            s.Yaw = ValidationYawTextBox.Text;
         }
 
         private void SetupEventHandlers()
@@ -75,7 +88,27 @@ namespace DroneSurveillanceSystem.Views
 
         private void InitializeUIData()
         {
-            // Initialize with drone default data
+            // Initialize drone selection panel with real drones
+            PopulateDroneSelectionPanel();
+            
+            // Subscribe to drone changes
+            SubscribeToDroneChanges();
+            
+            // Setup validation field events to track user edits
+            ValidationLatitudeTextBox.TextChanged += ValidationField_TextChanged;
+            ValidationLongitudeTextBox.TextChanged += ValidationField_TextChanged;
+            ValidationAltitudeTextBox.TextChanged += ValidationField_TextChanged;
+            ValidationYawTextBox.TextChanged += ValidationField_TextChanged;
+        }
+
+        private void SubscribeToDroneChanges()
+        {
+            DeviceDataManager.DronesChanged += OnDronesChanged;
+        }
+
+        private void OnDronesChanged(List<UsbDrone> drones)
+        {
+            Dispatcher.Invoke(PopulateDroneSelectionPanel);
         }
 
         private void UpdateUI(object? sender, EventArgs e)
@@ -92,26 +125,9 @@ namespace DroneSurveillanceSystem.Views
             AltitudeText.Text = $"{_droneControlService.Altitude:F1} m";
             SpeedText.Text = $"{_droneControlService.Speed:F1} m/s";
             GPSText.Text = $"{_droneControlService.Latitude:F6}, {_droneControlService.Longitude:F6}";
-            BatteryProgressBar.Value = _droneControlService.BatteryLevel;
-            BatteryPercentText.Text = $"{_droneControlService.BatteryLevel:F1}%";
-            CurrentFlightModeText.Text = _droneControlService.FlightMode.ToString();
-            CurrentZoneText.Text = _droneControlService.CurrentZone;
 
-            // Update battery color based on level
-            if (_droneControlService.BatteryLevel < 20)
-                BatteryProgressBar.Foreground = new SolidColorBrush(Colors.Red);
-            else if (_droneControlService.BatteryLevel < 50)
-                BatteryProgressBar.Foreground = new SolidColorBrush(Colors.Orange);
-            else
-                BatteryProgressBar.Foreground = new SolidColorBrush(Colors.Green);
-
-            // Update validation panel with current drone position (auto-fill on first load)
-            if (!_isValidationActive)
-            {
-                ValidationLatitudeTextBox.Text = _droneControlService.Latitude.ToString("F6");
-                ValidationLongitudeTextBox.Text = _droneControlService.Longitude.ToString("F6");
-                ValidationAltitudeTextBox.Text = _droneControlService.Altitude.ToString("F1");
-            }
+            // NO AUTO-FILL: User must manually enter target position
+            // Validation fields remain user-editable and keep user input
         }
 
         private void UpdateProcessingStatistics()
@@ -271,68 +287,44 @@ namespace DroneSurveillanceSystem.Views
         {
             try
             {
-                // Parse input values
-                var droneId = (ValidationDroneIdTextBox.Text ?? "").Trim();
-                if (string.IsNullOrWhiteSpace(droneId))
+                PersistValidationFields();
+
+                if (string.IsNullOrWhiteSpace(_selectedDroneId))
                 {
-                    MessageBox.Show("Please enter a Drone ID.", "Missing Drone ID", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    MessageBox.Show("Please select a drone from the Drone Selection panel at the top.", "No Drone Selected", MessageBoxButton.OK, MessageBoxImage.Warning);
                     return;
                 }
 
                 if (!TryParseDouble(ValidationLatitudeTextBox.Text, out var targetLat) ||
                     !TryParseDouble(ValidationLongitudeTextBox.Text, out var targetLon))
                 {
-                    MessageBox.Show("Please enter valid Latitude and Longitude values.", "Invalid Coordinates", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    MessageBox.Show("Please enter valid Latitude and Longitude values in Target Position.", "Invalid Coordinates", MessageBoxButton.OK, MessageBoxImage.Warning);
                     return;
                 }
 
                 if (!TryParseDouble(ValidationAltitudeTextBox.Text, out var targetAlt))
                 {
-                    MessageBox.Show("Please enter a valid Altitude value.", "Invalid Altitude", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    MessageBox.Show("Please enter a valid Altitude value in Target Position.", "Invalid Altitude", MessageBoxButton.OK, MessageBoxImage.Warning);
                     return;
                 }
 
-                // First click: Moving to alert position for validation
-                if (!_isValidationActive)
+                if (!TryParseDouble(ValidationYawTextBox.Text, out var targetYaw))
                 {
-                    // Capture current position as initial position
-                    _initialLatitude = _droneControlService.Latitude;
-                    _initialLongitude = _droneControlService.Longitude;
-                    _initialAltitude = _droneControlService.Altitude;
-
-                    // Update initial position display
-                    InitialLatitudeText.Text = _initialLatitude.ToString("F6");
-                    InitialLongitudeText.Text = _initialLongitude.ToString("F6");
-                    InitialAltitudeText.Text = _initialAltitude.ToString("F1") + " m";
-
-                    // Send move command via WebSocket
-                    SendDroneValidationTask(droneId, targetLat, targetLon, targetAlt, "move");
-
-                    _isValidationActive = true;
-                    _validationState = ValidationState.Moving;
-
-                    // Update UI
-                    GoToPositionButton.Content = "Return to Base";
-                    ValidationStatusText.Text = "Moving to Alert Location";
-                    ValidationStatusIndicator.Fill = new SolidColorBrush(Colors.Yellow);
-
-                    MessageBox.Show($"Drone moving to alert position: {targetLat:F6}, {targetLon:F6}, {targetAlt:F1}m", "Validation Started", MessageBoxButton.OK, MessageBoxImage.Information);
+                    MessageBox.Show("Please enter a valid Yaw value in Target Position.", "Invalid Yaw", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
                 }
-                else
-                {
-                    // Second click: Returning to initial position
-                    SendDroneValidationTask(droneId, _initialLatitude, _initialLongitude, _initialAltitude, "move");
 
-                    _validationState = ValidationState.Returning;
+                var curLat = _droneControlService.Latitude;
+                var curLon = _droneControlService.Longitude;
+                var curAlt = _droneControlService.Altitude;
+                InitialLatitudeText.Text = curLat.ToString("F6");
+                InitialLongitudeText.Text = curLon.ToString("F6");
+                InitialAltitudeText.Text = curAlt.ToString("F1") + " m";
 
-                    // Update UI
-                    GoToPositionButton.Content = "Go to Position";
-                    _isValidationActive = false;
-                    ValidationStatusText.Text = "Returning to Base";
-                    ValidationStatusIndicator.Fill = new SolidColorBrush(Colors.Cyan);
+                SendDroneValidationTask(_selectedDroneId, targetLat, targetLon, targetAlt, targetYaw, "move");
 
-                    MessageBox.Show($"Drone returning to initial position: {_initialLatitude:F6}, {_initialLongitude:F6}, {_initialAltitude:F1}m", "Return to Base", MessageBoxButton.OK, MessageBoxImage.Information);
-                }
+                ValidationStatusText.Text = $"Go to Position sent ({targetLat:F5}, {targetLon:F5})";
+                ValidationStatusIndicator.Fill = new SolidColorBrush(Colors.LimeGreen);
             }
             catch (Exception ex)
             {
@@ -344,28 +336,9 @@ namespace DroneSurveillanceSystem.Views
         {
             try
             {
-                var droneId = (ValidationDroneIdTextBox.Text ?? "").Trim();
-                if (string.IsNullOrWhiteSpace(droneId))
-                {
-                    MessageBox.Show("Please enter a Drone ID.", "Missing Drone ID", MessageBoxButton.OK, MessageBoxImage.Warning);
-                    return;
-                }
-
-                // Send hover command at current position
-                var currentLat = _droneControlService.Latitude;
-                var currentLon = _droneControlService.Longitude;
-                var currentAlt = _droneControlService.Altitude;
-
-                SendDroneValidationTask(droneId, currentLat, currentLon, currentAlt, "hover");
-
-                _validationState = ValidationState.Hovering;
-
-                // Update UI
-                ValidationStatusText.Text = "Hovering (Validation)";
-                ValidationStatusIndicator.Fill = new SolidColorBrush(Colors.Orange);
-                GoToPositionButton.IsEnabled = true;
-
-                MessageBox.Show($"Drone hovering at position for validation: {currentLat:F6}, {currentLon:F6}, {currentAlt:F1}m", "Validation Paused", MessageBoxButton.OK, MessageBoxImage.Information);
+                ValidationStatusText.Text = "Validation stopped";
+                ValidationStatusIndicator.Fill = new SolidColorBrush(Colors.Gray);
+                GoToPositionButton.Content = "Go to Position";
             }
             catch (Exception ex)
             {
@@ -373,7 +346,38 @@ namespace DroneSurveillanceSystem.Views
             }
         }
 
-        private void SendDroneValidationTask(string droneId, double latitude, double longitude, double altitude, string action)
+        private void ValidationReturnToBaseButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(_selectedDroneId))
+                {
+                    MessageBox.Show("Please select a drone from the Drone Selection panel at the top.", "No Drone Selected", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                var (baseLat, baseLon, baseAlt, baseYaw) = DroneBaseConfig.Load();
+                if (baseLat == 0 && baseLon == 0 && baseAlt == 0 && baseYaw == 0)
+                {
+                    MessageBox.Show(
+                        "Set DroneBase (Latitude, Longitude, Altitude, Yaw) in appsettings.json next to the application executable, then restart or reopen the control panel.",
+                        "Base location not configured",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Information);
+                    return;
+                }
+
+                SendDroneReturnToBaseTask(_selectedDroneId, baseLat, baseLon, baseAlt, baseYaw);
+                ValidationStatusText.Text = "Return to Base command sent (configured home)";
+                ValidationStatusIndicator.Fill = new SolidColorBrush(Colors.DeepSkyBlue);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error: {ex.Message}", "Return to Base", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void SendDroneValidationTask(string droneId, double latitude, double longitude, double altitude, double yaw, string action)
         {
             try
             {
@@ -383,29 +387,58 @@ namespace DroneSurveillanceSystem.Views
                     data = new
                     {
                         drone_id = droneId,
-                        latitude = latitude,
-                        longitude = longitude,
-                        altitude = altitude,
+                        pos = new[] { latitude, longitude, altitude, yaw },
                         action = action,
                         timestamp = DateTime.UtcNow.ToString("o"),
-                        validation_type = "alert"
                     }
                 };
 
                 string jsonMessage = JsonConvert.SerializeObject(payload);
-                
-                // Send via WebSocket
+
                 if (ApiService.Instance != null)
                 {
                     ApiService.Instance.SendMessage(jsonMessage);
                 }
 
-                // Log the action
-                System.Diagnostics.Debug.WriteLine($"[Validation] Sent {action} command: {jsonMessage}");
+                System.Diagnostics.Debug.WriteLine($"[DroneTask] Sent {action}: {jsonMessage}");
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"[Validation Error] {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"[DroneTask Error] {ex.Message}");
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Sends the drone to the predefined base from appsettings.json. Separate from Go to Position (user fields) and from Stop Validation.
+        /// </summary>
+        private void SendDroneReturnToBaseTask(string droneId, double latitude, double longitude, double altitude, double yaw)
+        {
+            try
+            {
+                var payload = new
+                {
+                    type = "drone_task",
+                    data = new
+                    {
+                        drone_id = droneId,
+                        pos = new[] { latitude, longitude, altitude, yaw },
+                        action = "return_base",
+                        timestamp = DateTime.UtcNow.ToString("o"),
+                    }
+                };
+
+                var jsonMessage = JsonConvert.SerializeObject(payload);
+                if (ApiService.Instance != null)
+                {
+                    ApiService.Instance.SendMessage(jsonMessage);
+                }
+
+                System.Diagnostics.Debug.WriteLine($"[ReturnToBase] Sent return_base: {jsonMessage}");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[ReturnToBase Error] {ex.Message}");
                 throw;
             }
         }
@@ -421,7 +454,9 @@ namespace DroneSurveillanceSystem.Views
 
         protected override void OnClosed(EventArgs e)
         {
+            PersistValidationFields();
             _uiUpdateTimer?.Stop();
+            DeviceDataManager.DronesChanged -= OnDronesChanged;
             _droneControlService?.Dispose();
             base.OnClosed(e);
         }
@@ -429,6 +464,145 @@ namespace DroneSurveillanceSystem.Views
         private void TabControl_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
         {
 
+        }
+
+        // =============== Drone Selection Panel Methods ===============
+        private void PopulateDroneSelectionPanel()
+        {
+            DroneSelectionPanel.Children.Clear();
+
+            try
+            {
+                var drones = DeviceDataManager.GetAllDrones();
+
+                if (drones == null || drones.Count == 0)
+                {
+                    var noDronesText = new TextBlock
+                    {
+                        Text = "No drones connected. Add drones from Connected Drones page.",
+                        Foreground = new SolidColorBrush(Colors.Orange),
+                        FontSize = 12,
+                        VerticalAlignment = VerticalAlignment.Center,
+                        Margin = new Thickness(10, 0, 0, 0)
+                    };
+                    DroneSelectionPanel.Children.Add(noDronesText);
+                    _selectedDroneId = "";
+                    _selectedDroneButton = null;
+                    return;
+                }
+
+                Button? firstButton = null;
+                UsbDrone? firstDrone = null;
+                Button? matchButton = null;
+                UsbDrone? matchDrone = null;
+
+                foreach (var drone in drones)
+                {
+                    var droneKey = string.IsNullOrWhiteSpace(drone.DeviceId) ? (drone.Name ?? "") : drone.DeviceId;
+                    if (string.IsNullOrWhiteSpace(droneKey))
+                    {
+                        continue;
+                    }
+
+                    var button = new Button
+                    {
+                        Content = drone.Name ?? droneKey,
+                        Style = (Style)FindResource("DroneChipButtonStyle"),
+                        Margin = new Thickness(5),
+                        Tag = droneKey,
+                        ToolTip = $"Status: {drone.Status}\nBattery: {drone.BatteryLevel}%"
+                    };
+
+                    if (drone.IsConnected)
+                    {
+                        button.Background = new SolidColorBrush(Color.FromRgb(30, 64, 175));
+                        button.BorderBrush = new SolidColorBrush(Color.FromRgb(59, 130, 246));
+                        button.Opacity = 1.0;
+                    }
+                    else
+                    {
+                        button.Background = new SolidColorBrush(Color.FromRgb(55, 65, 81));
+                        button.BorderBrush = new SolidColorBrush(Color.FromRgb(107, 114, 128));
+                        button.Opacity = 0.85;
+                    }
+
+                    var capturedDrone = drone;
+                    var capturedKey = droneKey;
+                    button.Click += (s, e) => SelectDrone(button, capturedKey, capturedDrone.Name ?? capturedKey, capturedDrone.BatteryLevel, capturedDrone.IsConnected, capturedDrone.Status);
+                    DroneSelectionPanel.Children.Add(button);
+
+                    if (firstButton == null)
+                    {
+                        firstButton = button;
+                        firstDrone = drone;
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(_selectedDroneId) &&
+                        string.Equals(droneKey, _selectedDroneId, StringComparison.OrdinalIgnoreCase))
+                    {
+                        matchButton = button;
+                        matchDrone = drone;
+                    }
+                }
+
+                if (matchButton != null && matchDrone != null)
+                {
+                    var k = string.IsNullOrWhiteSpace(matchDrone.DeviceId) ? (matchDrone.Name ?? "") : matchDrone.DeviceId;
+                    SelectDrone(matchButton, k, matchDrone.Name ?? k, matchDrone.BatteryLevel, matchDrone.IsConnected, matchDrone.Status);
+                }
+                else if (firstButton != null && firstDrone != null)
+                {
+                    var k = string.IsNullOrWhiteSpace(firstDrone.DeviceId) ? (firstDrone.Name ?? "") : firstDrone.DeviceId;
+                    SelectDrone(firstButton, k, firstDrone.Name ?? k, firstDrone.BatteryLevel, firstDrone.IsConnected, firstDrone.Status);
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error populating drone list: {ex.Message}");
+            }
+        }
+
+        private void SelectDrone(Button sourceButton, string droneId, string droneName, int batteryLevel, bool isConnected, string status)
+        {
+            _selectedDroneId = droneId;
+            _isDroneConnected = isConnected;
+
+            if (_selectedDroneButton != null)
+            {
+                _selectedDroneButton.BorderThickness = new Thickness(1);
+            }
+
+            _selectedDroneButton = sourceButton;
+            _selectedDroneButton.BorderBrush = new SolidColorBrush(Color.FromRgb(34, 197, 94));
+            _selectedDroneButton.BorderThickness = new Thickness(2);
+            
+            // Update status display
+            var statusText = FindName("SelectedDroneStatusText") as TextBlock;
+            if (statusText != null)
+            {
+                statusText.Text = $"Selected: {droneName} ({status})";
+                statusText.Foreground = isConnected ? new SolidColorBrush(Colors.Lime) : new SolidColorBrush(Colors.Orange);
+            }
+
+            // Update drone info display
+            var infoText = FindName("SelectedDroneInfoText") as TextBlock;
+            if (infoText != null)
+            {
+                infoText.Text = isConnected
+                    ? $"Battery: {batteryLevel}% | Ready for validation"
+                    : $"Battery: {batteryLevel}% | Drone is disconnected (commands may fail)";
+            }
+        }
+
+        private void ValidationField_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
+        {
+            PersistValidationFields();
+        }
+
+        public void RefreshDroneList()
+        {
+            // Method to refresh drone list when called from other pages
+            PopulateDroneSelectionPanel();
         }
     }
 }
