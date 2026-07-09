@@ -157,7 +157,7 @@ The **CCTV Client** streams surveillance footage to the backend, where AI models
 
 # Pipeline Of VIRA
 
-<img src="RelatedImages/pipeline.png" alt="Description" width="600">
+<img src="RelatedImages/Pipeline.png" alt="Description" width="600">
 
 - A **Frame** (image captured from the drone's camera or simulation) enters the pipeline as the starting input
 
